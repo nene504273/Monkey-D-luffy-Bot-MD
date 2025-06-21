@@ -12,6 +12,10 @@ alt="Monkey Bot MD" />
 
 Este es un proyecto Bot que será usado para el uso de todos los usuarios en general.
 
+
+---
+
+
 </details>
 <summary><b>PROPIETARIO</b></summary>
 
