@@ -17,20 +17,20 @@ global.botNumber = '' //Ejemplo: 573218138672
 
 global.owner = [
 // <-- Número @s.whatsapp.net -->
+  ['584244144821', 'ɴ͡ᴇ͜ɴᴇ❀᭄☂️', true],
   ['8294868853', '⏤͟͞ू⃪ ፝͜⁞𝘿𝙞𝙤𝙣𝙚𝙞𝙗𝙞-ʳⁱᵖ ִֶ ࣪˖ ִֶָ🐇་༘', true],
   ['18096758983', '⟆⃝༉⃟⸙ ᯽ N͙e͙v͙i͙-D͙e͙v͙ ⌗⚙️࿐', true],
-  ['526671548329', 'ू⃪ ꒰˘͈ᵕ ˘͈ 𝑳𝒆𝒈𝒏𝒂-𝒄𝒉𝒂𝒏 🪽 ꒱𖦹', true],
 
 // <-- Número @lid -->
+  ['72434808041640', 'ɴ͡ᴇ͜ɴᴇ❀᭄☂️', true],
   ['200141197844495', 'Dioneibi', true],
-  ['260081845334105', 'nevi', true],
-  ['58566677377081', 'legna', true]
+  ['260081845334105', 'nevi', true]
 ];
 
 //*─ׄ─ׅ─ׄ─⭒─ׄ─ׅ─ׄ─⭒─ׄ─ׅ─ׄ─⭒─ׄ─ׅ─ׄ─⭒─ׄ─ׅ─ׄ─⭒─ׄ─ׅ─ׄ─*
 
 global.mods = []
-global.suittag = ['18294868853']
+global.suittag = ['584244144821'] // Cambiado al nuevo número principal
 global.prems = []
 
 //*─ׄ─ׅ─ׄ─⭒─ׄ─ׅ─ׄ─⭒─ׄ─ׅ─ׄ─⭒─ׄ─ׅ─ׄ─⭒─ׄ─ׅ─ׄ─⭒─ׄ─ׅ─ׄ─*
@@ -39,25 +39,25 @@ global.libreria = 'Baileys'
 global.baileys = 'V 6.7.16' 
 global.languaje = 'Español'
 global.vs = '2.2.0'
-global.nameqr = 'Ruby-Hoshino-Bot-MD'
-global.namebot = '꒰ 🥥 ꒱ؘ 𝙍𝙪𝙗𝙮-𝙃𝙤𝙨𝙝𝙞𝙣𝙤-𝘽𝙤𝙩 ♪ ࿐ ࿔*:･ﾟ'
-global.Rubysessions = 'RubySessions'
-global.jadi = 'RubyJadiBots' 
+global.nameqr = 'monkey-D-luffy-MD'
+global.namebot = '☠️ ＭＯＮＫＥＹ Ｄ ＬＵＦＦＹ - ＭＤ 🏴‍☠️'
+global.Rubysessions = 'LuffySessions'
+global.jadi = 'LuffyJadiBots' 
 global.RubyJadibts = true
 
 //*─ׄ─ׅ─ׄ─⭒─ׄ─ׅ─ׄ─⭒─ׄ─ׅ─ׄ─⭒─ׄ─ׅ─ׄ─⭒─ׄ─ׅ─ׄ─⭒─ׄ─ׅ─ׄ─*
 
-global.packname = '✦⃟⛧┋ ➪ _ＲＵＢＹ ⛧ ＨＯＳＨＩＮＯ_ 🌸┋⃟✧'
-global.botname = '🕊️⃟⋆≛⃝  𝐑᪶𝐮𝐛𝐲 𝐇⃨𝐨𝐬𝐡𝐢𝐧𝐨⃛ 🔥⃝ℓє'
-global.wm = '‧˚꒰🍷꒱ ፝͜⁞R͢ᴜʙʏ-H͢ᴼ꯭s፝֟ʜɪɴᴏ-𝘉𝘰𝘵-𝑴𝑫✰⃔⃝🦋'
-global.author = 'Made By 𐔌Dioneibi-rip ͡꒱ ۫'
-global.dev = '⌬ Modified by: Dioneibi-rip ⚙️💻 '
-global.textbot = '⏤͟͞ू⃪ 𝑹𝒖𝒃𝒚-𝐻𝒐𝒔𝒉𝒊𝒏𝒐🌸⃝𖤐 • 𝗣𝗼𝘄𝗲𝗿𝗲𝗱 𝗕𝘆 ᴰⁱᵒⁿᵉⁱᵇⁱ⁻ʳⁱᵖ'
-global.etiqueta = 'ˑ 𓈒 𐔌 D͙i͙o͙n͙e͙i͙b͙i͙-r͙i͙p͙ ͡꒱ ۫'
+global.packname = '🏴‍☠️ ＭＯＮＫＥＹ Ｄ ＬＵＦＦＹ ☠️'
+global.botname = '☠️⃟⋆≛⃝ ＭＯＮＫＥＹ Ｄ ＬＵＦＦＹ - ＭＤ 🏴‍☠️'
+global.wm = '‧˚꒰🏴‍☠️꒱ ፝͜⁞ M͢ᴏɴᴋᴇʏ D L͢ᴜғғʏ-𝘉𝘰𝘵-𝑴𝑫✰⃔⃝'
+global.author = 'Made By ɴ͡ᴇ͜ɴᴇ❀᭄☂️' // Nombre del creador cambiado
+global.dev = '⌬ Modified by: ɴ͡ᴇ͜ɴᴇ❀᭄☂️ '
+global.textbot = '⏤͟͞ू⃪ ＭＯＮＫＥＹ Ｄ ＬＵＦＦＹ - ＭＤ 🏴‍☠️ • 𝗣𝗼𝘄𝗲𝗿𝗲𝗱 𝗕𝘆 ɴ͡ᴇ͜ɴᴇ❀᭄☂️'
+global.etiqueta = 'ˑ 𓈒 𐔌 ɴ͡ᴇ͜ɴᴇ❀᭄☂️ ͡꒱ ۫' // Etiqueta cambiada
 
 //*─ׄ─ׅ─ׄ─⭒─ׄ─ׅ─ׄ─⭒─ׄ─ׅ─ׄ─⭒─ׄ─ׅ─ׄ─⭒─ׄ─ׅ─ׄ─⭒─ׄ─ׅ─ׄ─*
 
-global.moneda = '¥enes'
+global.moneda = 'Berris 💰'
 global.welcom1 = '❍ Edita Con El Comando setwelcome'
 global.welcom2 = '❍ Edita Con El Comando setbye'
 global.banner = 'https://raw.githubusercontent.com/The-King-Destroy/Adiciones/main/Contenido/1747289219876.jpeg'
@@ -68,15 +68,15 @@ global.avatar = 'https://qu.ax/RYjEw.jpeg'
 global.gp1 = 'https://chat.whatsapp.com/JMA2XLLEgSPAqEdCkMOgJR'
 global.comunidad1 = 'https://chat.whatsapp.com/K2CPrOTksiA36SW6k41yuR'
 global.channel = 'https://whatsapp.com/channel/0029VakLbM76mYPPFL0IFI3P'
-global.channel2 = 'https://whatsapp.com/channel/0029VakLbM76mYPPFL0IFI3P'
+global.channel2 = 'https.whatsapp.com/channel/0029VakLbM76mYPPFL0IFI3P'
 global.md = 'https://github.com/Dioneibi-rip/Ruby-Hoshino-Bot'
 global.correo = 'dioneibipaselomendes@gmail.com'
 global.cn ='https://whatsapp.com/channel/0029VakLbM76mYPPFL0IFI3P';
 
 //*─ׄ─ׅ─ׄ─⭒─ׄ─ׅ─ׄ─⭒─ׄ─ׅ─ׄ─⭒─ׄ─ׅ─ׄ─⭒─ׄ─ׅ─ׄ─⭒─ׄ─ׅ─ׄ─*
 
-global.catalogo = fs.readFileSync('./src/catalogo.jpg');
-global.estilo = { key: {  fromMe: false, participant: `0@s.whatsapp.net`, ...(false ? { remoteJid: "5219992095479-1625305606@g.us" } : {}) }, message: { orderMessage: { itemCount : -999999, status: 1, surface : 1, message: packname, orderTitle: 'Bang', thumbnail: catalogo, sellerJid: '0@s.whatsapp.net'}}}
+// global.catalogo = fs.readFileSync('./src/catalogo.jpg');
+// global.estilo = { key: {  fromMe: false, participant: `0@s.whatsapp.net`, ...(false ? { remoteJid: "5219992095479-1625305606@g.us" } : {}) }, message: { orderMessage: { itemCount : -999999, status: 1, surface : 1, message: packname, orderTitle: 'Bang', thumbnail: catalogo, sellerJid: '0@s.whatsapp.net'}}}
 global.ch = {
 ch1: '120363335626706839@newsletter',
 }
