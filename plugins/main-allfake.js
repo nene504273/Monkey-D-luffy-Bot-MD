@@ -49,9 +49,9 @@ global.icono = await getBuffer(iconUrl)
 global.fkontak = { "key": { "participants":"0@s.whatsapp.net", "remoteJid": "status@broadcast", "fromMe": false, "id": "Halo" }, "message": { "contactMessage": { "vcard": `BEGIN:VCARD\nVERSION:3.0\nN:Sy;Bot;;;\nFN:y\nitem1.TEL;waid=${m.sender.split('@')[0]}:${m.sender.split('@')[0]}\nitem1.X-ABLabel:Ponsel\nEND:VCARD` }}, "participant": "0@s.whatsapp.net" }
 
 //creador y otros
-global.creador = 'Wa.me/18294868853'
+global.creador = 'Wa.me/04244144821'
 global.ofcbot = `${conn.user.jid.split('@')[0]}`
-global.asistencia = 'Wa.me/18294868853'
+global.asistencia = 'Wa.me/04244144821'
 global.namechannel = '🏴‍☠️MONKEY • D • L U F F Y🏴‍☠️'
 global.namechannel2 = '⟡『 𝐓𝐞𝐚𝐦 𝐂𝐡𝐚𝐧𝐧𝐞𝐥: 🏴‍☠️MONKEY • D • L U F F Y🏴‍☠️'
 global.namegrupo = '࿐ 𝙈𝙤𝙣𝙠𝙚𝙮 𝘿. 𝙇𝙪𝙛𝙛𝙮 ⟦ 𝘽𝙤𝙩 𝙊𝙁𝙁𝙄𝘾𝙄𝘼𝙇 ⟧🏴‍☠️'
