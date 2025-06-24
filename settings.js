@@ -70,7 +70,7 @@ global.comunidad1 = 'https://chat.whatsapp.com/K2CPrOTksiA36SW6k41yuR'
 global.channel = 'https://whatsapp.com/channel/0029VakLbM76mYPPFL0IFI3P'
 global.channel2 = 'https.whatsapp.com/channel/0029VakLbM76mYPPFL0IFI3P'
 global.md = 'https://github.com/nene504273/Monkey-D-luffy-Bot-MD'
-global.correo = 'dioneibipaselomendes@gmail.com'
+global.correo = 'quieres.robar.mi.bot@gmail.com'
 global.cn ='https://whatsapp.com/channel/0029VakLbM76mYPPFL0IFI3P';
 
 //*─ׄ─ׅ─ׄ─⭒─ׄ─ׅ─ׄ─⭒─ׄ─ׅ─ׄ─⭒─ׄ─ׅ─ׄ─⭒─ׄ─ׅ─ׄ─⭒─ׄ─ׅ─ׄ─*
