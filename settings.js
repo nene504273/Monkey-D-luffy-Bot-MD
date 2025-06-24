@@ -65,7 +65,7 @@ global.avatar = 'https://qu.ax/RYjEw.jpeg'
 
 //*─ׄ─ׅ─ׄ─⭒─ׄ─ׅ─ׄ─⭒─ׄ─ׅ─ׄ─⭒─ׄ─ׅ─ׄ─⭒─ׄ─ׅ─ׄ─⭒─ׄ─ׅ─ׄ─*
 
-global.gp1 = 'https://chat.whatsapp.com/JMA2XLLEgSPAqEdCkMOgJR'
+global.gp1 = 'https://chat.whatsapp.com/E5AsHpu3ewM7VyBW0aILKt'
 global.comunidad1 = 'https://chat.whatsapp.com/E9xIdGkHYOoB4Pq8eMzO05'
 global.channel = 'https://whatsapp.com/channel/0029VbBNkDqInlqSR3MtNN0u'
 global.channel2 = 'https://whatsapp.com/channel/0029VbBNkDqInlqSR3MtNN0u'
