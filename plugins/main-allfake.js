@@ -91,8 +91,8 @@ global.emojis = [emoji, emoji2, emoji3, emoji4].getRandom()
 global.wait = '⚘𖠵⃕❖𖥔 𝑪𝒂𝒓𝒈𝒂𝒏𝒅𝒐...ꪶꪾ❍̵̤̂ꫂ\n❝ 𝐴𝑔𝑢𝑎𝑟𝑑𝑒 𝑢𝑛 𝑚𝑜𝑚𝑒𝑛𝑡𝑜 ❞';
 
 //Enlaces
-var canal = 'https://whatsapp.com/channel/0029VakLbM76mYPPFL0IFI3P'
-let canal2 = 'https://whatsapp.com/channel/0029VakLbM76mYPPFL0IFI3P'
+var canal = 'https://whatsapp.com/channel/0029VbBNkDqInlqSR3MtNN0u'
+let canal2 = 'https://whatsapp.com/channel/0029VbBNkDqInlqSR3MtNN0u'
 var git = 'https://github.com/Dioneibi-rip'
 var github = 'https://github.com/Dioneibi-rip/Ruby-Hoshino-Bot' 
 let correo = 'ulcidecono@gmail.com'
