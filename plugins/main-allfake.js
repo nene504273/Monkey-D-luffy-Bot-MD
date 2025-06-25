@@ -94,7 +94,7 @@ global.wait = '⚘𖠵⃕❖𖥔 𝑪𝒂𝒓𝒈𝒂𝒏𝒅𝒐...ꪶꪾ❍̵�
 var canal = 'https://whatsapp.com/channel/0029VbBNkDqInlqSR3MtNN0u'
 let canal2 = 'https://whatsapp.com/channel/0029VbBNkDqInlqSR3MtNN0u'
 var git = 'https://github.com/nene504273'
-var github = 'https://github.com nene504273 Monkey-D-luffy-Bot-MD' 
+var github = 'https://github.com/nene504273  Monkey-D-luffy-Bot-MD' 
 let correo = 'ulcidecono@gmail.com'
 global.redes = [canal, canal2, git, github, correo].getRandom()
 
