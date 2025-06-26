@@ -41,7 +41,7 @@ async function handler(m, { conn }) {
       nota: 'Resolucion de probremas',
       correo: 'sin información',
       region: '🇩🇴 República Dominicana',
-      web: 'https://github.com/Legna-chan',
+      web: 'https://github.com/mantis-has',
       biografia: await conn.fetchStatus('18293142989@s.whatsapp.net').then(res => res.status).catch(_ => 'Sin biografía')
     }
   ]
