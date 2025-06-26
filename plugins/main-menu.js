@@ -6,7 +6,7 @@ import moment from 'moment-timezone';
 const cooldowns = new Map();
 const lastMenuSent = new Map();
 
-const newsletterJid = '120363418071540900@newsletter';
+const newsletterJid = '120363420846835529@newsletter';
 // --- CAMBIO: Nombre del Bot ---
 const newsletterName = '*Monkey-D-luffy-Bot-MD-OFICIAL*';
 const packname = '˚🐒-🄻🅄🄵🄵🅈-🄱🄾🅃-🐒˚';
