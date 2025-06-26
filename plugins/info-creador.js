@@ -31,7 +31,7 @@ async function handler(m, { conn }) {
       nota: 'Soporte Técnico',
       correo: 'sin información',
       region: '🇩🇴 República Dominicana',
-      web: 'https://github.com/dioneibi-rio',
+      web: 'https://github.com/dioneibi-rip',
       biografia: await conn.fetchStatus('18294868853@s.whatsapp.net').then(res => res.status).catch(_ => 'Sin biografía')
     },
     {
