@@ -25,6 +25,16 @@ async function handler(m, { conn }) {
       biografia: await conn.fetchStatus('18096758983@s.whatsapp.net').then(res => res.status).catch(_ => 'Sin biografía')
     },
     {
+      numero: '18294868853',
+      nombre: 'dioneibi-rip',
+      cargo: 'Desarrollador y ayudante',
+      nota: 'Soporte Técnico',
+      correo: 'sin información',
+      region: '🇩🇴 República Dominicana',
+      web: 'https://github.com/dioneibi-rio',
+      biografia: await conn.fetchStatus('18294868853@s.whatsapp.net').then(res => res.status).catch(_ => 'Sin biografía')
+    },
+    {
       numero: '5216671548329',
       nombre: '⏤͟͞ू⃪ ꒰˘͈ᵕ ˘͈ 𝑳𝒆𝒈𝒏𝒂-𝒄𝒉𝒂𝒏 🪽 ꒱𖦹',
       cargo: 'Co-Desarrolladora y contribudora',
