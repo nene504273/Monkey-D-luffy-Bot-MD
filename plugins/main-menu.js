@@ -67,6 +67,7 @@ let handler = async (m, { conn, usedPrefix }) => {
   const utcTime = moment().utc().format('HH:mm');
 
   const gifVideo = mediaLinks.video[Math.floor(Math.random() * mediaLinks.video.length)];
+  // La siguiente línea ya no es necesaria para la vista previa, pero puede usarse en otro lugar si lo deseas.
   const randomThumbnail = mediaLinks.imagen[Math.floor(Math.random() * mediaLinks.imagen.length)];
 
   const emojis = {
@@ -112,6 +113,8 @@ Hola ${name} este es el menú:
 
   const finalText = `${header}\n\n${sections}\n\n[⏳] Este menú puede enviarse 1 vez cada 5 minutos por grupo.`;
 
+  // --- CAMBIO REALIZADO AQUÍ ---
+  // Se ha eliminado el objeto `externalAdReply` de `contextInfo`.
   const contextInfo = {
     mentionedJid: [m.sender],
     isForwarded: true,
@@ -120,16 +123,19 @@ Hola ${name} este es el menú:
       newsletterJid,
       newsletterName,
       serverMessageId: -1
-    },
+    }
+    // --- SECCIÓN ELIMINADA ---
+    /*
     externalAdReply: {
       title: packname,
-      // --- CAMBIO: Nombre del Bot ---
       body: 'Ver todos los comandos de Monkey-D-luffy-Bot-MD',
       thumbnailUrl: randomThumbnail,
-      sourceUrl: 'https://github.com/nevi-dev/Vermeil-bot', // Puedes cambiar este enlace si quieres
+      sourceUrl: 'https://github.com/nevi-dev/Vermeil-bot',
       mediaType: 1,
       renderLargerThumbnail: true
     }
+    */
+    // --- FIN DE LA SECCIÓN ELIMINADA ---
   };
 
   let sentMsg;
