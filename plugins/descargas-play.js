@@ -2,7 +2,7 @@ import fetch from 'node-fetch';
 import yts from 'yt-search';
 
 const newsletterJid  = '120363420846835529@newsletter';
-const newsletterName = '⏤͟͞ू⃪፝͜⁞⟡ 𝐌ᴏ𝐧𝐤𝐞𝐲 𝐃' 𝐁ᴏ𝐭';
+const newsletterName = '⏤͟͞ू⃪፝͜⁞⟡ 𝐌ᴏ𝐧𝐤𝐞𝐲 𝐃 𝐁ᴏ𝐭';
 
 var handler = async (m, { conn, args, usedPrefix, command }) => {
   const name = conn.getName(m.sender);
