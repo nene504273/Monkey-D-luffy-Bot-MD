@@ -121,7 +121,7 @@ var handler = async (m, { conn, args, usedPrefix, command }) => {
 
 handler.help = ['play'].map(v => v + ' <texto>');
 handler.tags = ['descargas'];
-handler.command = ['play'];
+handler.command = ['descargar'];
 handler.register = true;
 
 export default handler;
