@@ -25,7 +25,7 @@ export async function before(m, { conn, participants, groupMetadata }) {
   const avatar = encodeURIComponent(await conn.profilePictureUrl(m.messageStubParameters[0], 'image').catch(_ => 'https://files.catbox.moe/emwtzj.png'))
 
   const backgroundWelcome = encodeURIComponent('https://i.ibb.co/4YBNyvP/images-76.jpg')
-  const backgroundGoodbye = encodeURIComponent('https://i.ibb.co/9b8MdJr/farewell-anime.jpg')
+  const backgroundGoodbye = encodeURIComponent('https://files.catbox.moe/3lw6bx.jpg')
 
   const welcomeApiUrl = `https://api.siputzx.my.id/api/canvas/welcomev1?username=${username}&guildName=${guildName}&memberCount=${memberCount}&avatar=${avatar}&background=${backgroundWelcome}&quality=80`
   const goodbyeApiUrl = `https://api.siputzx.my.id/api/canvas/welcomev1?username=${username}&guildName=${guildName}&memberCount=${memberCount}&avatar=${avatar}&background=${backgroundGoodbye}&quality=80`
