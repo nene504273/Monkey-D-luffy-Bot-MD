@@ -51,7 +51,7 @@ let handler = async function (m, { conn, text, args, usedPrefix, command }) {
 ║ • Experiencia » 245 🪙
 ║ • Tokens » 10 💸
 ╚═══════════════════════
-> 🎈 ¡Gracias por usar Ruby-Hoshino-Bot!
+> 🎈 ¡Gracias por usar Monkey-D-luffy-MD-bot!
 `;
 
     await conn.sendMessage(m.chat, {
