@@ -23,21 +23,21 @@ export async function before(m, { conn, participants, groupMetadata }) {
   const guildName = encodeURIComponent(groupMetadata.subject)
   const memberCount = participants.length + (m.messageStubType == 27 ? 1 : 0) - ((m.messageStubType == 28 || m.messageStubType == 32) ? 1 : 0)
   const avatar = encodeURIComponent(await conn.profilePictureUrl(m.messageStubParameters[0], 'image').catch(_ => 'https://files.catbox.moe/emwtzj.png'))
-  const background = encodeURIComponent('https://files.catbox.moe/w1r8jh.jpeg')
 
-  // URLs API para welcome y goodbye
-  const welcomeApiUrl = `https://api.siputzx.my.id/api/canvas/welcomev2?username=${username}&guildName=${guildName}&memberCount=${memberCount}&avatar=${avatar}&background=${background}`
-  const goodbyeApiUrl = `https://api.siputzx.my.id/api/canvas/goodbyev2?username=${username}&guildName=${guildName}&memberCount=${memberCount}&avatar=${avatar}&background=${background}`
+  const backgroundWelcome = encodeURIComponent('https://i.ibb.co/4YBNyvP/images-76.jpg')
+  const backgroundGoodbye = encodeURIComponent('https://i.ibb.co/9b8MdJr/farewell-anime.jpg')
 
-  // Función para descargar imagen o fallback
+  const welcomeApiUrl = `https://api.siputzx.my.id/api/canvas/welcomev1?username=${username}&guildName=${guildName}&memberCount=${memberCount}&avatar=${avatar}&background=${backgroundWelcome}&quality=80`
+  const goodbyeApiUrl = `https://api.siputzx.my.id/api/canvas/welcomev1?username=${username}&guildName=${guildName}&memberCount=${memberCount}&avatar=${avatar}&background=${backgroundGoodbye}&quality=80`
+
   async function fetchImage(url, fallbackUrl) {
     try {
       const res = await fetch(url)
-      if (!res.ok) throw new Error('Error al descargar imagen')
+      if (!res.ok) throw new Error('No se pudo descargar')
       return await res.buffer()
     } catch {
-      const fallbackRes = await fetch(fallbackUrl)
-      return await fallbackRes.buffer()
+      const resFallback = await fetch(fallbackUrl)
+      return await resFallback.buffer()
     }
   }
 
@@ -46,14 +46,14 @@ export async function before(m, { conn, participants, groupMetadata }) {
   let txtGoodbye = 'ゲ◜៹ Bye Member ៹◞ゲ'
 
   if (chat.welcome) {
-    if (m.messageStubType == 27) { // Nuevo miembro
+    if (m.messageStubType == 27) {
       let imgBuffer = await fetchImage(welcomeApiUrl, avatar)
-      let bienvenida = `❀ *Bienvenido* a ${groupMetadata.subject}\n✰ @${username}\n${global.welcom1}\n✦ Ahora somos ${memberCount} Miembros.\n•(=^●ω●^=)• Disfruta tu estadía en el grupo!\n> ✐ Puedes usar *#help* para ver la lista de comandos.`
+      let bienvenida = `❀ *Bienvenido/a* a ${groupMetadata.subject}\n✰ @${username}\n${global.welcom1}\n✦ Ahora somos ${memberCount} miembros.\n> Usa *#help* si no sabes por dónde empezar.`
       await conn.sendMini(m.chat, txtWelcome, dev, bienvenida, imgBuffer, imgBuffer, redes, fkontak)
-    } else if (m.messageStubType == 28 || m.messageStubType == 32) { // Miembro salió
+    } else if (m.messageStubType == 28 || m.messageStubType == 32) {
       let imgBuffer = await fetchImage(goodbyeApiUrl, avatar)
-      let bye = `❀ *Adiós* de ${groupMetadata.subject}\n✰ @${username}\n${global.welcom2}\n✦ Ahora somos ${memberCount} Miembros.\n•(=^●ω●^=)• Te esperamos pronto!\n> ✐ Puedes usar *#help* para ver la lista de comandos.`
-      await conn.sendMini(m.chat, txtGoodbye, dev, bye, imgBuffer, imgBuffer, redes, fkontak)
+      let despedida = `❀ *Adiós* de ${groupMetadata.subject}\n✰ @${username}\n${global.welcom2}\n✦ Ahora somos ${memberCount} miembros.\n> ¡Vuelve pronto si lo deseas!`
+      await conn.sendMini(m.chat, txtGoodbye, dev, despedida, imgBuffer, imgBuffer, redes, fkontak)
     }
   }
 }
