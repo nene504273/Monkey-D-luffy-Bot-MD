@@ -1,9 +1,7 @@
-import fetch from 'node-fetch'
-
 let handler = async (m, { conn, args }) => {
     let userId = m.mentionedJid && m.mentionedJid[0] ? m.mentionedJid[0] : m.sender
     let user = global.db.data.users[userId]
-    let name = await conn.getName(userId)
+    let name = conn.getName(userId)
     let _uptime = process.uptime() * 1000
     let uptime = clockString(_uptime)
     let totalreg = Object.keys(global.db.data.users).length
@@ -554,32 +552,35 @@ Crea un *Sub-Bot* con tu número utilizando *#qr* o *#code*
 > ✦ Juega un pvp contra otro usuario.
 ᰔᩚ *#ttt*
 > ✦ Crea una sala de juego. 
+  `.trim()
 
-`.trim()
-
-    let videoUrl = 'https://files.catbox.moe/vpqnm4.mp4'
-    let videoBuffer
-    try {
-      videoBuffer = await (await fetch(videoUrl)).buffer()
-    } catch {
-      videoBuffer = null
-    }
-
-    await conn.sendMessage(m.chat, { 
-      video: videoBuffer || videoUrl, // usa buffer si se pudo, si no, envía la url directa
-      caption: txt,
-      gifPlayback: true,
+  await conn.sendMessage(m.chat, { 
+      text: txt,
       contextInfo: {
-        mentionedJid: [m.sender, userId],
-        isForwarded: true,
-        forwardedNewsletterMessageInfo: {
-            newsletterJid: channelRD?.id || '', // asegúrate que channelRD esté definido
-            newsletterName: channelRD?.name || '',
-            serverMessageId: -1,
-        },
-        forwardingScore: 999,
-        externalAdReply: {
-           ']
+          mentionedJid: [m.sender, userId],
+          isForwarded: true,
+          forwardedNewsletterMessageInfo: {
+              newsletterJid: channelRD.id,
+              newsletterName: channelRD.name,
+              serverMessageId: -1,
+          },
+          forwardingScore: 999,
+          externalAdReply: {
+              title: botname,
+              body: textbot,
+              thumbnailUrl: 'https://files.catbox.moe/jxp64s.jpg',
+              sourceUrl: redes,
+              mediaType: 1,
+              showAdAttribution: true,
+              renderLargerThumbnail: true,
+          },
+      },
+  }, { quoted: m })
+
+}
+
+handler.help = ['menu']
+handler.tags = ['main']
 handler.command = ['menu', 'menú', 'help']
 
 export default handler
