@@ -535,7 +535,7 @@ function pickRandom(list) { return list[Math.floor(Math.random() * list.length)]
 }}
 
 Global.dfail = (type, m, conn) => {
-    let msg = {
+let msg = {
   rowner: '「🍖」 *¡Oye, oye! ¡Solo mi creador, el que me dibujó, puede usar esto!* 🎨\n\n> *¡Es como el One Piece para él!*',
   owner: '「👒」 *¡Woooah! ¡Este es un tesoro que solo mi capitán y mis nakamas programadores pueden usar!* ⚙️',
   mods: '「💥」 *¡Uooo! ¡Solo los miembros más fuertes de mi tripulación pueden usar este poder!* 💪',
