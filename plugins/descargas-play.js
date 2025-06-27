@@ -1,8 +1,8 @@
 import fetch from 'node-fetch';
 import yts from 'yt-search';
 
-const newsletterJid  = '120363335626706839@newsletter';
-const newsletterName = '⏤͟͞ू⃪፝͜⁞⟡『 Ruby-Hoshino-Channel 』࿐⟡';
+const newsletterJid  = '120363420846835529@newsletter';
+const newsletterName = '⏤͟͞ू⃪፝͜⁞⟡ 𝐌ᴏ𝐧𝐤𝐞𝐲 𝐃' 𝐁ᴏ𝐭';
 
 var handler = async (m, { conn, args, usedPrefix, command }) => {
   const name = conn.getName(m.sender);
@@ -29,7 +29,7 @@ var handler = async (m, { conn, args, usedPrefix, command }) => {
   if (args[0] === 'audio' || args[0] === 'video') {
     const mode = args[0];                  
     const url  = args.slice(1).join(' ');   
-    if (!url) return conn.reply(m.chat, `⚠️ Uso: ${usedPrefix}play ${mode} <url>`, m, { contextInfo });
+    if (!url) return conn.reply(m.chat, `🩵 Uso: ${usedPrefix}play ${mode} <url>`, m, { contextInfo });
 
     
     const apiUrl = mode === 'video'
@@ -37,7 +37,7 @@ var handler = async (m, { conn, args, usedPrefix, command }) => {
       : `https://api.vreden.my.id/api/ytplaymp3?query=${encodeURIComponent(url)}`;
 
    
-    await conn.reply(m.chat, `⏳ *Procesando ${mode} para ti, ${name}-chan...*`, m, { contextInfo });
+    await conn.reply(m.chat, `🩵 *Procesando ${mode} para ti, ${name}...*`, m, { contextInfo });
 
     try {
       const res  = await fetch(apiUrl);
@@ -72,8 +72,8 @@ var handler = async (m, { conn, args, usedPrefix, command }) => {
 
   if (!args[0]) {
     return conn.reply(m.chat,
-      `🌸 *Konnichiwa ${name}-chan!* ¿Qué quieres escuchar o ver? 🎶📹\n\n` +
-      `Ejemplo:\n${usedPrefix}play Goku conoce a Bills`,
+      `🩵 ${name} ¿Qué quieres escuchar o ver? 🎶📹\n\n` +
+      `Ejemplo:\n${usedPrefix}play Monkey es good`,
       m, { contextInfo }
     );
   }
@@ -85,7 +85,7 @@ var handler = async (m, { conn, args, usedPrefix, command }) => {
   const search = await yts(query);
   const video  = search.videos?.[0];
   if (!video) {
-    return conn.reply(m.chat, `😿 Lo siento ${name}-chan, no encontré nada con "${query}".`, m, { contextInfo });
+    return conn.reply(m.chat, `😿 Lo siento ${name}, no encontré nada con "${query}".`, m, { contextInfo });
   }
 
   
@@ -104,7 +104,7 @@ var handler = async (m, { conn, args, usedPrefix, command }) => {
 > 𑁯᧙  🕰️ *Publicado:* ${video.ago}
 > 𑁯᧙  📝 *vídeo url:* ${video.url}
 ╰─ꨪᰰ━۪  ࣪ ꨶ ╼ׄ ╼࡙֟፝͝⌒࣪᷼⏜ׅ 🍵᮫໋⃨𝆬 ࣪ ⏜ׄ᷼⌒╼࡙֟፝͝ ╾
-💌 Arigatou por usarme, siempre estaré aquí para ti~ ✨`;
+🩵 Gracias por usar este proyecto Bot.`;
 
   await conn.sendMessage(
     m.chat,
