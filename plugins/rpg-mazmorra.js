@@ -52,7 +52,7 @@ let handler = async (m, { conn, usedPrefix, command }) => {
              `┃Tu salud ${evento.health < 0 ? 'bajó en: ' + Math.abs(evento.health) : 'se mantuvo igual.'}\n` +
              `╰━━━━━━━━━━━━⬣`;
 
- await conn.sendFile(m.chat, 'https://files.catbox.moe/wtyj6h.jpg', 'mazmorras.jpg', info, m);
+ await conn.sendFile(m.chat, 'https://files.catbox.moe/0n6lo0.jpg', 'mazmorras.jpg', info, m);
 
 
 
