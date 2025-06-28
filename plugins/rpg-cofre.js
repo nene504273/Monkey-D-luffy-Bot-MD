@@ -13,7 +13,7 @@ const handler = async (m, { isPrems, conn }) => {
     return;
   }
 
-  const img = 'https://files.catbox.moe/qfx5pn.jpg';
+  const img = 'https://files.catbox.moe/o90vnr.jpg';
   const dia = Math.floor(Math.random() * 100);
   const tok = Math.floor(Math.random() * 10);
   const ai = Math.floor(Math.random() * 40);
