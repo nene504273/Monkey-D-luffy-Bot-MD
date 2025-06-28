@@ -43,7 +43,7 @@ let rtx2 = `🏴‍☠️ **Cσɳҽxισɳ SυႦ-Bσƚ Mσԃҽ Cσԃҽ** 🏴�
 
 `4` » Escribe el Código para iniciar sesión con el bot, ¡y prepárate para la aventura!
 
-✧ **No es recomendable usar tu cuenta principal**, ¡no querrás que el Gobierno Mundial te atrape`
+✧ **No es recomendable usar tu cuenta principal**, ¡no querrás que el Gobierno Mundial te atrape!`
                 
 
 const __filename = fileURLToPath(import.meta.url)
