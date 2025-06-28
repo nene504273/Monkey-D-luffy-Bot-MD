@@ -30,7 +30,7 @@ let crm3 = "SBpbmZvLWRvbmFyLmpz"
 let crm4 = "IF9hdXRvcmVzcG9uZGVyLmpzIGluZm8tYm90Lmpz"
 let drm1 = ""
 let drm2 = ""
-let rtx = "*\n\n✐ Cσɳҽxισɳ SυႦ-Bσƚ Mσԃҽ QR\n\n✰ Con otro celular o en la PC escanea este QR para convertirte en un *Sub-Bot* Temporal.\n\n\`1\` » Haga clic en los tres puntos en la esquina superior derecha\n\n\`2\` » Toque dispositivos vinculados\n\n\`3\` » Escanee este codigo QR para iniciar sesion con el bot\n\n✧ ¡Este código QR expira en 45 segundos!."
+let rtx = " '*\n\n✐ Cσɳҽxισɳ SυႦ-Bσƚ Mσԃҽ QR\n\n✰ Con otro celular o en la PC escanea este QR para convertirte en un *Sub-Bot* Temporal.\n\n\`1\` » Haga clic en los tres puntos en la esquina superior derecha\n\n\`2\` » Toque dispositivos vinculados\n\n\`3\` » Escanee este codigo QR para iniciar sesion con el bot\n\n✧ ¡Este código QR expira en 45 segundos!."
 let rtx2 = `🏴‍☠️ **Cσɳҽxισɳ SυႦ-Bσƚ Mσԃҽ Cσԃҽ** 🏴‍☠️
 
 ✰ ¡Usa este Código para convertirte en un *Sub-Bot* Temporal y navegar por los mares de la tecnología!
@@ -43,7 +43,7 @@ let rtx2 = `🏴‍☠️ **Cσɳҽxισɳ SυႦ-Bσƚ Mσԃҽ Cσԃҽ** 🏴�
 
 `4` » Escribe el Código para iniciar sesión con el bot, ¡y prepárate para la aventura!
 
-✧ **No es recomendable usar tu cuenta principal**, ¡no querrás que el Gobierno Mundial te atrape!`
+✧ **No es recomendable usar tu cuenta principal**, ¡no querrás que el Gobierno Mundial te atrape!`;
                 
 
 const __filename = fileURLToPath(import.meta.url)
