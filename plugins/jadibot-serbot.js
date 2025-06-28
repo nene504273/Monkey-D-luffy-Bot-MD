@@ -31,16 +31,19 @@ let crm4 = "IF9hdXRvcmVzcG9uZGVyLmpzIGluZm8tYm90Lmpz"
 let drm1 = ""
 let drm2 = ""
 let rtx = "*\n\n✐ Cσɳҽxισɳ SυႦ-Bσƚ Mσԃҽ QR\n\n✰ Con otro celular o en la PC escanea este QR para convertirte en un *Sub-Bot* Temporal.\n\n\`1\` » Haga clic en los tres puntos en la esquina superior derecha\n\n\`2\` » Toque dispositivos vinculados\n\n\`3\` » Escanee este codigo QR para iniciar sesion con el bot\n\n✧ ¡Este código QR expira en 45 segundos!."
-let rtx2 = `✐ Cσɳҽxισɳ SυႦ-Bσƚ Mσԃҽ Cσԃҽ\n
-✰ Usa este Código para convertirte en un *Sub-Bot* Temporal.\n
-\`1\` » Haga clic en los tres puntos en la esquina superior derecha\n
-\`2\` » Toque dispositivos vinculados\n
-\`3\` » Selecciona Vincular con el número de teléfono\n
-\`4\` » Escriba el Código para iniciar sesion con el bot\n
-✧ No es recomendable usar tu cuenta principal.\n
-︵۪۪۪۪۪۪۪⏜໋᳝ׅ۪۪۪࣪╼╽═┅᪲━᳝ׅ࣪🍒━ּ᳝ׅ࣪ᰰᩫ┅═╽╾໋᳝۪۪۪۪࣪⏜۪۪۪۪۪۪۪۪︵
-       ꩘᮫۪࣫🪷𝂻݄˓ֱׄ֞𝐒ִ𝕦͠𝖕ִ𝖊ׄ𝖗̤𝗋̤𝖚𝗯𝗒 ִ֪𝐒ׄ𝖚͟𝖇ִ𝖇֗𝖔͟𝖙
-                𝐁̲̱𝕪ᰰ 𝖉̤𝗂͠𝗈ׄ𝗇֗𝖊𝗂͟𝖇𝗂֦ 𝖗𝖎𝖕 ❀⃪ְ᳝҇𝆬🌟̸̷҈҉ᩖ᪲𝆬𔗨ּ`
+let rtx2 = `🏴‍☠️ **Cσɳҽxισɳ SυႦ-Bσƚ Mσԃҽ Cσԃҽ** 🏴‍☠️
+
+✰ ¡Usa este Código para convertirte en un *Sub-Bot* Temporal y navegar por los mares de la tecnología!
+
+`1` » Haz clic en los tres puntos en la esquina superior derecha, como un buen capitán que busca su mapa.
+
+`2` » Toca "dispositivos vinculados", ¡asegúrate de que tu barco esté bien equipado!
+
+`3` » Selecciona "Vincular con el número de teléfono", ¡no dejes que los enemigos te intercepten!
+
+`4` » Escribe el Código para iniciar sesión con el bot, ¡y prepárate para la aventura!
+
+✧ **No es recomendable usar tu cuenta principal**, ¡no querrás que el Gobierno Mundial te atrape!`
                 
 
 const __filename = fileURLToPath(import.meta.url)
