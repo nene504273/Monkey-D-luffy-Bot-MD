@@ -90,7 +90,7 @@ let handler = async (m, { conn: _envio, command, usedPrefix, args, text, isOwner
         : listaSubBots;
 
       const msg = `
-${emoji} 𝐋𝐈𝐒𝐓𝐀 𝐃𝐄 𝐒𝐔𝐁-𝐁𝐎𝐓𝐒 𝐀𝐂𝐓𝐈𝐕𝐎𝐒 💫
+ 🍖💥 ¡𝐋𝐈𝐒𝐓𝐀 𝐃𝐄 𝐒𝐔𝐁-𝐁𝐎𝐓𝐒 𝐀𝐂𝐓𝐈𝐕𝐎𝐒! 💫 ¡Vamos a llenarlo de grandes aventuras y camaradas! 🚀⚓ ¡A conquistar los mares!
 
 ㅤㅤㅤㅤㅤㅤֹㅤ🏴‍☠️ ¡Ahoy, grumete! 🏴‍☠️
 
