@@ -8,19 +8,18 @@ let handler = async (m, { conn, args }) => {
     let totalCommands = Object.values(global.plugins).filter((v) => v.help && v.tags).length
 
     let txt = `
-𝐇𝐨𝐥𝐚 𝐩𝐢𝐫𝐚𝐭𝐚 𝐦𝐢𝐬𝐭𝐞𝐫𝐢𝐨𝐬𝐨, 𝐒𝐨𝐲 ${botname} 𝐄𝐥 𝐦𝐞𝐣𝐨𝐫 𝐩𝐢𝐫𝐚𝐭𝐚 𝐝𝐞 𝐭𝐨𝐝𝐨𝐬 (｡•̀ᴗ-)✧
-Llevo en busca del tesoro perdido desde: ${uptime}
-
-Soy: ${(con.user.jid == global.conn.user.jid ? 'Principal BOT' : 'SubBot')}
-
-Detras de mi hay ${totalreg} piratas
-
-Puedo hacer ${totalCommands} maravillas por ti
-
-
-╭━━COMANDOS...
-╰━━━━━━━━━━━━
-
+Hola! Soy *${botname}* (｡•̀ᴗ-)✧
+Aquí tienes la lista de comandos
+╭┈ ↷
+│ᰔᩚ Cliente » @${userId.split('@')[0]}
+│❀ Modo » Publico
+│✦ Bot » ${(conn.user.jid == global.conn.user.jid ? 'Principal 🅥' : 'Prem Bot 🅑')}
+│ⴵ Activada » ${uptime}
+│✰ Usuarios » ${totalreg}
+│✧ Comandos » ${totalCommands}
+│🜸 Baileys » Multi Device
+╰─────────────────
+Crea un *Sub-Bot* con tu número utilizando *#qr* o *#code*
 
 • :･ﾟ⊹˚• \`『 Info-Bot 』\` •˚⊹:･ﾟ•
 
