@@ -1,10 +1,16 @@
 let handler = async (m, { conn, command, usedPrefix }) => {
 let img = './src/catalogo.jpg'
 let staff = `🏆 *EQUIPO DE CREADORES* 🏆
+
+
 ✰ Propietario: Nene Mental
+
 ✰ Bot: Monket D Luffy
+
 ✰ Versión: ${vs}
+
 ✰ *Libreria* » ${libreria} ${baileys}
+
 ➪ GitHub: https://github.com/nene4527
 
 𝐂 𝐎 𝐋 𝐀 𝐁 𝐎 𝐑 𝐀 𝐃 𝐎 𝐑 𝐄 𝐒
