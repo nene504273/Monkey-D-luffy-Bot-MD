@@ -27,7 +27,7 @@ const handler = async (m, { conn, command, usedPrefix, text }) => {
 
     // Respuesta exitosa
     return conn.reply(m.chat, 
-        `${emoji} Tu registro ha sido eliminado exitosamente!`,
+        `🏴‍☠️ ¡Tu registro ha sido eliminado exitosamente! Ahora seguimos navegando hacia nuevas aventuras.`,
         m
     );
 };
