@@ -1,5 +1,3 @@
-//* Código creado por Félix, no quites créditos *//
-
 let handler = async (m, { conn, args }) => {
     let userId = m.mentionedJid && m.mentionedJid[0] ? m.mentionedJid[0] : m.sender
     let user = global.db.data.users[userId]
@@ -10,7 +8,7 @@ let handler = async (m, { conn, args }) => {
     let totalCommands = Object.values(global.plugins).filter((v) => v.help && v.tags).length
 
     let txt = `
-Hola! Soy *Monkey D Luffy* (｡•̀ᴗ-)✧
+Hola! Soy *${botname}* (｡•̀ᴗ-)✧
 Aquí tienes la lista de comandos
 ╭┈ ↷
 │ᰔᩚ Cliente » @${userId.split('@')[0]}
@@ -568,8 +566,8 @@ Crea un *Sub-Bot* con tu número utilizando *#qr* o *#code*
           },
           forwardingScore: 999,
           externalAdReply: {
-              title: Monkey Bot MD,
-              body: Nene Mental,
+              title: botname,
+              body: textbot,
               thumbnailUrl: banner,
               sourceUrl: redes,
               mediaType: 1,
