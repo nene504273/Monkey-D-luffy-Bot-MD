@@ -11,7 +11,7 @@ let staff = `🏆 *EQUIPO DE CREADORES* 🏆
 
 ✰ *Libreria* » ${libreria} ${baileys}
 
-➪ GitHub: https://github.com/nene4527
+➪ GitHub: https://github.com/nene504273
 
 𝐂 𝐎 𝐋 𝐀 𝐁 𝐎 𝐑 𝐀 𝐃 𝐎 𝐑 𝐄 𝐒
 
