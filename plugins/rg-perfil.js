@@ -27,7 +27,7 @@ let handler = async (m, { conn, args }) => {
   let edad = user.age || 'Desconocida';
 
   let avatar = await conn.profilePictureUrl(userId, 'image').catch(_ => 'https://files.catbox.moe/h6s7k0.jpg');
-  const backgroundURL = encodeURIComponent('https://i.ibb.co.com/2jMjYXK/IMG-20250103-WA0469.jpg');
+  const backgroundURL = encodeURIComponent('https://files.catbox.moe/h6s7k0.jpg');
   const avatarURL = encodeURIComponent(avatar);
 
   const imageAPI = `https://api.siputzx.my.id/api/canvas/profile?backgroundURL=${backgroundURL}&avatarURL=${avatarURL}&rankName=${encodeURIComponent(role)}&rankId=0&exp=${exp}&requireExp=0&level=${nivel}&name=${encodeURIComponent(name)}`;
