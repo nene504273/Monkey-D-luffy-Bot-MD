@@ -33,7 +33,7 @@ const handler = async (m, { conn, args, usedPrefix, command }) => {
         );
 
         if (seMencionaOwner) {
-            return conn.reply(m.chat, `🌸 *Ara ara~... ¿mencionar a uno de mis creadores?*\n✨ *Qué atrevido eres, onii-chan...*\n💢 *Pero no puedo traicionar a uno de mis creadores...*\n😈 *...a menos que quieras desaparecer con él~* 💀`, m);
+            return conn.reply(m.chat, `🏴‍☠️ ¡Arrr, arrr! ¿Mencionar a uno de mis creadores, dices? ✨ ¡Qué osado eres, grumete...! 💢 ¡Pero este viejo lobo de mar no puede traicionar a uno de sus capitanes...! 😈 ...a menos que quieras hacer compañía a las profundidades conmigo, ¡jo ho ho! 💀`, m);
         }
     }
 
