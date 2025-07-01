@@ -13,7 +13,7 @@ Aquí tienes la lista de comandos
 ╭┈ ↷
 │ᰔᩚ Cliente » @${userId.split('@')[0]}
 │❀ Modo » Publico
-│✦ Bot » ${(conn.user.jid == global.conn.user.jid ? 'Principal 🅥' : 'Prem Bot 🅑')}
+│✦ Bot » ${(conn.user.jid == global.conn.user.jid ? 'OficialBot' : 'Subbots')}
 │ⴵ Activada » ${uptime}
 │✰ Usuarios » ${totalreg}
 │✧ Comandos » ${totalCommands}
