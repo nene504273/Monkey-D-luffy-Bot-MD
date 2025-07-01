@@ -92,8 +92,10 @@ let handler = async (m, { conn: _envio, command, usedPrefix, args, text, isOwner
       const msg = `
 ${emoji} 𝐋𝐈𝐒𝐓𝐀 𝐃𝐄 𝐒𝐔𝐁-𝐁𝐎𝐓𝐒 𝐀𝐂𝐓𝐈𝐕𝐎𝐒 💫
 
-ㅤㅤㅤㅤㅤㅤֹㅤ¿𝐐𝐮𝐢𝐞𝐫𝐞𝐬 𝐭𝐞𝐧𝐞𝐫 𝐮𝐧 𝐛𝐨𝐭 𝐞𝐧 𝐭𝐮 𝐠𝐫𝐮𝐩𝐨?
-ㅤ𝖯𝗎𝖾d𝖾𝗌 𝗉𝖾𝖽𝗂𝗋 𝗉𝖾𝗋𝗆𝗂𝗌𝗈 𝖺 uno de estos para unirlo 𝗌𝗂𝗇 probrema!
+ㅤㅤㅤㅤㅤㅤֹㅤ🏴‍☠️ ¡Ahoy, grumete! 🏴‍☠️
+
+ ☠️ ¿Quisieras tener un bote en tu tripulación? ⛵️ Puedes pedir permiso a uno de estos para unirlo sin ningún problema. 🏴‍☠️ ¡¡A surcar los mares!!
+ㅤ
 
  🏴‍☠️ ¡Atención, grumetes! ⚠️ 
 
