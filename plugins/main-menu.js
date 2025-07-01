@@ -1,27 +1,125 @@
-let handler = async (m, { conn, args }) => {
-    let userId = m.mentionedJid && m.mentionedJid[0] ? m.mentionedJid[0] : m.sender
-    let user = global.db.data.users[userId]
-    let name = conn.getName(userId)
-    let _uptime = process.uptime() * 1000
-    let uptime = clockString(_uptime)
-    let totalreg = Object.keys(global.db.data.users).length
-    let totalCommands = Object.values(global.plugins).filter((v) => v.help && v.tags).length
+//* Código creado por Félix, no quites créditos *//
 
-    let txt = `
-Hola! Soy *${botname}* (｡•̀ᴗ-)✧
-Aquí tienes la lista de comandos
-╭┈ ↷
-│ᰔᩚ Cliente » @${userId.split('@')[0]}
-│❀ Modo » Publico
-│✦ Bot » ${(conn.user.jid == global.conn.user.jid ? 'OficialBot' : 'Subbots')}
-│ⴵ Activada » ${uptime}
-│✰ Usuarios » ${totalreg}
-│✧ Comandos » ${totalCommands}
-│🜸 Baileys » Multi Device
-╰─────────────────
-Crea un *Sub-Bot* con tu número utilizando *#qr* o *#code*
+import fs from 'fs';
+import fetch from 'node-fetch';
+import { xpRange } from '../lib/levelling.js';
+import { promises } from 'fs';
+import { join } from 'path';
 
-• :･ﾟ⊹˚• \`『 Info-Bot 』\` •˚⊹:･ﾟ•
+// Creamos un objeto global para almacenar el banner y el nombre por sesión
+global.bannerUrls = {}; // Almacenará las URLs de los banners por sesión
+global.botNames = {};   // Almacenará los nombres personalizados por sesión
+
+let handler = async (m, { conn, usedPrefix, text, command }) => {
+  try {
+    // Inicializamos el banner y el nombre por sesión si no existen
+    if (!global.bannerUrls[conn.user.jid]) {
+      global.bannerUrls[conn.user.jid] = 'https://files.catbox.moe/5k9zhl.jpg'; // URL inicial de la imagen del menú
+    }
+    if (!global.botNames[conn.user.jid]) {
+      global.botNames[conn.user.jid] = 'Bot'; // Nombre inicial del bot
+    }
+
+    // Verificar si el usuario es el socket activo
+    const isSocketActive = conn.user.jid === m.sender;
+
+    // Comando para cambiar el banner (solo permitido para el socket activo)
+    if (command === 'setbanner') {
+      if (!isSocketActive) {
+        return await m.reply('「🩵」Este comando solo puede ser usado por el socket.', m);
+      }
+      if (!text) {
+        return await m.reply('✘ Por favor, proporciona un enlace válido para la nueva imagen del banner.', m);
+      }
+      global.bannerUrls[conn.user.jid] = text.trim(); // Actualiza el banner solo para esta sesión
+      return await m.reply('「🩵」El banner fue actualizado con éxito...', m);
+    }
+
+    // Comando para cambiar el nombre del bot (solo permitido para el socket activo)
+    if (command === 'setname') {
+      if (!isSocketActive) {
+        return await m.reply('「🩵」Este comando solo puede ser usado por el socket.', m);
+      }
+      if (!text) {
+        return await m.reply('「🩵」¿Qué nombre deseas agregar al socket?', m);
+      }
+      global.botNames[conn.user.jid] = text.trim(); // Actualiza el nombre solo para esta sesión
+      return await m.reply('「🩵」El nombre fue actualizado con éxito...', m);
+    }
+
+    // Comandos para el menú y "CARGANDO COMANDOS" (pueden ser usados por cualquier usuario)
+    if (command === 'menu' || command === 'help' || command === 'menú') {
+      // Variables para el contexto del canal
+      const dev = 'Nene oficial';
+      const redes = 'https://github.com/Andresv27728/2.0';
+      const channelRD = { id: "120363420846835529@newsletter", name: "Monkey D Luffy Channel" };
+      let who = m.mentionedJid && m.mentionedJid[0] ? m.mentionedJid[0] : m.fromMe ? conn.user.jid : m.sender;
+      let perfil = await conn.profilePictureUrl(who, 'image').catch(_ => 'https://files.catbox.moe/mqtxvp.jpg');
+
+      // Mensaje de "CARGANDO COMANDOS..." con contexto de canal y respondiendo al mensaje
+      await conn.sendMessage(m.chat, {
+        text: 'ꪹ͜🕑͡ 𝗕𝗨𝗦𝗖𝗔𝗡𝗗𝗢 𝗧𝗘𝗦𝗢𝗥𝗢𝗦...',
+        contextInfo: {
+          isForwarded: true,
+          forwardedNewsletterMessageInfo: {
+            newsletterJid: channelRD.id,
+            newsletterName: channelRD.name,
+            serverMessageId: -1,
+          },
+          forwardingScore: 999,
+          externalAdReply: {
+            title: 'Monkey D Luffy Bot',
+            body: dev,
+            thumbnailUrl: perfil,
+            sourceUrl: redes,
+            mediaType: 1,
+            renderLargerThumbnail: false,
+          },
+        }
+      }, { quoted: m });
+
+      // Datos usuario y menú
+      let { exp, chocolates, level, role } = global.db.data.users[m.sender];
+      let { min, xp, max } = xpRange(level, global.multiplier);
+      let nombre = await conn.getName(m.sender);
+      let _uptime = process.uptime() * 1000;
+      let _muptime;
+      if (process.send) {
+        process.send('uptime');
+        _muptime = await new Promise(resolve => {
+          process.once('message', resolve);
+          setTimeout(resolve, 1000);
+        }) * 1000;
+      }
+      let muptime = clockString(_muptime);
+      let uptime = clockString(_uptime);
+      let totalreg = Object.keys(global.db.data.users).length;
+      let taguser = '@' + m.sender.split("@s.whatsapp.net")[0];
+      const emojis = '🏴‍☠️';
+      const error = '❌';
+
+      let botname = global.botNames[conn.user.jid]; // Nombre del bot específico para esta sesión
+      let menu = `¡Hola! ${taguser} soy ${botname} ${(conn.user.jid == global.conn.user.jid ? '(OficialBot)' : '(Sub-Bot)')} 
+
+╭━━I N F O-B O-T━━
+┃Creador:Nene
+┃Tiempo activo: ${uptime}
+┃Baileys: Multi device.
+┃Registros: ${totalreg}
+╰━━━━━━━━━━━━━
+
+╭━━INFO USUARIO━╮
+┃Nombre: ${nombre}
+┃Rango: ${role}
+┃Nivel: ${level}
+╰━━━━━━━━━━━━━
+
+➪ 𝗟𝗜𝗦𝗧𝗔 
+       ➪  𝗗𝗘 
+           ➪ 𝗖𝗢𝗠𝗔𝗡𝗗𝗢𝗦
+
+
+• :･ﾟ⊹˚• `『 Info 』` •˚⊹:･ﾟ•
 
 ❍ Comandos para ver estado e información de la Bot.
 ᰔᩚ *#help • #menu*
@@ -63,7 +161,7 @@ Crea un *Sub-Bot* con tu número utilizando *#qr* o *#code*
 ᰔᩚ *#editautoresponder*
 > ✦ Configurar un Prompt personalizado de la Bot.
 
-• :･ﾟ⊹˚• \`『 Buscadores 』\` •˚⊹:･ﾟ•
+• :･ﾟ⊹˚• `『 Buscadores 』` •˚⊹:･ﾟ•
 
 ❍ Comandos para realizar búsquedas en distintas plataformas.
 ᰔᩚ *#tiktoksearch • #tiktoks*
@@ -95,7 +193,7 @@ Crea un *Sub-Bot* con tu número utilizando *#qr* o *#code*
 ᰔᩚ *#npmjs*
 > ✦ Buscandor de npmjs.
 
-• :･ﾟ⊹˚• \`『 Descargas 』\` •˚⊹:･ﾟ•
+• :･ﾟ⊹˚• `『 Descargas 』` •˚⊹:･ﾟ•
 
 ❍ Comandos de descargas para varios archivos.
 ᰔᩚ *#tiktok • #tt*
@@ -135,37 +233,37 @@ Crea un *Sub-Bot* con tu número utilizando *#qr* o *#code*
 ᰔᩚ *#npmdl • #npmdownloader*
 > ✦ Descarga paquetes de NPMJs.
 
-• :･ﾟ⊹˚• \`『 Economia 』\` •˚⊹:･ﾟ•
+• :･ﾟ⊹˚• `『 Economia 』` •˚⊹:･ﾟ•
 
 ❍ Comandos de economía y rpg para ganar dinero y otros recursos.
 ᰔᩚ *#w • #work • #trabajar*
-> ✦ Trabaja para ganar ${moneda}.
+> ✦ Trabaja para ganar Berris 💰.
 ᰔᩚ *#slut • #protituirse*
-> ✦ Trabaja como prostituta y gana ${moneda}.
+> ✦ Trabaja como prostituta y gana Berris 💰.
 ᰔᩚ *#cf • #suerte*
-> ✦ Apuesta tus ${moneda} a cara o cruz.
+> ✦ Apuesta tus Berris 💰 a cara o cruz.
 ᰔᩚ *#crime • #crimen
-> ✦ Trabaja como ladrón para ganar ${moneda}.
+> ✦ Trabaja como ladrón para ganar Berris 💰.
 ᰔᩚ *#ruleta • #roulette • #rt*
-> ✦ Apuesta ${moneda} al color rojo o negro.
+> ✦ Apuesta Berris 💰 al color rojo o negro.
 ᰔᩚ *#casino • #apostar*
-> ✦ Apuesta tus ${moneda} en el casino.
+> ✦ Apuesta tus Berris 💰 en el casino.
 ᰔᩚ *#slot*
-> ✦ Apuesta tus ${moneda} en la ruleta y prueba tu suerte.
+> ✦ Apuesta tus Berris 💰 en la ruleta y prueba tu suerte.
 ᰔᩚ *#cartera • #wallet*
-> ✦ Ver tus ${moneda} en la cartera.
+> ✦ Ver tus Berris 💰 en la cartera.
 ᰔᩚ *#banco • #bank*
-> ✦ Ver tus ${moneda} en el banco.
+> ✦ Ver tus Berris 💰 en el banco.
 ᰔᩚ *#deposit • #depositar • #d*
-> ✦ Deposita tus ${moneda} al banco.
+> ✦ Deposita tus Berris 💰 al banco.
 ᰔᩚ *#with • #retirar • #withdraw*
-> ✦ Retira tus ${moneda} del banco.
+> ✦ Retira tus Berris 💰 del banco.
 ᰔᩚ *#transfer • #pay*
-> ✦ Transfiere ${moneda} o XP a otros usuarios.
+> ✦ Transfiere Berris 💰 o XP a otros usuarios.
 ᰔᩚ *#miming • #minar • #mine*
 > ✦ Trabaja como minero y recolecta recursos.
 ᰔᩚ *#buyall • #buy*
-> ✦ Compra ${moneda} con tu XP.
+> ✦ Compra Berris 💰 con tu XP.
 ᰔᩚ *#daily • #diario*
 > ✦ Reclama tu recompensa diaria.
 ᰔᩚ *#cofre*
@@ -175,11 +273,11 @@ Crea un *Sub-Bot* con tu número utilizando *#qr* o *#code*
 ᰔᩚ *#monthly • #mensual*
 > ✦ Reclama tu recompensa mensual.
 ᰔᩚ *#steal • #robar • #rob*
-> ✦ Intenta robarle ${moneda} a alguien.
+> ✦ Intenta robarle Berris 💰 a alguien.
 ᰔᩚ *#robarxp • #robxp*
 > ✦ Intenta robar XP a un usuario.
 ᰔᩚ *#eboard • #baltop*
-> ✦ Ver el ranking de usuarios con más ${moneda}.
+> ✦ Ver el ranking de usuarios con más Berris 💰.
 ᰔᩚ *#aventura • #adventure*
 > ✦ Aventúrate en un nuevo reino y recolecta recursos.
 ᰔᩚ *#curar • #heal*
@@ -189,13 +287,13 @@ Crea un *Sub-Bot* con tu número utilizando *#qr* o *#code*
 ᰔᩚ *#inv • #inventario*
 > ✦ Ver tu inventario con todos tus ítems.
 ᰔᩚ *#mazmorra • #explorar*
-> ✦ Explorar mazmorras para ganar ${moneda}.
+> ✦ Explorar mazmorras para ganar Berris 💰.
 ᰔᩚ *#halloween*
 > ✦ Reclama tu dulce o truco (Solo en Halloween).
 ᰔᩚ *#christmas • #navidad*
 > ✦ Reclama tu regalo navideño (Solo en Navidad).
 
-• :･ﾟ⊹˚• \`『 Gacha 』\` •˚⊹:･ﾟ•
+• :･ﾟ⊹˚• `『 Gacha 』` •˚⊹:･ﾟ•
 
 ❍ Comandos de gacha para reclamar y colecciónar personajes.
 ᰔᩚ *#rollwaifu • #rw • #roll*
@@ -215,7 +313,7 @@ Crea un *Sub-Bot* con tu número utilizando *#qr* o *#code*
 ᰔᩚ *#waifusboard • #waifustop • #topwaifus*
 > ✦ Ver el top de personajes con mayor valor.
 
-• :･ﾟ⊹˚• \`『 Stickers 』\` •˚⊹:･ﾟ•
+• :･ﾟ⊹˚• `『 Stickers 』` •˚⊹:･ﾟ•
 
 ❍ Comandos para creaciones de stickers etc.
 ᰔᩚ *#sticker • #s*
@@ -237,7 +335,7 @@ Crea un *Sub-Bot* con tu número utilizando *#qr* o *#code*
 ᰔᩚ *#wm*
 > ✦ Cambia el nombre de los stickers.
 
-•:･ﾟ⊹˚• \`『 Herramientas 』\` •˚⊹:･ﾟ•
+•:･ﾟ⊹˚• `『 Herramientas 』` •˚⊹:･ﾟ•
 
 ❍ Comandos de herramientas con muchas funciones.
 ᰔᩚ *#calcular • #calcular • #cal*
@@ -267,7 +365,7 @@ Crea un *Sub-Bot* con tu número utilizando *#qr* o *#code*
 ᰔᩚ *#translate • #traducir • #trad*
 > ✦ Traduce palabras en otros idiomas.
 
-• :･ﾟ⊹˚• \`『 Perfil 』\` •˚⊹:･ﾟ•
+• :･ﾟ⊹˚• `『 Perfil 』` •˚⊹:･ﾟ•
 
 ❍ Comandos de perfil para ver, configurar y comprobar estados de tu perfil.
 ᰔᩚ *#reg • #verificar • #register*
@@ -301,7 +399,7 @@ Crea un *Sub-Bot* con tu número utilizando *#qr* o *#code*
 ᰔᩚ *#confesiones • #confesar*
 > ✦ Confiesa tus sentimientos a alguien de manera anonima.
 
-• :･ﾟ⊹˚• \`『 Grupos 』\` •˚⊹:･ﾟ•
+• :･ﾟ⊹˚• `『 Grupos 』` •˚⊹:･ﾟ•
 
 ❍ Comandos de grupos para una mejor gestión de ellos.
 ᰔᩚ *#hidetag*
@@ -367,7 +465,7 @@ Crea un *Sub-Bot* con tu número utilizando *#qr* o *#code*
 ᰔᩚ *#listnum • #kicknum*
 > ✦ Elimine a usuario por el prefijo de país.
 
-• :･ﾟ⊹˚• \`『 Anime 』\` •˚⊹:･ﾟ•
+• :･ﾟ⊹˚• `『 Anime 』` •˚⊹:･ﾟ•
 
 ❍ Comandos de reacciones de anime.
 ᰔᩚ *#angry • #enojado* + <mencion>
@@ -439,7 +537,7 @@ Crea un *Sub-Bot* con tu número utilizando *#qr* o *#code*
 ᰔᩚ *#think* + <mencion>
 > ✦ Pensar en algo
 
-• :･ﾟ⊹˚• \`『 NSFW 』\` •˚⊹:･ﾟ•
+• :･ﾟ⊹˚• `『 NSFW 』` •˚⊹:･ﾟ•
 
 ❍ Comandos NSFW (Contenido para adultos)
 ᰔᩚ *#anal* + <mencion>
@@ -485,7 +583,7 @@ Crea un *Sub-Bot* con tu número utilizando *#qr* o *#code*
 ᰔᩚ *#yuri • #tijeras* + <mencion>
 > ✦ Hacer tijeras.
 
-• :･ﾟ⊹˚• \`『 Juegos 』\` •˚⊹:･ﾟ•
+• :･ﾟ⊹˚• `『 Juegos 』` •˚⊹:･ﾟ•
 
 ❍ Comandos de juegos para jugar con tus amigos.
 ᰔᩚ *#amistad • #amigorandom* 
@@ -551,43 +649,53 @@ Crea un *Sub-Bot* con tu número utilizando *#qr* o *#code*
 ᰔᩚ *#pvp • #suit* + <mencion>
 > ✦ Juega un pvp contra otro usuario.
 ᰔᩚ *#ttt*
-> ✦ Crea una sala de juego. 
-  `.trim()
+> ✦ Crea una sala de juego.
 
-  await conn.sendMessage(m.chat, { 
-      text: txt,
-      contextInfo: {
-          mentionedJid: [m.sender, userId],
+> © ⍴᥆ᥕᥱrᥱძ ᑲᥡ Staff Monkey D Luffy Bot.`.trim(); // El resto del menú permanece igual
+
+      // Enviar el menú con el banner y nombre específico para esta sesión y respondiendo al mensaje
+      await conn.sendMessage(m.chat, {
+        image: { url: global.bannerUrls[conn.user.jid] },
+        caption: menu,
+        contextInfo: {
+          mentionedJid: [m.sender],
           isForwarded: true,
           forwardedNewsletterMessageInfo: {
-              newsletterJid: channelRD.id,
-              newsletterName: channelRD.name,
-              serverMessageId: -1,
+            newsletterJid: channelRD.id,
+            newsletterName: channelRD.name,
+            serverMessageId: -1,
           },
           forwardingScore: 999,
           externalAdReply: {
-              title: botname,
-              body: textbot,
-              thumbnailUrl: banner,
-              sourceUrl: redes,
-              mediaType: 1,
-              showAdAttribution: true,
-              renderLargerThumbnail: true,
+            title: '𝐌onkey D 𝐁o͟T͎ 𝙼𝙳',
+            body: dev,
+            thumbnailUrl: perfil,
+            sourceUrl: redes,
+            mediaType: 1,
+            renderLargerThumbnail: false,
           },
-      },
-  }, { quoted: m })
+        }
+      }, { quoted: m });
 
-}
+      await m.react(emojis);
+    }
 
-handler.help = ['menu']
-handler.tags = ['main']
-handler.command = ['menu', 'menú', 'help']
+  } catch (e) {
+    await m.reply(`✘ Ocurrió un error cuando la lista de comandos se iba a enviar.\n\n${e}`, m);
+    await m.react(error);
+  }
+};
 
-export default handler
+handler.help = ['menu', 'setbanner', 'setname'];
+handler.tags = ['main'];
+handler.command = ['menu', 'help', 'menú', 'asistenciabot', 'comandosbot', 'listadecomandos', 'menucompleto', 'setmenubanner', 'setmenuname'];
+handler.register = true;
 
 function clockString(ms) {
-    let seconds = Math.floor((ms / 1000) % 60)
-    let minutes = Math.floor((ms / (1000 * 60)) % 60)
-    let hours = Math.floor((ms / (1000 * 60 * 60)) % 24)
-    return `${hours}h ${minutes}m ${seconds}s`
+  let h = isNaN(ms) ? '--' : Math.floor(ms / 3600000);
+  let m = isNaN(ms) ? '--' : Math.floor(ms / 60000) % 60;
+  let s = isNaN(ms) ? '--' : Math.floor(ms / 1000) % 60;
+  return [h, m, s].map(v => v.toString().padStart(2, 0)).join(':');
 }
+
+export default handler;
