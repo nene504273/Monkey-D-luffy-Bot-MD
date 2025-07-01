@@ -1,5 +1,5 @@
 let handler = async (m, { conn, command, usedPrefix }) => {
-let img = './src/catalogo.jpg'
+let img = 'https://files.catbox.moe/qbyzje.jpg'
 let staff = `🏆 *EQUIPO DE CREADORES* 🏆
 
 
