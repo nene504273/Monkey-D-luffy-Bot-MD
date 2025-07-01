@@ -1,19 +1,24 @@
 let handler = async (m, { conn, command, usedPrefix }) => {
 let img = './src/catalogo.jpg'
-let staff = `ᥫ᭡ *EQUIPO DE AYUDANTES* ❀
-✰ *Dueño* » Dioneibi-rip
-✦ *Bot* » ׄ❀ׅᮢ໋۬۟   ׁ ᮫᩠𝗥ᥙ᜔᪲𝖻ֹ𝘺 𝐇֢ᩚᨵ̷̸ׁׅׅ𝗌𝗁𝗂ᮬ𝗇֟፝͡𝗈̷̸  ꫶֡ᰵ࡙🌸̵໋ׄᮬ͜✿֪
-⚘ *Versión* » ${vs}
-❖ *Libreria* » ${libreria} ${baileys}
-> ✧ GitHub » https://github.com/Dioneibi-rip
+let staff = `🏆 *EQUIPO DE CREADORES* 🏆
+✰ Propietario: Nene Mental
+✰ Bot: Monket D Luffy
+✰ Versión: ${vs}
+✰ *Libreria* » ${libreria} ${baileys}
+➪ GitHub: https://github.com/nene4527
 
-✰ *Colaborador 1* » Nevi 
-✦ *Rol* » Ayudante y desarrollador. 
-> ✧ Github » https://github.com/nevi-dev
+𝐂 𝐎 𝐋 𝐀 𝐁 𝐎 𝐑 𝐀 𝐃 𝐎 𝐑 𝐄 𝐒
 
-✰ *Colaborador 2* » Legna 🅜
-✦ *Rol* » Soporte/ayudante, editor.
-> ✧ Github » https://github.com/Legna-chan
+✰ Nevi: soporte y desarrollador. 
+➪ Github » https://github.com/nevi-dev
+
+✰ Félix: Desarrollador.
+➪ Github » https://github.com/mantis-has
+
+✰ Dioneibi: Desarrollador y ayudante.
+➪ Github » https://github.com/Dioneibi-rip
+
+> Monkey D Luffy Bot
 `
 await conn.sendFile(m.chat, img, 'yuki.jpg', staff.trim(), m)
 }
