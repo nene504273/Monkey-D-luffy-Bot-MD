@@ -9,7 +9,7 @@ let handler = async (m, { conn, text, isOwner }) => {
 
     if (isOwner) {
         await conn.groupAcceptInvite(code)
-            .then(res => m.reply(`${emoji} Me he unido exitosamente al grupo.`))
+            .then(res => m.reply(`¡Gomu Gomu no! 🎉 Me he unido exitosamente al grupo, ¡estoy listo para una nueva aventura!.`))
             .catch(err => m.reply(`${msm} Error al unirme al grupo.`));
     } else {
         let message = `${emoji} Invitación a un grupo:\n${text}\n\nPor: @${m.sender.split('@')[0]}`;
