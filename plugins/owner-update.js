@@ -1,7 +1,7 @@
 import { exec } from 'child_process';
 
 let handler = async (m, { conn }) => {
-  m.reply(`🌷 Actualizando la bot...`);
+  m.reply(`🏴‍☠️ Actualizando el bot...`);
 
   const comando = 'find src -type f | xargs git update-index --assume-unchanged && git pull';
 
