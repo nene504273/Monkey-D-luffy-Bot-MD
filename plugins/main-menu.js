@@ -581,7 +581,7 @@ Crea un *Sub-Bot* con tu número utilizando *#qr* o *#code*
 
 handler.help = ['menu']
 handler.tags = ['main']
-handler.command = ['menu', 'menú', 'help', 'ayuda']
+handler.command = ['menu', 'menú', 'help']
 
 export default handler
 
