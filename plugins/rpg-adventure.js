@@ -2,7 +2,7 @@ import fetch from 'node-fetch';
 
 let handler = async (m, { conn }) => {
 let user = global.db.data.users[m.sender];
-let img = 'https://files.catbox.moe/bj45rp.jpg';
+let img = 'https://files.catbox.moe/qptfv3.jpg';
 if (!user) {
 return conn.reply(m.chat, `${emoji} El usuario no se encuentra en la base de Datos.`, m);
 }
