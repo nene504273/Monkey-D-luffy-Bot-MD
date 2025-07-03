@@ -9,7 +9,7 @@
 
     let txt = `
 Hola! Soy *${botname}* (｡•̀ᴗ-)✧
-Aquí tienes la lista de comandos
+Aquí tienes la lista de comandoS
 ╭┈ ↷
 │ᰔᩚ Cliente » @${userId.split('@')[0]}
 │❀ Modo » Publico
