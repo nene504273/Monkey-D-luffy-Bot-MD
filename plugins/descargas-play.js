@@ -1,10 +1,11 @@
-import fetch from 'node-fetch';
-import yts from 'yt-search';
+import fetch from "node-fetch";
+import yts from "yt-search";
 
-const newsletterJid  = '120363420846835529@newsletter';
+const SIZE_LIMIT_MB = 100;
+const newsletterJid = '120363420846835529@newsletter';
 const newsletterName = '⏤͟͞ू⃪፝͜⁞⟡ 𝐌ᴏ𝐧𝐤𝐞𝐲 𝐃 𝐁ᴏ𝐭';
 
-var handler = async (m, { conn, args, usedPrefix, command }) => {
+const handler = async (m, { conn, args, usedPrefix, command }) => {
   const name = conn.getName(m.sender);
   const contextInfo = {
     mentionedJid: [m.sender],
@@ -16,8 +17,8 @@ var handler = async (m, { conn, args, usedPrefix, command }) => {
       serverMessageId: -1
     },
     externalAdReply: {
-      title: packname,
-      body: dev,
+      title: '¡El Rey de los Piratas te trae música! 🎶',
+      body: `¡Vamos a buscar eso, ${name}!`,
       thumbnail: icons,
       sourceUrl: redes,
       mediaType: 1,
@@ -25,98 +26,86 @@ var handler = async (m, { conn, args, usedPrefix, command }) => {
     }
   };
 
-
-  if (args[0] === 'audio' || args[0] === 'video') {
-    const mode = args[0];                  
-    const url  = args.slice(1).join(' ');   
-    if (!url) return conn.reply(m.chat, `🩵 Uso: ${usedPrefix}play ${mode} <url>`, m, { contextInfo });
-
-    
-    const apiUrl = mode === 'video'
-      ? `https://api.vreden.my.id/api/ytplaymp4?query=${encodeURIComponent(url)}`
-      : `https://api.vreden.my.id/api/ytplaymp3?query=${encodeURIComponent(url)}`;
-
-   
-    await conn.reply(m.chat, `🩵 *Procesando ${mode} para ti, ${name}...*`, m, { contextInfo });
-
-    try {
-      const res  = await fetch(apiUrl);
-      const jsn  = await res.json();
-      const meta = jsn.result.metadata;
-      const dl   = jsn.result.download;
-
-      if (!jsn.status === 200 || !dl?.url) {
-        throw new Error('No se obtuvo enlace de descarga.');
-      }
-
-      const dataBuffer = await (await fetch(dl.url)).buffer();
-      const title      = meta.title;
-      const caption    = mode === 'video'
-        ? `📹 *${title}*\n🎞 Calidad: ${dl.quality}`
-        : `🎵 *${title}*\n🔊 Calidad: ${dl.quality}`;
-
-      await conn.sendMessage(
-        m.chat,
-        mode === 'video'
-          ? { video: dataBuffer, mimetype: 'video/mp4', fileName: dl.filename, caption }
-          : { audio: dataBuffer, mimetype: 'audio/mpeg', fileName: dl.filename, ptt: false, caption },
-        { quoted: m, contextInfo }
-      );
-    } catch (e) {
-      console.error(e);
-      await conn.reply(m.chat, `❌ Oops, ocurrió un error: ${e.message}`, m, { contextInfo });
-    }
-    return;
-  }
-
-
   if (!args[0]) {
-    return conn.reply(m.chat,
-      `🩵 ${name} ¿Qué quieres escuchar o ver? 🎶📹\n\n` +
-      `Ejemplo:\n${usedPrefix}play Monkey es good`,
-      m, { contextInfo }
-    );
+    return conn.reply(m.chat, `☠️ *¡Hey ${name}!* ¿Qué canción o video estás buscando?\n\nEjemplo:\n${usedPrefix}play Binks no Sake`, m, { contextInfo });
   }
 
-  
-  const query = args.join(' ');
-  await conn.reply(m.chat, `🔎 *Buscando "${query}" para ti, ${name}-chan...*`, m, { contextInfo });
+  const isMode = args[0] === "audio" || args[0] === "video";
+  const query = isMode ? args.slice(1).join(" ") : args.join(" ");
 
   const search = await yts(query);
-  const video  = search.videos?.[0];
+  const video = search.videos?.[0];
+
   if (!video) {
-    return conn.reply(m.chat, `😿 Lo siento ${name}, no encontré nada con "${query}".`, m, { contextInfo });
+    return conn.reply(m.chat, `😵 *¡Rayos! No encontré nada con:* "${query}"`, m, { contextInfo });
   }
 
-  
+  if (isMode) {
+    const apiBase = "https://api.stellarwa.xyz/dow";
+    const dlApi = isMode === "audio"
+      ? `${apiBase}/ytmp3?url=${encodeURIComponent(video.url)}`
+      : `${apiBase}/ytmp4?url=${encodeURIComponent(video.url)}`;
+
+    try {
+      const res = await fetch(dlApi);
+      const json = await res.json();
+
+      if (!json.status || !json.data?.dl) {
+        return conn.reply(m.chat, `❌ *Error descargando ${isMode}:* ${json.message || 'Sin enlace válido'}`, m, { contextInfo });
+      }
+
+      const fileSize = isMode === "video"
+        ? parseInt((await fetch(json.data.dl, { method: "HEAD" })).headers.get("content-length") || "0") / (1024 * 1024)
+        : 0;
+
+      const asDocument = fileSize > SIZE_LIMIT_MB;
+
+      if (isMode === "audio") {
+        await conn.sendMessage(m.chat, {
+          audio: { url: json.data.dl },
+          mimetype: "audio/mpeg",
+          fileName: json.data.title + ".mp3",
+          ptt: false
+        }, { quoted: m });
+        return m.react("🎧");
+      } else {
+        await conn.sendMessage(m.chat, {
+          video: { url: json.data.dl },
+          caption: `📹 *¡Ahí tienes tu video, ${name}!*\n🦴 ¡Ese se ve genial!`,
+          fileName: json.data.title + ".mp4",
+          mimetype: "video/mp4",
+          ...(asDocument ? { asDocument: true } : {})
+        }, { quoted: m });
+        return m.react("📽️");
+      }
+    } catch (e) {
+      console.error(e);
+      return conn.reply(m.chat, `❌ *Fallo inesperado:* ${e.message}`, m, { contextInfo });
+    }
+  }
+
   const buttons = [
-    { buttonId: `${usedPrefix}play audio ${video.url}`, buttonText: { displayText: '🎵 Audio' }, type: 1 },
-    { buttonId: `${usedPrefix}play video ${video.url}`, buttonText: { displayText: '📹 Vídeo' }, type: 1 }
+    { buttonId: `${usedPrefix}play audio ${video.url}`, buttonText: { displayText: '🎵 ¡Solo el audio!' }, type: 1 },
+    { buttonId: `${usedPrefix}play video ${video.url}`, buttonText: { displayText: '📹 ¡Quiero ver eso!' }, type: 1 }
   ];
 
-  
-  const caption = 
-`╭─ꨪᰰ━۪  ࣪ ꨶ ╼ׄ ╼࡙֟፝͝⌒࣪᷼⏜ׅ 🍵᮫໋⃨𝆬 ࣪ ⏜ׄ᷼⌒╼࡙֟፝͝ ╾ 
-> 𑁯᧙  🍓 *Título:* ${video.title}
-> 𑁯᧙  📏 *Duración:* ${video.timestamp}
-> 𑁯᧙  👁️ *Vistas:*  ${video.views.toLocaleString()}
-> 𑁯᧙  🎨 *Autor:* ${video.author.name}
-> 𑁯᧙  🕰️ *Publicado:* ${video.ago}
-> 𑁯᧙  📝 *vídeo url:* ${video.url}
-╰─ꨪᰰ━۪  ࣪ ꨶ ╼ׄ ╼࡙֟፝͝⌒࣪᷼⏜ׅ 🍵᮫໋⃨𝆬 ࣪ ⏜ׄ᷼⌒╼࡙֟፝͝ ╾
-🩵 Gracias por usar este proyecto Bot.`;
+  const caption = `
+╭───🍖 *¡YOSHI! Encontré esto para ti, ${name}* 🍖───
+│🍓 *Título:* ${video.title}
+│⏱️ *Duración:* ${video.timestamp}
+│👁️ *Vistas:* ${video.views.toLocaleString()}
+│🎨 *Autor:* ${video.author.name}
+│🗓️ *Publicado:* ${video.ago}
+│🔗 *Enlace:* ${video.url}
+╰───────────────────────────────`;
 
-  await conn.sendMessage(
-    m.chat,
-    {
-      image: { url: video.thumbnail },
-      caption,
-      footer: 'Elige Audio o Vídeo ↓',
-      buttons,
-      headerType: 4
-    },
-    { quoted: m, contextInfo }
-  );
+  await conn.sendMessage(m.chat, {
+    image: { url: video.thumbnail },
+    caption,
+    footer: '¡Elige lo que quieres, nakama!',
+    buttons,
+    headerType: 4
+  }, { quoted: m });
 };
 
 handler.help = ['play'].map(v => v + ' <texto>');
