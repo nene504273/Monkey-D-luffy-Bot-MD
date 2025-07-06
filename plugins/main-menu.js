@@ -510,7 +510,6 @@ Aquí tienes mi lista de comandos
 . 바˓   ⃚̫🌷ܷ̯̌ ֙ ꜥ ១ *#bite* + <mencion>
 > ✦ Muerde a alguien
 . 바˓   ⃚̫
-
 // Mensaje de inicio de envío del menú
     await conn.reply(m.chat, '*ꪹ͜𓂃⌛͡𝗘𝗻𝘃𝗶𝗮𝗻𝗱𝗼 𝗠𝗲𝗻𝘂 𝗱𝗲𝗹 𝗕𝗼𝘁....𓏲੭*', fkontak, { 
         contextInfo: { 
