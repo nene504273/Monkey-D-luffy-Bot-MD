@@ -6,29 +6,28 @@ import moment from 'moment-timezone';
 const cooldowns = new Map();
 const lastMenuSent = new Map();
 
-const newsletterJid = '120363418071540900@newsletter';
-const newsletterName = '*Ellen-Joe-Bot-OFICIAL*';
-const packname = '˚🄴🄻🄻🄴🄽-🄹🄾🄴-🄱🄾🅃';
+// --- Información de One Piece para el menú ---
+const newsletterJid = '120363418071540900@newsletter'; // ¡Mantén este si es necesario!
+const newsletterName = '*¡SOMBREROS DE PAJA UNIDOS!* 🏴‍☠️';
+const packname = '🏴‍☠️ Gomu Gomu No Bot 🏴‍☠️'; // ¡Nombre del bot al estilo Luffy!
 
 let handler = async (m, { conn, usedPrefix }) => {
-  // --- NUEVO: Manejo de errores de lectura de DB ---
+  // --- Manejo de errores de lectura de DB ---
   let mediaLinks;
   try {
     const dbPath = path.join(process.cwd(), 'src', 'database', 'db.json');
     const dbRaw = fs.readFileSync(dbPath);
     mediaLinks = JSON.parse(dbRaw).links;
   } catch (e) {
-    console.error("Error al leer o parsear src/database/db.json:", e);
-    // Si hay un error, envía un mensaje al chat y detiene la ejecución del comando.
-    return conn.reply(m.chat, '¡🏴‍☠️ Error al cargar los tesoros del bot! Inténtalo de nuevo más tarde.', m);
+    console.error("¡Error al zarpar! No se pudo leer src/database/db.json:", e);
+    return conn.reply(m.chat, '¡Shishishi! Parece que el Log Pose no funciona. No pude leer la base de datos.', m);
   }
-  // --- FIN DEL BLOQUE MODIFICADO ---
 
   if (m.quoted?.id && m.quoted?.fromMe) return;
 
   const chatId = m.chat;
   const now = Date.now();
-  const waitTime = 5 * 60 * 1000;
+  const waitTime = 5 * 60 * 1000; // 5 minutos, ¡como un descanso en el Grand Line!
 
   const lastUsed = cooldowns.get(chatId) || 0;
 
@@ -40,7 +39,7 @@ let handler = async (m, { conn, usedPrefix }) => {
     const last = lastMenuSent.get(chatId);
     return await conn.reply(
       chatId,
-      `¡Alto ahí, Nakama! 🏴‍☠️ @${m.sender.split('@')[0]} no puedes pedir el menú tan seguido.\nEspera: *${minutes}m ${seconds}s* para zarpar de nuevo.`,
+      `@${m.sender.split('@')[0]} ¡Espera, aún no es hora de otro banquete! 🍖\nPodrás ver el menú de nuevo en: *${minutes}m ${seconds}s*`,
       last?.message || m,
       {
         mentions: [m.sender]
@@ -54,7 +53,7 @@ let handler = async (m, { conn, usedPrefix }) => {
   try {
     name = await conn.getName(m.sender);
   } catch {
-    name = 'Capitán';
+    name = 'Nakama'; // ¡Si no tiene nombre, es un nakama!
   }
 
   const isMain = conn.user.jid === global.conn.user.jid;
@@ -68,25 +67,25 @@ let handler = async (m, { conn, usedPrefix }) => {
   const gifVideo = mediaLinks.video[Math.floor(Math.random() * mediaLinks.video.length)];
   const randomThumbnail = mediaLinks.imagen[Math.floor(Math.random() * mediaLinks.imagen.length)];
 
-  // Emojis con temática de One Piece
+  // --- Emojis temáticos de One Piece ---
   const emojis = {
-    'main': '📜',      // Pergamino de comandos
-    'tools': '🔧',     // Herramientas de navegación
-    'audio': '🎵',     // Binks' Sake
-    'group': '🏴‍☠️',     // Bandera pirata (para grupos)
-    'owner': '👑',     // Rey Pirata
-    'fun': '🎉',       // Fiesta en el barco
-    'info': '🧭',      // Brújula de información
-    'internet': '🌊',  // Océano de datos
-    'downloads': '📥',  // Descargas de tesoros
-    'admin': '⚓',     // Ancla (para administradores)
-    'anime': '🌟',     // Estrella (para anime)
-    'nsfw': '🔞',      // Prohibido para menores
-    'search': '🔍',    // Lupa de búsqueda
-    'sticker': '🖼️',    // Retrato / Arte
-    'game': '🎲',      // Juego de la tripulación
-    'premium': '💎',   // Tesoros Premium
-    'bot': '🤖'        // Propio bot
+    'main': '🏴‍☠️', // Bandera pirata
+    'tools': '🔧', // Herramientas de Franky
+    'audio': '🎵', // Música de Brook
+    'group': '🤝', // Lazos de nakamas
+    'owner': '👑', // Rey de los Piratas
+    'fun': '🤣', // Risa de Luffy
+    'info': '🗺️', // Mapa de Nami
+    'internet': '🌐', // Red del mundo
+    'downloads': '📥', // Descargas de tesoros
+    'admin': '⚙️', // Engranajes de una nave
+    'anime': '🌟', // Estrellas de los sueños
+    'nsfw': '🔞', // ¡Contenido solo para piratas mayores de edad!
+    'search': '🔎', // Búsqueda del One Piece
+    'sticker': '🎨', // Dibujos de Usopp
+    'game': '🎲', // Juegos en la cubierta
+    'premium': '💎', // Joyas valiosas
+    'bot': '🤖'  // Bot pirata
   };
 
   let groups = {};
@@ -106,28 +105,31 @@ let handler = async (m, { conn, usedPrefix }) => {
   }
 
   const sections = Object.entries(groups).map(([tag, cmds]) => {
-    const emoji = emojis[tag] || '🗺️'; // Mapa del tesoro para no definidos
-    return `*${emoji} ${tag.toUpperCase()}* \n` + cmds.map(cmd => `> ${cmd}`).join('\n');
+    const emoji = emojis[tag] || '⚓'; // Ancla si no hay emoji específico
+    return `*${emoji} ${tag.toUpperCase()}* ⚔️\n` + cmds.map(cmd => `» ${cmd}`).join('\n'); // Diseño de lista pirata
   }).join('\n\n');
 
+  // --- Encabezado con detalles y temática de Luffy ---
   const header = `
-¡Ahoy, ${name}! 🏴‍☠️ Este es el logbook de comandos:
-╭─•───────「Ellen-Joe-Bot」───────•
-│ 👤 *Navegante*: ${name}
-│ 🤖 *Barco*: ${isMain ? 'Thousand Sunny' : `Going Merry | Principal: ${principalNumber}`}
-│ 📦 *Bitácora de Comandos*: ${totalCommands}
-│ ⏱️ *Tiempo en el Mar*: ${uptime}
-│ 🌍 *Hora en Grand Line*: ${utcTime}
-│ 👥 *Tripulación*: ${totalreg}
-│ 👑 *Rey de los Piratas*: wa.me/${global.owner?.[0]?.[0] || "¡Pronto lo descubriremos!"}
-╰─•──────────────────────────•`.trim();
+¡Ahoy, *${name}*! 👋 Este es tu Log Pose de Comandos:
+╭─────────────────────────╮
+│ 🍖 *Capitán:* ${name}
+│ 🏴‍☠️ *Gomu Gomu No Bot:* ${isMain ? '¡El Rey de los Piratas!' : `¡Navegante Secundario! | Rey Principal: ${principalNumber}`}
+│ ✨ *Tesoro de Comandos:* ${totalCommands}
+│ ⏳ *Viaje Activo:* ${uptime}
+│ ⏰ *Hora en Grand Line:* ${utcTime}
+│ 🗺️ *Nakamas Registrados:* ${totalreg}
+│ 👑 *Nuestro Yonko:* wa.me/${global.owner?.[0]?.[0] || "¡Desconocido!"}
+╰─────────────────────────╯
+`.trim();
 
-  const finalText = `${header}\n\n${sections}\n\n[⏳] ¡Cuidado, Nakama! Solo puedes revisar este logbook cada 5 minutos por grupo.`;
+  const finalText = `${header}\n\n${sections}\n\n¡Al ataque! 🌊 Este menú se actualiza cada *5 minutos*. ¡A por el One Piece! 👒`;
 
+  // --- ContextInfo con temática pirata ---
   const contextInfo = {
     mentionedJid: [m.sender],
     isForwarded: true,
-    forwardingScore: 999,
+    forwardingScore: 999, // ¡Máxima puntuación de aventura!
     forwardedNewsletterMessageInfo: {
       newsletterJid,
       newsletterName,
@@ -135,9 +137,9 @@ let handler = async (m, { conn, usedPrefix }) => {
     },
     externalAdReply: {
       title: packname,
-      body: '¡Descubre todos los secretos de Ellen-Joe-Bot!',
+      body: '¡Zarpa con el Gomu Gomu No Bot!', // Mensaje pirata
       thumbnailUrl: randomThumbnail,
-      sourceUrl: 'https://github.com/nevi-dev/Vermeil-bot', 
+      sourceUrl: 'https://github.com/nevi-dev/Vermeil-bot', // ¡Puedes cambiar este enlace por el tuyo!
       mediaType: 1,
       renderLargerThumbnail: true
     }
@@ -152,9 +154,9 @@ let handler = async (m, { conn, usedPrefix }) => {
       contextInfo
     }, { quoted: m });
   } catch (e) {
-    // Si falla el envío del video, intenta enviar solo texto.
-    console.error("¡Parece que el Den Den Mushi tuvo un problema al enviar el mensaje de video del menú:", e);
-    sentMsg = await conn.reply(chatId, `¡Ahoy, ${name}!\n\n${finalText}\n\n_Parece que el mensaje con video no pudo ser enviado, pero aquí tienes el logbook._`, m, { contextInfo });
+    console.error("¡Error en la travesía! No se pudo enviar el mapa del tesoro:", e);
+    // Si falla el envío del video, intenta enviar solo texto con el contextInfo.
+    sentMsg = await conn.reply(chatId, finalText, m, { contextInfo });
   }
 
   cooldowns.set(chatId, now);
@@ -166,10 +168,11 @@ let handler = async (m, { conn, usedPrefix }) => {
 
 handler.help = ['menu'];
 handler.tags = ['main'];
-handler.command = ['menu', 'menú', 'help'];
+handler.command = ['menu', 'menú', 'help', 'comandos']; // Agregamos 'comandos' por si acaso
 
 export default handler;
 
+// Función para el tiempo de actividad, ¡como el tiempo de navegación!
 function clockString(ms) {
   const h = Math.floor(ms / 3600000);
   const m = Math.floor(ms / 60000) % 60;
