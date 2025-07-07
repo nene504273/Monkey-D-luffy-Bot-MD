@@ -507,22 +507,7 @@ Aquí está mi lista de comandos para ayudarte en tu aventura:
 . 🏴‍☠️   *#morder • #mordisco* + <mencion>
 > ✦ Muerde a alguien.
 ╚▭࣪▬ִ▭࣪▬ִ▭࣪▬ִ▭࣪▬ִ▭࣪▬ִ▭࣪▬▭╝
-`; 
-
-handler.help = ['menu'];
-handler.register = true;
-handler.tags = ['main'];
-handler.command = ['menu', 'menú', 'help'];
-
-export default handler;
-
-function clockString(ms) {
-    let seconds = Math.floor((ms / 1000) % 60);
-    let minutes = Math.floor((ms / (1000 * 60)) % 60);
-    let hours = Math.floor((ms / (1000 * 60 * 60)) % 24);
-    return `${hours}h ${minutes}m ${seconds}s`;
-}
-
+`;
 
   // Function to format uptime
   function clockString(ms) {
