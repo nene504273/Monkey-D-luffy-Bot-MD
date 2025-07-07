@@ -7,7 +7,7 @@ const cooldowns = new Map();
 const lastMenuSent = new Map();
 
 // --- Información de One Piece para el menú ---
-const newsletterJid = '120363418071540900@newsletter'; // ¡Mantén este si es necesario!
+const newsletterJid = '120363335626706839@newsletter'; // ¡Mantén este si es necesario!
 const newsletterName = '*¡SOMBREROS DE PAJA UNIDOS!* 🏴‍☠️';
 const packname = '🏴‍☠️ Gomu Gomu No Bot 🏴‍☠️'; // ¡Nombre del bot al estilo Luffy!
 
