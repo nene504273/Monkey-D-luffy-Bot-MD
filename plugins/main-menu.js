@@ -507,7 +507,9 @@ Aquí está mi lista de comandos para ayudarte en tu aventura:
 . 🏴‍☠️   *#morder • #mordisco* + <mencion>
 > ✦ Muerde a alguien.
 ╚▭࣪▬ִ▭࣪▬ִ▭࣪▬ִ▭࣪▬ִ▭࣪▬ִ▭࣪▬▭╝
-`; // Mensaje de inicio de envío del menú
+`; 
+
+// Mensaje de inicio de envío del menú
     await conn.reply(m.chat, '*ꪹ͜𓂃⌛͡𝗘𝗻𝘃𝗶𝗮𝗻𝗱𝗼 𝗠𝗲𝗻𝘂 𝗱𝗲𝗹 𝗕𝗼𝘁....𓏲੭*', fkontak, { 
         contextInfo: { 
             forwardingScore: 2022, 
