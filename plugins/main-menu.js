@@ -1,15 +1,15 @@
 import fs from 'fs';
 import path from 'path';
-import fetch from 'node-fetch';
+import fetch from 'node-fetch'; // No se usa en el código proporcionado, pero se mantiene si se necesita en el futuro.
 import moment from 'moment-timezone';
-import PhoneNumber from 'awesome-phonenumber'; // << NUEVO >> Importamos la nueva dependencia
+import PhoneNumber from 'awesome-phonenumber';
 
 const cooldowns = new Map();
 const lastMenuSent = new Map();
 
 const newsletterJid = '120363420846835529@newsletter';
-const newsletterName = '*🏴‍☠️StrawHat-Bot-OFICIAL🏴‍☠️*';
-const packname = '⚓StrawHat-Crew⚓';
+const newsletterName = '*🏴‍☠️StrawHat-Bot-OFICIAL🏴‍☠️*'; // Nombre de newsletter al estilo One Piece
+const packname = '⚓StrawHat-Crew⚓'; // Packname al estilo One Piece
 
 let handler = async (m, { conn, usedPrefix }) => {
   // --- ¡Alerta de Jolly Roger! Manejo de errores de lectura de DB ---
@@ -20,6 +20,7 @@ let handler = async (m, { conn, usedPrefix }) => {
     mediaLinks = JSON.parse(dbRaw).links;
   } catch (e) {
     console.error("¡Ay no! Error al leer o parsear src/database/db.json:", e);
+    // Si hay un error, ¡la aventura se detiene aquí!
     return conn.reply(m.chat, '¡Error de mapa! No pude leer la base de datos de los tesoros. ☠️', m);
   }
   // --- ¡Fin del Bloque de Aventuras! ---
@@ -28,7 +29,7 @@ let handler = async (m, { conn, usedPrefix }) => {
 
   const chatId = m.chat;
   const now = Date.now();
-  const waitTime = 5 * 60 * 1000;
+  const waitTime = 5 * 60 * 1000; // ¡5 minutos para que la tripulación descanse!
 
   const lastUsed = cooldowns.get(chatId) || 0;
 
@@ -36,12 +37,15 @@ let handler = async (m, { conn, usedPrefix }) => {
     const remainingMs = waitTime - (now - lastUsed);
     const minutes = Math.floor(remainingMs / 60000);
     const seconds = Math.floor((remainingMs % 60000) / 1000);
+
     const last = lastMenuSent.get(chatId);
     return await conn.reply(
       chatId,
       `¡Eh, @${m.sender.split('@')[0]}! ¡Todavía no podemos zarpar de nuevo!\nDebes esperar *${minutes}m ${seconds}s* para usar el menú. ¡Paciencia, nakama! 🏴‍☠️`,
       last?.message || m,
-      { mentions: [m.sender] }
+      {
+        mentions: [m.sender]
+      }
     );
   }
 
@@ -51,7 +55,7 @@ let handler = async (m, { conn, usedPrefix }) => {
   try {
     name = await conn.getName(m.sender);
   } catch {
-    name = 'Marino Novato';
+    name = 'Marino Novato'; // Nombre predeterminado al estilo One Piece
   }
 
   const isMain = conn.user.jid === global.conn.user.jid;
@@ -60,31 +64,45 @@ let handler = async (m, { conn, usedPrefix }) => {
   const totalCommands = Object.keys(global.plugins || {}).length;
   const uptime = clockString(process.uptime() * 1000);
   const totalreg = Object.keys(global.db?.data?.users || {}).length;
-  
-  // << NUEVO >> Bloque para obtener las horas
-  const venezuelaTime = moment().tz('America/Caracas').format('HH:mm');
-  const utcTime = moment().utc().format('HH:mm');
+
+  // Bloque para obtener las horas con formato AM/PM y lógica de fallback
+  const venezuelaTime = moment().tz('America/Caracas').format('h:mm A'); // Formato AM/PM
   let userTimezoneText = 'Hora Desconocida 🗺️';
-  try {
-      const pn = new PhoneNumber(m.sender);
-      const regionCode = pn.getRegionCode();
-      if (regionCode) {
-          const timezones = moment.tz.zonesForCountry(regionCode);
-          if (timezones && timezones.length > 0) {
-              const userTime = moment().tz(timezones[0]).format('HH:mm');
-              userTimezoneText = `${userTime} (${regionCode})`;
-          }
+  const userDB = global.db.data.users[m.sender];
+
+  // 1. Prioridad: Intentar obtener la zona horaria desde la base de datos del usuario
+  if (userDB && userDB.timezone && moment.tz.names().includes(userDB.timezone)) {
+      try {
+          const userTime = moment().tz(userDB.timezone).format('h:mm A'); // Formato AM/PM
+          const friendlyName = userDB.timezone.split('/').pop().replace('_', ' ');
+          userTimezoneText = `${userTime} (${friendlyName})`;
+      } catch (e) {
+          console.error("Error al usar la zona horaria guardada en la DB:", e);
       }
-  } catch (e) {
-      console.error("Error al obtener la zona horaria del usuario:", e);
   }
-  // << FIN DEL NUEVO BLOQUE >>
+
+  // 2. Fallback: Si no hay nada en la DB, intentar la detección automática por número
+  if (userTimezoneText === 'Hora Desconocida 🗺️') {
+      try {
+          const pn = new PhoneNumber(m.sender);
+          const regionCode = pn.getRegionCode();
+          if (regionCode) {
+              const timezones = moment.tz.zonesForCountry(regionCode);
+              if (timezones && timezones.length > 0) {
+                  const userTime = moment().tz(timezones[0]).format('h:mm A'); // Formato AM/PM
+                  userTimezoneText = `${userTime} (Detectado: ${regionCode})`;
+              }
+          }
+      } catch (e) {
+          console.error("Error al obtener la zona horaria del usuario por número:", e);
+      }
+  }
 
   const gifVideo = mediaLinks.video[Math.floor(Math.random() * mediaLinks.video.length)];
   const randomThumbnail = mediaLinks.imagen[Math.floor(Math.random() * mediaLinks.imagen.length)];
 
   const emojis = {
-    'main': '📜', 'tools': '🛠️', 'audio': '🎶', 'group': '🏴‍☠️',
+    'main': '📜', 'tools': '🛠️', 'audio': '🎶', 'group': '🏴‍☠️', // Emojis temáticos
     'owner': '👑', 'fun': '🎉', 'info': '🗺️', 'internet': '🌐',
     'downloads': '⬇️', 'admin': '⚓', 'anime': '🎌', 'nsfw': '🔞',
     'search': '🔍', 'sticker': '🖼️', 'game': '🎲', 'premium': '💎', 'bot': '🤖'
@@ -107,11 +125,10 @@ let handler = async (m, { conn, usedPrefix }) => {
   }
 
   const sections = Object.entries(groups).map(([tag, cmds]) => {
-    const emoji = emojis[tag] || '🗺️';
+    const emoji = emojis[tag] || '🗺️'; // Emoji predeterminado si no se encuentra
     return `[${emoji} *${tag.toUpperCase()}*]\n` + cmds.map(cmd => `> ${cmd}`).join('\n');
   }).join('\n\n');
 
-  // << MODIFICADO >> Se actualizó el header con las nuevas horas
   const header = `
 ¡Yohoho, ${name}! ¡Este es el Logbook de Comandos!
 |----[🧭 El Gran Menú de Luffy 🧭]----•
@@ -119,16 +136,14 @@ let handler = async (m, { conn, usedPrefix }) => {
 | 🤖 Bote Pirata: ${isMain ? 'Principal' : `Sub-Bote | Principal: ${principalNumber}`}
 | 📜 Comandos del Mapa: ${totalCommands}
 | ⏱️ Tiempo en Alta Mar: ${uptime}
-| 🇻🇪 Hora en Venezuela: ${venezuelaTime}
+| 🌍 Hora del Nuevo Mundo: ${venezuelaTime}
 | 👤 Hora del Usuario: ${userTimezoneText}
-| 🌍 Hora del Nuevo Mundo (UTC): ${utcTime}
 | 👥 Tripulantes: ${totalreg}
 | 👑 Rey Pirata: wa.me/${global.owner?.[0]?.[0] || "¡Sin Rumbo Fijo!"}
 |-----------------------------------•`.trim();
 
-  const finalText = `${header}\n\n${sections}\n\n[⏳] ¡Cuidado, nakama! Este Logbook solo se puede consultar una vez cada 5 minutos por grupo. ¡No te quedes sin tinta! 🖋️`;
+  const finalText = `${header}\n\n${sections}\n\n[💡] Si tu hora no es correcta, usa *.settimezone* para ajustarla.\n\n[⏳] ¡Cuidado, nakama! Este Logbook solo se puede consultar una vez cada 5 minutos por grupo. ¡No te quedes sin tinta! 🖋️`;
 
-  // << MODIFICADO >> Se cambió renderLargerThumbnail a false para una imagen más pequeña
   const contextInfo = {
     mentionedJid: [m.sender],
     isForwarded: true,
@@ -140,11 +155,11 @@ let handler = async (m, { conn, usedPrefix }) => {
     },
     externalAdReply: {
       title: packname,
-      body: '¡Descubre todos los tesoros de StrawHat-Bot!',
+      body: '¡Descubre todos los tesoros de StrawHat-Bot!', // Texto al estilo One Piece
       thumbnailUrl: randomThumbnail,
-      sourceUrl: 'https://github.com/nevi-dev/Vermeil-bot',
+      sourceUrl: 'https://github.com/nevi-dev/Vermeil-bot', // ¡Puedes cambiar este mapa si quieres!
       mediaType: 1,
-      renderLargerThumbnail: false // << MODIFICADO >>
+      renderLargerThumbnail: false
     }
   };
 
@@ -157,6 +172,7 @@ let handler = async (m, { conn, usedPrefix }) => {
       contextInfo
     }, { quoted: m });
   } catch (e) {
+    // Si la gomu gomu no falla al enviar el video, ¡solo enviamos el pergamino!
     console.error("¡Problemas con el barco! Error al enviar el menú:", e);
     sentMsg = await conn.reply(chatId, finalText, m, { contextInfo });
   }
@@ -170,10 +186,11 @@ let handler = async (m, { conn, usedPrefix }) => {
 
 handler.help = ['menu'];
 handler.tags = ['main'];
-handler.command = ['menu', 'menú', 'help', 'comandos', 'tesoros'];
+handler.command = ['menu', 'menú', 'help', 'comandos', 'tesoros']; // Comandos adicionales al estilo One Piece
 
 export default handler;
 
+// ¡Aquí está la brújula para el tiempo en alta mar!
 function clockString(ms) {
   const h = Math.floor(ms / 3600000);
   const m = Math.floor(ms / 60000) % 60;
