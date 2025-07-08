@@ -6,7 +6,7 @@ import moment from 'moment-timezone';
 const cooldowns = new Map();
 const lastMenuSent = new Map();
 
-const newsletterJid = '120363418071540900@newsletter';
+const newsletterJid = '120363420846835529@newsletter';
 const newsletterName = '*🏴‍☠️StrawHat-Bot-OFICIAL🏴‍☠️*'; // Nombre de newsletter al estilo One Piece
 const packname = '⚓StrawHat-Crew⚓'; // Packname al estilo One Piece
 
