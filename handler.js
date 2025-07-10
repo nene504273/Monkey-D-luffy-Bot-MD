@@ -603,7 +603,7 @@ global.dfail = (type, m, conn) => {
         unreg: `🍥 ¡Ah, no! *¡Aún no estás en mi tripulación!* 🏴‍☠️\n¡Necesito saber quién eres para que navegues conmigo! ✨\n\n📝 ¡Apúntate con:\n» */reg nombre.edad*\n\n🎶 Ejemplo épico:\n» */reg Zoro-kun.21*\n\n💖 ¡Así te reconoceré como un verdadero nakama, shishishi!*`,
         restrict: '「😴」 *¡Uhm! ¡Esta función está durmiendo la siesta por ahora!* ¡Volverá con más energía! 💤'
     }[type];
-    if (msg) return conn.reply(m.chat, msg, m, rcanal).then(_ => m.react('✖️'));
+    if (msg) return conn.reply(m.chat, msg, m).then(_ => m.react('✖️'));
 };
 
 let file = global.__filename(import.meta.url, true);
