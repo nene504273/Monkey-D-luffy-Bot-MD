@@ -592,16 +592,16 @@ export async function handler(chatUpdate) {
 // Función de fallo para permisos
 global.dfail = (type, m, conn) => {
     const msg = {
-        rowner: '「🌺」 *Gomenasai~! Esta función solo la puede usar mi creador celestial...* 🌌\n\n> *Dioneibi-sama.*',
-        owner: '「🌸」 *¡Nyaa~! Solo mi creador y programadores pueden usar este comando~!* 💾💕',
-        mods: '「🌟」 *Uguu~ Esto eso solo lo pueden usar mis desarrolladores mágicos~!* 🔮',
-        premium: '「🍡」 *Ehh~? Esta función es exclusiva para usuarios Premium-desu~!* ✨\n\n💫 *¿No eres premium aún? Consíguelo ahora usando:*\n> ✨ *.comprarpremium 2 dias* (o reemplaza "2 dias" por la cantidad que desees).',
-        group: '「🐾」 *¡Onii-chan~! Este comando solo puede usarse en grupos grupales~!* 👥',
-        private: '「🎀」 *Shh~ Este comando es solo para ti y para mí, en privado~* 💌',
-        admin: '「🧸」 *¡Kyah~! Solo los admin-senpai pueden usar esta habilidad~!* 🛡️',
-        botAdmin: '「🔧」 *¡Espera! Necesito ser admin para que este comando funcione correctamente.*\n\n🔧 *Hazme admin y desataré todo mi poder~*',
-        unreg: `🍥 𝑶𝒉 𝒏𝒐~! *¡Aún no estás registrado~!* 😿\nNecesito conocerte para que uses mis comandos~ ✨\n\n📝 Por favor regístrate con:\n» */reg nombre.edad*\n\n🎶 Ejemplo encantado:\n» */reg Dioneibi-kun.15*\n\n💖 ¡Así podré reconocerte, nya~!*`,
-        restrict: '「📵」 *¡Ouh~! Esta función está dormida por ahora~* 💤'
+        rowner: '「🏴‍☠️」 *¡Oye! ¡Solo yo, el futuro Rey de los Piratas, puedo usar esto!* ¡Ni se te ocurra, eh! 💥\n\n> *Luffy-sama.*',
+        owner: '「🍖」 *¡Grrr! ¡Este truco solo lo dominan los que están en la cima de mi tripulación!* ¡No es para cualquiera! 🗺️',
+        mods: '「⚔️」 *¡Jejeje! ¡Esto es algo que solo mis nakamas más fuertes pueden manejar!* ¡Tienes que entrenar más! 👊',
+        premium: '「💰」 *¡Uhm! ¡Esta habilidad es solo para los que tienen un montón de Berries!* ¡Conviértete en un gran pirata para conseguirla! ✨\n\n💫 *¿Quieres ser parte de los más ricos? ¡Consíguelo ahora usando:*\n> ✨ *.comprarpremium 2 dias* (o reemplaza "2 dias" por la cantidad que desees, ¡más Berries!).',
+        group: '「🗺️」 *¡Shishishi! ¡Esto es una aventura para toda la tripulación, no para lobos solitarios!* ¡Vamos, en grupo es mejor! 👥',
+        private: '「👒」 *¡Oye, tú! ¡Esto es algo entre nosotros dos, como buenos nakamas!* ¡Un secreto pirata! 🤫',
+        admin: '「👑」 *¡Waaajaja! ¡Solo los capitanes y vice-capitanes pueden dar estas órdenes!* ¡Aún no eres uno de ellos! 🛡️',
+        botAdmin: '「⚙️」 *¡Espera un momento! ¡Necesito ser un capitán para que esto funcione!* ¡Hazme admin y verás mi poder! 💪\n\n⚙️ *¡Dame el puesto de capitán y te mostraré de qué estoy hecho!*',
+        unreg: `🍥 ¡Ah, no! *¡Aún no estás en mi tripulación!* 🏴‍☠️\n¡Necesito saber quién eres para que navegues conmigo! ✨\n\n📝 ¡Apúntate con:\n» */reg nombre.edad*\n\n🎶 Ejemplo épico:\n» */reg Zoro-kun.21*\n\n💖 ¡Así te reconoceré como un verdadero nakama, shishishi!*`,
+        restrict: '「😴」 *¡Uhm! ¡Esta función está durmiendo la siesta por ahora!* ¡Volverá con más energía! 💤'
     }[type];
     if (msg) return conn.reply(m.chat, msg, m, rcanal).then(_ => m.react('✖️'));
 };
