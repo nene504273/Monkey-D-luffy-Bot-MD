@@ -2,7 +2,7 @@ import db from '../lib/database.js'
 
 let handler = async (m, { args }) => {
 let user = global.db.data.users[m.sender]
-if (!args[0]) return m.reply(`${emoji} Ingresa la cantidad de *${moneda}* que deseas Retirar.`)
+if (!args[0]) return m.reply(`Ingresa la cantidad de *Berris 💰* que deseas depositar en tu tesoro.`)
 if (args[0] == 'all') {
 let count = parseInt(user.bank)
 user.bank -= count * 1
