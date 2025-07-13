@@ -1,6 +1,6 @@
 import fetch from "node-fetch";
 import yts from "yt-search";
-// Import the yta and ytv functions from your local lib file
+// 1. IMPORTAMOS LAS NUEVAS FUNCIONES DESDE TU ARCHIVO
 import { yta, ytv } from '../lib/y2mate.js';
 
 const SIZE_LIMIT_MB = 100;
@@ -21,8 +21,8 @@ const handler = async (m, { conn, args, usedPrefix, command }) => {
     externalAdReply: {
       title: '¡El Rey de los Piratas te trae música! 🎶',
       body: `¡Vamos a buscar eso, ${name}!`,
-      thumbnail: 'https://i.imgur.com/4r523Rz.jpeg', // Using a placeholder icon
-      sourceUrl: 'https://github.com/FG98F', // Using a placeholder URL
+      thumbnail: icons,
+      sourceUrl: redes,
       mediaType: 1,
       renderLargerThumbnail: false
     }
@@ -42,9 +42,9 @@ const handler = async (m, { conn, args, usedPrefix, command }) => {
     return conn.reply(m.chat, `😵 *¡Rayos! No encontré nada con:* "${query}"`, m, { contextInfo });
   }
 
-  // --- DOWNLOAD LOGIC ---
+  // --- SECCIÓN DE DESCARGA MODIFICADA ---
   if (isMode) {
-    // --- Method 1: Primary API ---
+    // --- MÉTODO 1: API Principal (Stellar) ---
     try {
       const apiBase = "https://api.stellarwa.xyz/dow";
       const dlApi = isMode === "audio"
@@ -54,9 +54,9 @@ const handler = async (m, { conn, args, usedPrefix, command }) => {
       const res = await fetch(dlApi);
       const json = await res.json();
 
-      // If the API call is not successful, throw an error to trigger the fallback
+      // Si la API principal falla, lanzamos un error para activar el `catch`
       if (!json.status || !json.data?.dl) {
-        throw new Error(`Primary API failed: ${json.message || 'No valid link'}`);
+        throw new Error(json.message || 'No se recibió un enlace válido de la API principal');
       }
 
       const fileSize = isMode === "video"
@@ -65,67 +65,43 @@ const handler = async (m, { conn, args, usedPrefix, command }) => {
       const asDocument = fileSize > SIZE_LIMIT_MB;
 
       if (isMode === "audio") {
-        await conn.sendMessage(m.chat, {
-          audio: { url: json.data.dl },
-          mimetype: "audio/mpeg",
-          fileName: json.data.title + ".mp3",
-          ptt: false
-        }, { quoted: m });
+        await conn.sendMessage(m.chat, { audio: { url: json.data.dl }, mimetype: "audio/mpeg", fileName: json.data.title + ".mp3" }, { quoted: m });
         return m.react("🎧");
-      } else { // isMode === "video"
-        await conn.sendMessage(m.chat, {
-          video: { url: json.data.dl },
-          caption: `📹 *¡Ahí tienes tu video, ${name}!*\n🦴 ¡Ese se ve genial!`,
-          fileName: json.data.title + ".mp4",
-          mimetype: "video/mp4",
-          ...(asDocument ? { asDocument: true } : {})
-        }, { quoted: m });
+      } else {
+        await conn.sendMessage(m.chat, { video: { url: json.data.dl }, caption: `📹 *¡Ahí tienes tu video, ${name}!*`, fileName: json.data.title + ".mp4", mimetype: "video/mp4", ...(asDocument ? { asDocument: true } : {}) }, { quoted: m });
         return m.react("📽️");
       }
     } catch (e) {
-      console.error("Primary download method failed:", e.message);
-      await conn.reply(m.chat, `⚠️ *El primer método de descarga falló.*\n\nIntentando con el segundo método...`, m);
+      // Si el MÉTODO 1 falla, se ejecuta este bloque
+      console.error(`Error en el método principal: ${e.message}`);
+      await conn.reply(m.chat, `⚠️ *El primer método de descarga falló.*\n\nIntentando con el método de respaldo...`, m);
 
-      // --- Method 2: Fallback using y2mate.js ---
+      // --- MÉTODO 2: Respaldo (y2mate.js) ---
       try {
-        const fallbackDownloader = isMode === "audio" ? yta : ytv;
-        const result = await fallbackDownloader(video.url);
+        const downloader = isMode === 'audio' ? yta : ytv;
+        const result = await downloader(video.url);
 
         if (!result || !result.link) {
-          throw new Error("Fallback method did not return a valid link.");
+          throw new Error('No se pudo obtener un enlace de descarga del método de respaldo.');
         }
 
-        const fileSize = isMode === "video"
-          ? parseInt((await fetch(result.link, { method: "HEAD" })).headers.get("content-length") || "0") / (1024 * 1024)
-          : 0;
-        const asDocument = fileSize > SIZE_LIMIT_MB;
-
-        if (isMode === "audio") {
-          await conn.sendMessage(m.chat, {
-            audio: { url: result.link },
-            mimetype: "audio/mpeg",
-            fileName: `${result.title}.mp3`
-          }, { quoted: m });
+        if (isMode === 'audio') {
+          await conn.sendMessage(m.chat, { audio: { url: result.link }, mimetype: 'audio/mpeg', fileName: `${result.title}.mp3` }, { quoted: m });
           return m.react("🎧");
-        } else { // isMode === "video"
-          await conn.sendMessage(m.chat, {
-            video: { url: result.link },
-            caption: `📹 *¡Ahí tienes tu video, ${name}!* (Método 2)`,
-            fileName: `${result.title}.mp4`,
-            mimetype: "video/mp4",
-            ...(asDocument ? { asDocument: true } : {})
-          }, { quoted: m });
+        } else {
+          await conn.sendMessage(m.chat, { video: { url: result.link }, caption: `📹 *¡Ahí tienes tu video, ${name}!*`, fileName: `${result.title}.mp4`, mimetype: 'video/mp4' }, { quoted: m });
           return m.react("📽️");
         }
-      } catch (e2) {
-        console.error("Fallback download method failed:", e2.message);
-        return conn.reply(m.chat, `❌ *¡Lo siento, ${name}!* Ambos métodos de descarga han fallado. No se pudo obtener el archivo.`, m, { contextInfo });
+      } catch (err) {
+        // Si el MÉTODO 2 también falla, se notifica el error final
+        console.error(`Error en el método de respaldo: ${err.message}`);
+        await conn.reply(m.chat, `❌ *Lo siento, ambos métodos de descarga han fallado.*\n\n*Razón del último fallo:* ${err.message}`, m, { contextInfo });
       }
     }
-    return; // End of download logic
+    return; // Finaliza la ejecución si estaba en modo descarga
   }
 
-  // --- SEARCH RESULT DISPLAY (if no mode is specified) ---
+  // --- Lógica para mostrar los botones (sin cambios) ---
   const buttons = [
     { buttonId: `${usedPrefix}play audio ${video.url}`, buttonText: { displayText: '🎵 ¡Solo el audio!' }, type: 1 },
     { buttonId: `${usedPrefix}play video ${video.url}`, buttonText: { displayText: '📹 ¡Quiero ver eso!' }, type: 1 }
