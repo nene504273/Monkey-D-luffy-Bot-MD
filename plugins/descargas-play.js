@@ -1,18 +1,17 @@
 import fetch from "node-fetch";
 import yts from "yt-search";
-import { yta, ytv } from '../lib/y2mate.js';
-import { ogmp3 } from '../lib/youtubedl.js';
 
-// --- TU CLAVE DE API ---
-const apiKey = 'stellar-FVGLV';
+// NOTA: Asegúrate de que las variables 'icons' y 'redes' estén definidas
+// en tu proyecto para que el thumbnail y el enlace del bot funcionen. Por ejemplo:
+// const icons = 'https://ejemplo.com/tu-imagen.jpg';
+// const redes = 'https://github.com/tu-usuario';
 
 const SIZE_LIMIT_MB = 100;
 const newsletterJid = '120363420846835529@newsletter';
-const newsletterName = '⏤͟͞ू⃪፝͜⁞⟡ 𝐌ᴏ𝐧𝐤𝐞𝐲 𝐃 𝐁ᴏ𝐭';
+const newsletterName = '⏤͟͞ू⃪፝͜⁞⟡ 𝐌ᴏ𝐧𝐤𝐞y 𝐃 𝐁ᴏ𝐭';
 
 const handler = async (m, { conn, args, usedPrefix, command }) => {
   const name = conn.getName(m.sender);
-
   const contextInfo = {
     mentionedJid: [m.sender],
     isForwarded: true,
@@ -25,8 +24,8 @@ const handler = async (m, { conn, args, usedPrefix, command }) => {
     externalAdReply: {
       title: '¡El Rey de los Piratas te trae música! 🎶',
       body: `¡Vamos a buscar eso, ${name}!`,
-      thumbnail: icons,
-      sourceUrl: redes,
+      thumbnail: icons, // Usará la variable 'icons' que debes definir
+      sourceUrl: redes, // Usará la variable 'redes' que debes definir
       mediaType: 1,
       renderLargerThumbnail: false
     }
@@ -36,89 +35,74 @@ const handler = async (m, { conn, args, usedPrefix, command }) => {
     return conn.reply(m.chat, `☠️ *¡Hey ${name}!* ¿Qué canción o video estás buscando?\n\nEjemplo:\n${usedPrefix}play Binks no Sake`, m, { contextInfo });
   }
 
-  const mode = (args[0] || '').toLowerCase();
-  const isDownloadMode = mode === 'audio' || mode === 'video';
-  const query = isDownloadMode ? args.slice(1).join(" ") : args.join(" ");
+  // Determina si se pide audio/video y cuál es la búsqueda (texto o URL)
+  const isMode = args[0].toLowerCase() === "audio" || args[0].toLowerCase() === "video";
+  const queryOrUrl = isMode ? args.slice(1).join(" ") : args.join(" ");
 
-  const search = await yts(query);
-  const video = search.videos?.[0];
-
-  if (!video) {
-    return conn.reply(m.chat, `😵 *¡Rayos! No encontré nada con:* "${query}"`, m, { contextInfo });
+  // Si el input es una URL de YouTube, la usa directamente, si no, la busca
+  const isUrl = queryOrUrl.match(/^(https?:\/\/)?(www\.)?(m\.)?(youtube\.com|youtu\.be)\/.+/);
+  let video;
+  if (isUrl) {
+    // Extrae el ID del video desde la URL y busca con yts
+    const videoId = queryOrUrl.split('v=')[1]?.split('&')[0] || queryOrUrl.split('/').pop();
+    video = await yts({ videoId });
+  } else {
+    // Busca por texto si no es una URL
+    const search = await yts(queryOrUrl);
+    video = search.videos?.[0];
   }
 
-  // --- Lógica de Descarga con 3 Métodos (API Key reintegrada) ---
-  if (isDownloadMode) {
-    // MÉTODO 1: API Principal con tu Key
+  if (!video) {
+    return conn.reply(m.chat, `😵 *¡Rayos! No encontré nada con:* "${queryOrUrl}"`, m, { contextInfo });
+  }
+
+  // --- Lógica de descarga directa usando la API api.vreden.my.id ---
+  if (isMode) {
+    const mode = args[0].toLowerCase();
+    const endpoint = mode === "audio" ? "ytmp3" : "ytmp4";
+    const dlApi = `https://api.vreden.my.id/api/${endpoint}?URL=${encodeURIComponent(video.url)}`;
+
     try {
-      const apiBase = "https://api.stellarwa.xyz/dow";
-      // Se añade el parámetro &apikey= con tu clave
-      const dlApi = mode === "audio" 
-        ? `${apiBase}/ytmp3?url=${encodeURIComponent(video.url)}&apikey=${apiKey}` 
-        : `${apiBase}/ytmp4?url=${encodeURIComponent(video.url)}&apikey=${apiKey}`;
-      
+      await m.react("📥"); // Reacciona para indicar que la descarga comenzó
       const res = await fetch(dlApi);
       const json = await res.json();
-      if (!json.status || !json.data?.dl) throw new Error(json.message || 'La API principal no devolvió un enlace válido');
+
+      if (!json.result || !json.result.download || !json.result.download.url) {
+        return conn.reply(m.chat, `❌ *Error descargando ${mode}:* La API no devolvió un enlace válido.`, m, { contextInfo });
+      }
       
-      const fileUrl = json.data.dl;
-      const fileName = json.data.title;
+      const downloadUrl = json.result.download.url;
+      const title = json.result.metadata.title || video.title;
+
       if (mode === "audio") {
-        await conn.sendMessage(m.chat, { audio: { url: fileUrl }, mimetype: "audio/mpeg", fileName: `${fileName}.mp3`, ptt: false }, { quoted: m });
+        await conn.sendMessage(m.chat, {
+          audio: { url: downloadUrl },
+          mimetype: "audio/mpeg",
+          fileName: `${title}.mp3`,
+          ptt: false
+        }, { quoted: m });
         return m.react("🎧");
-      } else {
-        await conn.sendMessage(m.chat, { video: { url: fileUrl }, caption: `📹 *¡Ahí tienes tu video, ${name}!*`, fileName: `${fileName}.mp4`, mimetype: 'video/mp4' }, { quoted: m });
+      } else { // mode === "video"
+        const headRes = await fetch(downloadUrl, { method: "HEAD" });
+        const fileSize = parseInt(headRes.headers.get("content-length") || "0") / (1024 * 1024);
+        const asDocument = fileSize > SIZE_LIMIT_MB;
+
+        await conn.sendMessage(m.chat, {
+          video: { url: downloadUrl },
+          caption: `📹 *¡Ahí tienes tu video, ${name}!*\n🦴 *Título:* ${title}`,
+          fileName: `${title}.mp4`,
+          mimetype: "video/mp4",
+          ...(asDocument && { asDocument: true }) // Envía como documento si supera el límite
+        }, { quoted: m });
         return m.react("📽️");
       }
     } catch (e) {
-      console.error(`Error en Método 1 (Stellar con API Key): ${e.message}`);
-      await m.reply(`⚠️ *Método 1 (API Principal) falló.*\n*Razón:* ${e.message}\n\nIntentando con el método 2...`);
-
-      // MÉTODO 2: Respaldo (y2mate.js)
-      try {
-        const downloader = mode === 'audio' ? yta : ytv;
-        const result = await downloader(video.url);
-        if (!result || !result.link) throw new Error('y2mate no devolvió un enlace válido');
-
-        const fileUrl = result.link;
-        const fileName = result.title;
-        if (mode === 'audio') {
-          await conn.sendMessage(m.chat, { audio: { url: fileUrl }, mimetype: 'audio/mpeg', fileName: `${fileName}.mp3`, ptt: false }, { quoted: m });
-          return m.react("🎧");
-        } else {
-          await conn.sendMessage(m.chat, { video: { url: fileUrl }, caption: `📹 *¡Ahí tienes tu video, ${name}!*`, fileName: `${fileName}.mp4`, mimetype: 'video/mp4' }, { quoted: m });
-          return m.react("📽️");
-        }
-      } catch (err) {
-        console.error(`Error en Método 2 (y2mate): ${err.message}`);
-        await m.reply(`⚠️ *Método 2 (Respaldo y2mate) falló.*\n*Razón:* ${err.message}\n\nIntentando con el último recurso...`);
-
-        // MÉTODO 3: Último Recurso (ogmp3)
-        try {
-          const result = await ogmp3.download(video.url, null, mode);
-          if (!result.status || !result.result?.download) {
-            throw new Error(result.error || 'ogmp3 no devolvió un enlace válido o lanzó un error');
-          }
-
-          const fileUrl = result.result.download;
-          const fileName = result.result.title;
-          if (mode === 'audio') {
-            await conn.sendMessage(m.chat, { audio: { url: fileUrl }, mimetype: 'audio/mpeg', fileName: `${fileName}.mp3`, ptt: false }, { quoted: m });
-            return m.react("🎧");
-          } else {
-            await conn.sendMessage(m.chat, { video: { url: fileUrl }, caption: `📹 *¡Ahí tienes tu video, ${name}!*`, fileName: `${fileName}.mp4`, mimetype: 'video/mp4' }, { quoted: m });
-            return m.react("📽️");
-          }
-        } catch (errorFinal) {
-          console.error(`Error en Método 3 (ogmp3): ${errorFinal.message}`);
-          await conn.reply(m.chat, `❌ *Lo siento, todos los métodos de descarga han fallado.*\n\n*Razón del último fallo:* ${errorFinal.message}`, m, { contextInfo });
-        }
-      }
+      console.error(e);
+      return conn.reply(m.chat, `❌ *Fallo inesperado:* ${e.message}`, m, { contextInfo });
     }
-    return;
   }
 
-  // --- Presentación de Resultados con Botones ---
+  // --- Menú interactivo si no se especifica modo ---
   const buttons = [
     { buttonId: `${usedPrefix}play audio ${video.url}`, buttonText: { displayText: '🎵 ¡Solo el audio!' }, type: 1 },
     { buttonId: `${usedPrefix}play video ${video.url}`, buttonText: { displayText: '📹 ¡Quiero ver eso!' }, type: 1 }
@@ -143,9 +127,9 @@ const handler = async (m, { conn, args, usedPrefix, command }) => {
   }, { quoted: m });
 };
 
-handler.help = ['play'].map(v => v + ' <texto>');
+handler.help = ['play'].map(v => v + ' <texto o URL>');
 handler.tags = ['descargas'];
-handler.command = ['play', 'yt'];
+handler.command = ['play'];
 handler.register = true;
 
 export default handler;
