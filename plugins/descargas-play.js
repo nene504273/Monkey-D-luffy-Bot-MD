@@ -33,7 +33,6 @@ const handler = async (m, { conn, args, usedPrefix, command }) => {
     return conn.reply(m.chat, `☠️ *¡Hey ${name}!* ¿Qué canción o video estás buscando?\n\nEjemplo:\n${usedPrefix}play Binks no Sake`, m, { contextInfo });
   }
 
-  // --- LÓGICA DE MODO CORREGIDA ---
   const mode = (args[0] || '').toLowerCase();
   const isDownloadMode = mode === 'audio' || mode === 'video';
   const query = isDownloadMode ? args.slice(1).join(" ") : args.join(" ");
@@ -45,7 +44,6 @@ const handler = async (m, { conn, args, usedPrefix, command }) => {
     return conn.reply(m.chat, `😵 *¡Rayos! No encontré nada con:* "${query}"`, m, { contextInfo });
   }
 
-  // --- Lógica de Descarga ---
   if (isDownloadMode) {
     // MÉTODO 1: API Principal (Stellar)
     try {
@@ -89,8 +87,6 @@ const handler = async (m, { conn, args, usedPrefix, command }) => {
 
         // MÉTODO 3: Último Recurso (ogmp3)
         try {
-          // --- LLAMADA CORREGIDA ---
-          // Ahora pasamos la variable 'mode', que contiene "audio" o "video".
           const result = await ogmp3.download(video.url, null, mode);
           if (!result.status || !result.result?.download) {
             throw new Error(result.error || 'ogmp3 no devolvió un enlace válido o lanzó un error');
