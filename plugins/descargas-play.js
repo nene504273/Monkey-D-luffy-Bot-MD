@@ -54,20 +54,19 @@ const handler = async (m, { conn, args, usedPrefix, command }) => {
 
   if (isMode) {
     const mode = args[0].toLowerCase();
+    // --- CÓDIGO CORREGIDO AQUÍ ---
+    // Se vuelve a usar la API de vreden.my.id con el parámetro 'url' en minúsculas.
     const endpoint = mode === "audio" ? "ytmp3" : "ytmp4";
-    const dlApi = `https://api.vreden.my.id/api/${endpoint}?URL=${encodeURIComponent(video.url)}`;
+    const dlApi = `https://api.vreden.my.id/api/${endpoint}?url=${encodeURIComponent(video.url)}`;
 
     try {
       await m.react("📥");
       const res = await fetch(dlApi);
       const json = await res.json();
 
-      // --- CAMBIO AQUÍ: MANEJO DE ERROR MEJORADO ---
-      // Si la API no devuelve un enlace de descarga...
+      // Mantenemos el manejo de errores mejorado
       if (!json.result?.download?.url) {
-        // Intenta obtener el mensaje de error de la API, si no, usa un mensaje por defecto.
         const errorMessage = json.result?.message || json.message || "La API no devolvió una respuesta exitosa.";
-        // Envía el error detallado al usuario.
         return conn.reply(m.chat, `❌ *Error descargando ${mode}*\n\n*Respuesta de la API:* \`\`\`${errorMessage}\`\`\``, m, { contextInfo });
       }
       
