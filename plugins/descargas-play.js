@@ -24,8 +24,8 @@ const handler = async (m, { conn, args, usedPrefix, command }) => {
     externalAdReply: {
       title: '¡El Rey de los Piratas te trae música! 🎶',
       body: `¡Vamos a buscar eso, ${name}!`,
-      thumbnail: icons, // Usará la variable 'icons' que debes definir
-      sourceUrl: redes, // Usará la variable 'redes' que debes definir
+      thumbnail: icons,
+      sourceUrl: redes,
       mediaType: 1,
       renderLargerThumbnail: false
     }
@@ -35,19 +35,15 @@ const handler = async (m, { conn, args, usedPrefix, command }) => {
     return conn.reply(m.chat, `☠️ *¡Hey ${name}!* ¿Qué canción o video estás buscando?\n\nEjemplo:\n${usedPrefix}play Binks no Sake`, m, { contextInfo });
   }
 
-  // Determina si se pide audio/video y cuál es la búsqueda (texto o URL)
   const isMode = args[0].toLowerCase() === "audio" || args[0].toLowerCase() === "video";
   const queryOrUrl = isMode ? args.slice(1).join(" ") : args.join(" ");
 
-  // Si el input es una URL de YouTube, la usa directamente, si no, la busca
   const isUrl = queryOrUrl.match(/^(https?:\/\/)?(www\.)?(m\.)?(youtube\.com|youtu\.be)\/.+/);
   let video;
   if (isUrl) {
-    // Extrae el ID del video desde la URL y busca con yts
     const videoId = queryOrUrl.split('v=')[1]?.split('&')[0] || queryOrUrl.split('/').pop();
     video = await yts({ videoId });
   } else {
-    // Busca por texto si no es una URL
     const search = await yts(queryOrUrl);
     video = search.videos?.[0];
   }
@@ -56,19 +52,23 @@ const handler = async (m, { conn, args, usedPrefix, command }) => {
     return conn.reply(m.chat, `😵 *¡Rayos! No encontré nada con:* "${queryOrUrl}"`, m, { contextInfo });
   }
 
-  // --- Lógica de descarga directa usando la API api.vreden.my.id ---
   if (isMode) {
     const mode = args[0].toLowerCase();
     const endpoint = mode === "audio" ? "ytmp3" : "ytmp4";
     const dlApi = `https://api.vreden.my.id/api/${endpoint}?URL=${encodeURIComponent(video.url)}`;
 
     try {
-      await m.react("📥"); // Reacciona para indicar que la descarga comenzó
+      await m.react("📥");
       const res = await fetch(dlApi);
       const json = await res.json();
 
-      if (!json.result || !json.result.download || !json.result.download.url) {
-        return conn.reply(m.chat, `❌ *Error descargando ${mode}:* La API no devolvió un enlace válido.`, m, { contextInfo });
+      // --- CAMBIO AQUÍ: MANEJO DE ERROR MEJORADO ---
+      // Si la API no devuelve un enlace de descarga...
+      if (!json.result?.download?.url) {
+        // Intenta obtener el mensaje de error de la API, si no, usa un mensaje por defecto.
+        const errorMessage = json.result?.message || json.message || "La API no devolvió una respuesta exitosa.";
+        // Envía el error detallado al usuario.
+        return conn.reply(m.chat, `❌ *Error descargando ${mode}*\n\n*Respuesta de la API:* \`\`\`${errorMessage}\`\`\``, m, { contextInfo });
       }
       
       const downloadUrl = json.result.download.url;
@@ -92,7 +92,7 @@ const handler = async (m, { conn, args, usedPrefix, command }) => {
           caption: `📹 *¡Ahí tienes tu video, ${name}!*\n🦴 *Título:* ${title}`,
           fileName: `${title}.mp4`,
           mimetype: "video/mp4",
-          ...(asDocument && { asDocument: true }) // Envía como documento si supera el límite
+          ...(asDocument && { asDocument: true })
         }, { quoted: m });
         return m.react("📽️");
       }
@@ -102,7 +102,6 @@ const handler = async (m, { conn, args, usedPrefix, command }) => {
     }
   }
 
-  // --- Menú interactivo si no se especifica modo ---
   const buttons = [
     { buttonId: `${usedPrefix}play audio ${video.url}`, buttonText: { displayText: '🎵 ¡Solo el audio!' }, type: 1 },
     { buttonId: `${usedPrefix}play video ${video.url}`, buttonText: { displayText: '📹 ¡Quiero ver eso!' }, type: 1 }
