@@ -54,8 +54,6 @@ const handler = async (m, { conn, args, usedPrefix, command }) => {
 
   if (isMode) {
     const mode = args[0].toLowerCase();
-    // --- CÓDIGO CORREGIDO AQUÍ ---
-    // Se vuelve a usar la API de vreden.my.id con el parámetro 'url' en minúsculas.
     const endpoint = mode === "audio" ? "ytmp3" : "ytmp4";
     const dlApi = `https://api.vreden.my.id/api/${endpoint}?url=${encodeURIComponent(video.url)}`;
 
@@ -64,20 +62,21 @@ const handler = async (m, { conn, args, usedPrefix, command }) => {
       const res = await fetch(dlApi);
       const json = await res.json();
 
-      // Mantenemos el manejo de errores mejorado
-      if (!json.result?.download?.url) {
-        const errorMessage = json.result?.message || json.message || "La API no devolvió una respuesta exitosa.";
+      // --- CÓDIGO AJUSTADO A LA ESTRUCTURA JSON PROPORCIONADA ---
+      if (json.status !== 200 || !json.result?.download?.url) {
+        const errorMessage = json.result?.message || json.message || "La API no devolvió una respuesta exitosa o un enlace válido.";
         return conn.reply(m.chat, `❌ *Error descargando ${mode}*\n\n*Respuesta de la API:* \`\`\`${errorMessage}\`\`\``, m, { contextInfo });
       }
       
       const downloadUrl = json.result.download.url;
       const title = json.result.metadata.title || video.title;
+      const fileName = json.result.download.filename || `${title}.${mode === 'audio' ? 'mp3' : 'mp4'}`;
 
       if (mode === "audio") {
         await conn.sendMessage(m.chat, {
           audio: { url: downloadUrl },
           mimetype: "audio/mpeg",
-          fileName: `${title}.mp3`,
+          fileName: fileName,
           ptt: false
         }, { quoted: m });
         return m.react("🎧");
@@ -89,7 +88,7 @@ const handler = async (m, { conn, args, usedPrefix, command }) => {
         await conn.sendMessage(m.chat, {
           video: { url: downloadUrl },
           caption: `📹 *¡Ahí tienes tu video, ${name}!*\n🦴 *Título:* ${title}`,
-          fileName: `${title}.mp4`,
+          fileName: fileName,
           mimetype: "video/mp4",
           ...(asDocument && { asDocument: true })
         }, { quoted: m });
