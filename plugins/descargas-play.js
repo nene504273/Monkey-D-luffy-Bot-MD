@@ -1,10 +1,7 @@
-import fetch from "node-fetch";
+import fetch from "node-fetch"; // Necesario para la API principal
+import { ogmp3 } from '../lib/youtubedl.js'; // Importando tu librería de respaldo
 import yts from "yt-search";
-
-// NOTA: Asegúrate de que las variables 'icons' y 'redes' estén definidas
-// en tu proyecto para que el thumbnail y el enlace del bot funcionen. Por ejemplo:
-// const icons = 'https://ejemplo.com/tu-imagen.jpg';
-// const redes = 'https://github.com/tu-usuario';
+import axios from 'axios'; // Necesario para la librería y la comprobación de tamaño
 
 const SIZE_LIMIT_MB = 100;
 const newsletterJid = '120363420846835529@newsletter';
@@ -24,8 +21,8 @@ const handler = async (m, { conn, args, usedPrefix, command }) => {
     externalAdReply: {
       title: '¡El Rey de los Piratas te trae música! 🎶',
       body: `¡Vamos a buscar eso, ${name}!`,
-      thumbnail: icons,
-      sourceUrl: redes,
+      thumbnail: icons, // Asegúrate de que la variable 'icons' esté definida globalmente
+      sourceUrl: redes, // Asegúrate de que la variable 'redes' esté definida globalmente
       mediaType: 1,
       renderLargerThumbnail: false
     }
@@ -38,15 +35,8 @@ const handler = async (m, { conn, args, usedPrefix, command }) => {
   const isMode = args[0].toLowerCase() === "audio" || args[0].toLowerCase() === "video";
   const queryOrUrl = isMode ? args.slice(1).join(" ") : args.join(" ");
 
-  const isUrl = queryOrUrl.match(/^(https?:\/\/)?(www\.)?(m\.)?(youtube\.com|youtu\.be)\/.+/);
-  let video;
-  if (isUrl) {
-    const videoId = queryOrUrl.split('v=')[1]?.split('&')[0] || queryOrUrl.split('/').pop();
-    video = await yts({ videoId });
-  } else {
-    const search = await yts(queryOrUrl);
-    video = search.videos?.[0];
-  }
+  const search = await yts(queryOrUrl);
+  const video = search.videos?.[0];
 
   if (!video) {
     return conn.reply(m.chat, `😵 *¡Rayos! No encontré nada con:* "${queryOrUrl}"`, m, { contextInfo });
@@ -54,52 +44,65 @@ const handler = async (m, { conn, args, usedPrefix, command }) => {
 
   if (isMode) {
     const mode = args[0].toLowerCase();
-    const endpoint = mode === "audio" ? "ytmp3" : "ytmp4";
-    const dlApi = `https://api.vreden.my.id/api/${endpoint}?url=${encodeURIComponent(video.url)}`;
+    await m.react("📥");
 
-    try {
-      await m.react("📥");
-      const res = await fetch(dlApi);
-      const json = await res.json();
-
-      // --- CÓDIGO AJUSTADO A LA ESTRUCTURA JSON PROPORCIONADA ---
-      if (json.status !== 200 || !json.result?.download?.url) {
-        const errorMessage = json.result?.message || json.message || "La API no devolvió una respuesta exitosa o un enlace válido.";
-        return conn.reply(m.chat, `❌ *Error descargando ${mode}*\n\n*Respuesta de la API:* \`\`\`${errorMessage}\`\`\``, m, { contextInfo });
-      }
-      
-      const downloadUrl = json.result.download.url;
-      const title = json.result.metadata.title || video.title;
-      const fileName = json.result.download.filename || `${title}.${mode === 'audio' ? 'mp3' : 'mp4'}`;
-
+    // --- Función auxiliar para enviar el medio y no repetir código ---
+    const sendMediaFile = async (downloadUrl, title) => {
       if (mode === "audio") {
         await conn.sendMessage(m.chat, {
           audio: { url: downloadUrl },
           mimetype: "audio/mpeg",
-          fileName: fileName,
-          ptt: false
+          fileName: `${title}.mp3`,
         }, { quoted: m });
-        return m.react("🎧");
-      } else { // mode === "video"
-        const headRes = await fetch(downloadUrl, { method: "HEAD" });
-        const fileSize = parseInt(headRes.headers.get("content-length") || "0") / (1024 * 1024);
+        await m.react("🎧");
+      } else {
+        const headRes = await axios.head(downloadUrl);
+        const fileSize = parseInt(headRes.headers['content-length'] || "0") / (1024 * 1024);
         const asDocument = fileSize > SIZE_LIMIT_MB;
-
         await conn.sendMessage(m.chat, {
           video: { url: downloadUrl },
           caption: `📹 *¡Ahí tienes tu video, ${name}!*\n🦴 *Título:* ${title}`,
-          fileName: fileName,
+          fileName: `${title}.mp4`,
           mimetype: "video/mp4",
           ...(asDocument && { asDocument: true })
         }, { quoted: m });
-        return m.react("📽️");
+        await m.react("📽️");
       }
+    };
+
+
+    // --- Intento 1: API Principal (api.vreden.my.id) ---
+    try {
+      const endpoint = mode === "audio" ? "ytmp3" : "ytmp4";
+      const dlApi = `https://api.vreden.my.id/api/${endpoint}?url=${encodeURIComponent(video.url)}`;
+      const res = await fetch(dlApi);
+      const json = await res.json();
+      if (json.status === 200 && json.result?.download?.url) {
+        console.log("Descarga exitosa con la API principal.");
+        await sendMediaFile(json.result.download.url, json.result.metadata.title || video.title);
+        return; // Termina la ejecución si tuvo éxito
+      }
+      throw new Error("La API principal no devolvió un enlace válido.");
     } catch (e) {
-      console.error(e);
-      return conn.reply(m.chat, `❌ *Fallo inesperado:* ${e.message}`, m, { contextInfo });
+      console.log(`Fallo de la API principal: ${e.message}. Intentando con el método de respaldo (ogmp3)...`);
+    }
+
+    // --- Intento 2: Fallback con ogmp3 ---
+    try {
+      const downloadResult = await ogmp3.download(video.url, null, mode);
+      if (downloadResult.status && downloadResult.result?.download) {
+        console.log("Descarga exitosa con el método de respaldo (ogmp3).");
+        await sendMediaFile(downloadResult.result.download, downloadResult.result.title);
+        return; // Termina la ejecución si tuvo éxito
+      }
+      throw new Error("El método de respaldo (ogmp3) tampoco funcionó.");
+    } catch (e) {
+      console.error(`Ambos métodos de descarga fallaron: ${e.message}`);
+      return m.react("❌"); // Si ambos fallan, reacciona y termina
     }
   }
 
+  // El menú de botones interactivo se mantiene sin cambios
   const buttons = [
     { buttonId: `${usedPrefix}play audio ${video.url}`, buttonText: { displayText: '🎵 ¡Solo el audio!' }, type: 1 },
     { buttonId: `${usedPrefix}play video ${video.url}`, buttonText: { displayText: '📹 ¡Quiero ver eso!' }, type: 1 }
