@@ -3,6 +3,9 @@ import yts from "yt-search";
 import { yta, ytv } from '../lib/y2mate.js';
 import { ogmp3 } from '../lib/youtubedl.js';
 
+// --- TU CLAVE DE API ---
+const apiKey = 'stellar-FVGLV';
+
 const SIZE_LIMIT_MB = 100;
 const newsletterJid = '120363420846835529@newsletter';
 const newsletterName = '⏤͟͞ू⃪፝͜⁞⟡ 𝐌ᴏ𝐧𝐤𝐞𝐲 𝐃 𝐁ᴏ𝐭';
@@ -44,11 +47,16 @@ const handler = async (m, { conn, args, usedPrefix, command }) => {
     return conn.reply(m.chat, `😵 *¡Rayos! No encontré nada con:* "${query}"`, m, { contextInfo });
   }
 
+  // --- Lógica de Descarga con 3 Métodos (API Key reintegrada) ---
   if (isDownloadMode) {
-    // MÉTODO 1: API Principal (Stellar)
+    // MÉTODO 1: API Principal con tu Key
     try {
       const apiBase = "https://api.stellarwa.xyz/dow";
-      const dlApi = mode === "audio" ? `${apiBase}/ytmp3?url=${encodeURIComponent(video.url)}` : `${apiBase}/ytmp4?url=${encodeURIComponent(video.url)}`;
+      // Se añade el parámetro &apikey= con tu clave
+      const dlApi = mode === "audio" 
+        ? `${apiBase}/ytmp3?url=${encodeURIComponent(video.url)}&apikey=${apiKey}` 
+        : `${apiBase}/ytmp4?url=${encodeURIComponent(video.url)}&apikey=${apiKey}`;
+      
       const res = await fetch(dlApi);
       const json = await res.json();
       if (!json.status || !json.data?.dl) throw new Error(json.message || 'La API principal no devolvió un enlace válido');
@@ -63,7 +71,7 @@ const handler = async (m, { conn, args, usedPrefix, command }) => {
         return m.react("📽️");
       }
     } catch (e) {
-      console.error(`Error en Método 1 (Stellar): ${e.message}`);
+      console.error(`Error en Método 1 (Stellar con API Key): ${e.message}`);
       await m.reply(`⚠️ *Método 1 (API Principal) falló.*\n*Razón:* ${e.message}\n\nIntentando con el método 2...`);
 
       // MÉTODO 2: Respaldo (y2mate.js)
