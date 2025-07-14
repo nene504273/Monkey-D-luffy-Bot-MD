@@ -1,33 +1,34 @@
 import fetch from 'node-fetch';
 import fs from 'fs';
+import path from 'path'; // Se añade 'path' para una búsqueda de archivos más segura
 
 let handler = async (m, { conn, usedPrefix, command }) => {
   let randomImageURL;
-  const dbPath = '../src/database/db.json';
 
+  // --- INICIO DEL SISTEMA DE BÚSQUEDA MEJORADO ---
   try {
-    const data = fs.readFileSync(dbPath, 'utf8');
-    const database = JSON.parse(data);
+    // 1. Se construye la ruta absoluta al archivo, sin importar dónde esté el comando.
+    const dbPath = path.join(process.cwd(), 'src', 'database', 'db.json');
+    
+    // 2. Se lee el archivo y se parsea el JSON.
+    const dbRaw = fs.readFileSync(dbPath);
+    const mediaLinks = JSON.parse(dbRaw).links; // Se accede directamente a la clave 'links'
 
-    // 1. Acceder a la ruta correcta: database.links.imagen
-    const imageList = database.links?.imagen;
-
-    // 2. Verificar que la lista exista y no esté vacía
-    if (imageList && imageList.length > 0) {
-      // Seleccionar una URL de imagen al azar
-      randomImageURL = imageList[Math.floor(Math.random() * imageList.length)];
+    // 3. Se verifica que la lista de imágenes exista y no esté vacía.
+    if (mediaLinks && mediaLinks.imagen && mediaLinks.imagen.length > 0) {
+      randomImageURL = mediaLinks.imagen[Math.floor(Math.random() * mediaLinks.imagen.length)];
     } else {
-      // Si no hay imágenes, responder al usuario y detener el comando
-      console.log("La ruta 'links.imagen' no existe o está vacía en db.json.");
-      return m.reply('No hay imágenes disponibles para mostrar en este momento. 😥');
+      // Si la lista 'imagen' no existe o está vacía, se informa al usuario.
+      console.log("ADVERTENCIA: La clave 'links.imagen' no existe o está vacía en db.json.");
+      return m.reply('Actualmente no hay imágenes disponibles para mostrar. 😥');
     }
-  } catch (error) {
-    // Si hay un error al leer el archivo, informar y detener
-    console.error("Error al procesar el archivo db.json:", error);
-    return m.reply('Ocurrió un error al intentar obtener una imagen. 😕');
+  } catch (e) {
+    // 4. Si hay cualquier error al leer o encontrar el archivo, se notifica y se detiene.
+    console.error("Error al leer o parsear src/database/db.json:", e);
+    return conn.reply(m.chat, 'Error: No pude encontrar la base de datos de imágenes. ☠️', m);
   }
+  // --- FIN DEL SISTEMA DE BÚSQUEDA ---
 
-  // Si todo salió bien, 'randomImageURL' tendrá un valor y el código continúa
   let grupos = `*Hola!, te invito a unirte a los grupos oficiales del Bot para convivir con la comunidad.....*
 
 - ${namegrupo}
@@ -45,9 +46,8 @@ ${namecomu}
 
 > ${dev}`;
 
-  // Enviar la imagen aleatoria obtenida
+  // Se envía la imagen aleatoria con el texto.
   await conn.sendFile(m.chat, randomImageURL, "grupos.jpg", grupos, m);
-
   await m.react(emojis);
 };
 
