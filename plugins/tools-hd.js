@@ -2,12 +2,12 @@ import FormData from "form-data";
 import Jimp from "jimp";
 import https from "https";
 
-// Emojis y frases con temática de Luffy y piratas
-const luffyEmoji = "🏴‍☠️";
-const luffyPhrase1 = "¡Prepárense para la aventura!";
-const luffyPhrase2 = "¡Rumbo a la alta mar!";
-const luffyPhrase3 = "¡El Rey de los Piratas quiere esta imagen en HD!";
-const luffyError = "¡Parece que el Grand Line nos jugó una mala pasada! 😥";
+// Emojis y frases de Luffy y su mundo
+const luffyEmoji = "🍖🏴‍☠️";
+const luffyPhrase1 = "¡Oye, Nakama! ¡Responde a una imagen para que la vuelva más épica!";
+const luffyPhrase2 = "¡Eso no es una imagen válida! Usa formato JPG o PNG, ¿vale?";
+const luffyPhrase3 = "¡Vamos a hacerla más HD que una fruta del diablo brillante!";
+const luffyError = "¡Maldita sea! ¡La imagen se nos escapó como un Pacifista! 😤";
 
 const handler = async (m, { conn, usedPrefix, command }) => {
   try {
@@ -15,14 +15,14 @@ const handler = async (m, { conn, usedPrefix, command }) => {
     const mime = (q.msg || q).mimetype || q.mediaType || "";
 
     if (!mime) {
-      return m.reply(`${luffyEmoji} ${luffyPhrase1} Por favor, responde a una imagen para mejorarla a *HD*`);
+      return m.reply(`${luffyEmoji} ${luffyPhrase1}`);
     }
 
     if (!/image\/(jpe?g|png)/.test(mime)) {
-      return m.reply(`${luffyEmoji} ${luffyPhrase2} ¡El formato del archivo (${mime}) no es válido! Usa JPG o PNG.`);
+      return m.reply(`${luffyEmoji} ${luffyPhrase2}`);
     }
 
-    await conn.reply(m.chat, `${luffyEmoji} ${luffyPhrase3} ¡Mejorando la calidad con Haki del Rey!...`, m);
+    await conn.reply(m.chat, `${luffyEmoji} ${luffyPhrase3} ¡Activando el Haki del Rey!...`, m);
 
     const imgBuffer = await q.download?.();
     if (!imgBuffer) return m.reply(`${luffyError} No pude descargar la imagen.`);
@@ -30,20 +30,20 @@ const handler = async (m, { conn, usedPrefix, command }) => {
     const result = await remini(imgBuffer, "enhance");
 
     if (!result || !Buffer.isBuffer(result)) {
-      return m.reply(`${luffyError} No se pudo mejorar la imagen.`);
+      return m.reply(`${luffyError} No se pudo mejorar la imagen. El Going Merry se hundió 🥲`);
     }
 
     await conn.sendMessage(m.chat, { image: result }, { quoted: m });
 
   } catch (error) {
     console.error(error);
-    return m.reply(`${luffyError} Ocurrió un error inesperado. Intenta más tarde.`);
+    return m.reply(`${luffyError} Ocurrió un error inesperado. ¡Llama a Franky para arreglar esto!`);
   }
 };
 
 handler.help = ["remini", "hd", "enhance"];
 handler.tags = ["ai", "tools"];
-handler.command = ["remini", "hd", "enhance"];
+handler.command = ["luffyhd", "gomuHD", "onepiecehd"];
 handler.group = true;
 handler.register = true;
 
@@ -70,7 +70,7 @@ async function remini(imageBuffer, operation) {
       },
       (res) => {
         if (res.statusCode !== 200) {
-          return reject(new Error("Respuesta inesperada: " + res.statusCode));
+          return reject(new Error("Respuesta inesperada del Marine: " + res.statusCode));
         }
         const data = [];
         res.on("data", (chunk) => data.push(chunk));
