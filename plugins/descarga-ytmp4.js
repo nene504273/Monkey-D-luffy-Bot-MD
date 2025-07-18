@@ -10,9 +10,6 @@ var handler = async (m, { conn, args, usedPrefix, command }) => {
   const emoji = '🏴‍☠️';
   const namebotLuffy = 'Sombrero de Paja Bot';
   const devLuffy = '¡Por el Rey de los Piratas!';
-  // ¡IMPORTANTE! Reemplaza esta URL con una imagen real y accesible de Luffy para tu bot.
-  const iconsLuffy = 'https://i.imgur.com/your_luffy_icon.jpg'; // <-- ¡CÁMBIAME!
-  const redesLuffy = 'https://one-piece.com/'; // Placeholder, asegúrate de que sea una URL válida si la usas.
 
   // Configuración para la vista previa del mensaje en WhatsApp.
   const contextInfo = {
@@ -31,8 +28,8 @@ var handler = async (m, { conn, args, usedPrefix, command }) => {
     externalAdReply: {
       title: namebotLuffy,
       body: devLuffy,
-      thumbnail: iconsLuffy,
-      sourceUrl: redesLuffy,
+      thumbnail: icons,
+      sourceUrl: redes,
       mediaType: 1, // 1 para imagen (thumbnail), 2 para video. Asegúrate de que sea correcto.
       renderLargerThumbnail: false
     }
