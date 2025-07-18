@@ -1,7 +1,7 @@
-import fetch from "node-fetch"; // Necesario para la API principal
-import { ogmp3 } from '../lib/youtubedl.js'; // Importando tu librería de respaldo
+import fetch from "node-fetch";
+import { ogmp3 } from '../lib/youtubedl.js';
 import yts from "yt-search";
-import axios from 'axios'; // Necesario para la librería y la comprobación de tamaño
+import axios from 'axios';
 
 const SIZE_LIMIT_MB = 100;
 const newsletterJid = '120363420846835529@newsletter';
@@ -21,8 +21,8 @@ const handler = async (m, { conn, args, usedPrefix, command }) => {
     externalAdReply: {
       title: '¡El Rey de los Piratas te trae música! 🎶',
       body: `¡Vamos a buscar eso, ${name}!`,
-      thumbnail: icons, // Asegúrate de que la variable 'icons' esté definida globalmente
-      sourceUrl: redes, // Asegúrate de que la variable 'redes' esté definida globalmente
+      thumbnail: global.icons || 'https://i.imgur.com/JP52fdP.jpg',
+      sourceUrl: global.redes || 'https://www.youtube.com/',
       mediaType: 1,
       renderLargerThumbnail: false
     }
@@ -46,63 +46,82 @@ const handler = async (m, { conn, args, usedPrefix, command }) => {
     const mode = args[0].toLowerCase();
     await m.react("📥");
 
-    // --- Función auxiliar para enviar el medio y no repetir código ---
+    // Función auxiliar con verificación de tipo MIME
     const sendMediaFile = async (downloadUrl, title) => {
-      if (mode === "audio") {
+      try {
+        const head = await axios.head(downloadUrl);
+        const mime = head.headers['content-type'] || '';
+        const sizeMB = parseInt(head.headers['content-length'] || "0") / (1024 * 1024);
+
+        if (mode === "audio" && !mime.includes("audio")) {
+          throw new Error('La URL no apunta a un archivo de audio válido.');
+        }
+        if (mode === "video" && !mime.includes("video")) {
+          throw new Error('La URL no apunta a un archivo de video válido.');
+        }
+
+        const fileOptions = {
+          mimetype: mode === "audio" ? "audio/mpeg" : "video/mp4",
+          fileName: `${title}.${mode === "audio" ? "mp3" : "mp4"}`,
+          ...(mode === "video" && sizeMB > SIZE_LIMIT_MB && { asDocument: true })
+        };
+
         await conn.sendMessage(m.chat, {
-          audio: { url: downloadUrl },
-          mimetype: "audio/mpeg",
-          fileName: `${title}.mp3`,
+          [mode]: { url: downloadUrl },
+          ...(mode === "video" ? { caption: `📹 *¡Ahí tienes tu video, ${name}!*\n🦴 *Título:* ${title}` } : {}),
+          ...fileOptions
         }, { quoted: m });
-        await m.react("🎧");
-      } else {
-        const headRes = await axios.head(downloadUrl);
-        const fileSize = parseInt(headRes.headers['content-length'] || "0") / (1024 * 1024);
-        const asDocument = fileSize > SIZE_LIMIT_MB;
-        await conn.sendMessage(m.chat, {
-          video: { url: downloadUrl },
-          caption: `📹 *¡Ahí tienes tu video, ${name}!*\n🦴 *Título:* ${title}`,
-          fileName: `${title}.mp4`,
-          mimetype: "video/mp4",
-          ...(asDocument && { asDocument: true })
-        }, { quoted: m });
-        await m.react("📽️");
+
+        await m.react(mode === "audio" ? "🎧" : "📽️");
+
+      } catch (err) {
+        console.error(`❌ Error al enviar ${mode}:`, err.message);
+        return m.reply(`❌ Error al procesar el ${mode}. El archivo podría no ser válido o estar caído.`);
       }
     };
 
-
-    // --- Intento 1: API Principal (api.vreden.my.id) ---
+    // --- Intento 1: API principal ---
     try {
       const endpoint = mode === "audio" ? "ytmp3" : "ytmp4";
       const dlApi = `https://api.vreden.my.id/api/${endpoint}?url=${encodeURIComponent(video.url)}`;
       const res = await fetch(dlApi);
       const json = await res.json();
+
       if (json.status === 200 && json.result?.download?.url) {
-        console.log("Descarga exitosa con la API principal.");
+        console.log("✅ Descarga desde API principal exitosa.");
         await sendMediaFile(json.result.download.url, json.result.metadata.title || video.title);
-        return; // Termina la ejecución si tuvo éxito
+        return;
       }
-      throw new Error("La API principal no devolvió un enlace válido.");
+
+      throw new Error("Respuesta inválida de la API principal.");
     } catch (e) {
-      console.log(`Fallo de la API principal: ${e.message}. Intentando con el método de respaldo (ogmp3)...`);
+      console.warn("⚠️ Fallback a ogmp3: ", e.message);
     }
 
-    // --- Intento 2: Fallback con ogmp3 ---
+    // --- Intento 2: ogmp3 ---
     try {
       const downloadResult = await ogmp3.download(video.url, null, mode);
       if (downloadResult.status && downloadResult.result?.download) {
-        console.log("Descarga exitosa con el método de respaldo (ogmp3).");
+        console.log("✅ Descarga desde ogmp3 exitosa.");
         await sendMediaFile(downloadResult.result.download, downloadResult.result.title);
-        return; // Termina la ejecución si tuvo éxito
+        return;
       }
-      throw new Error("El método de respaldo (ogmp3) tampoco funcionó.");
+      throw new Error("ogmp3 falló.");
     } catch (e) {
-      console.error(`Ambos métodos de descarga fallaron: ${e.message}`);
-      return m.react("❌"); // Si ambos fallan, reacciona y termina
+      console.error("❌ Todos los métodos de descarga fallaron:", e.message);
+      return m.react("❌");
     }
   }
 
-  // El menú de botones interactivo se mantiene sin cambios
+  // --- Botones interactivos (modo no especificado) ---
+  let thumbnail = video.thumbnail;
+  try {
+    const head = await axios.head(thumbnail);
+    if (!head.headers['content-type'].startsWith('image/')) throw new Error();
+  } catch {
+    thumbnail = 'https://i.imgur.com/JP52fdP.jpg';
+  }
+
   const buttons = [
     { buttonId: `${usedPrefix}play audio ${video.url}`, buttonText: { displayText: '🎵 ¡Solo el audio!' }, type: 1 },
     { buttonId: `${usedPrefix}play video ${video.url}`, buttonText: { displayText: '📹 ¡Quiero ver eso!' }, type: 1 }
@@ -119,7 +138,7 @@ const handler = async (m, { conn, args, usedPrefix, command }) => {
 ╰───────────────────────────────`;
 
   await conn.sendMessage(m.chat, {
-    image: { url: video.thumbnail },
+    image: { url: thumbnail },
     caption,
     footer: '¡Elige lo que quieres, nakama!',
     buttons,
