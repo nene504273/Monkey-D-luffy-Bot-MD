@@ -2,10 +2,15 @@
 import fetch from 'node-fetch';
 
 const newsletterJid = '120363420846835529@newsletter';
-const newsletterName = '⏤͟͞ू⃪፝͜⁞⟡『 🏴‍☠️MONKEY • D • L U F F Y🏴‍☠️ 』࿐⟡';
+const newsletterName = '⏤͟͞ू⃪፝͜⁞⟡『 🏴‍☠️MONKEY • D • L U F F Y🏴‍☠️ 』࿐⟡'; // Ya está temático de Luffy
 
 var handler = async (m, { conn, args, usedPrefix, command }) => {
-  const emoji = '🎥';
+  const emoji = '🏴‍☠️'; // Emoji temático de Luffy
+  const namebotLuffy = 'Sombrero de Paja Bot'; // Nombre del bot temático de Luffy
+  const devLuffy = '¡Por el Rey de los Piratas!'; // Frase del desarrollador temático de Luffy
+  const iconsLuffy = 'https://i.imgur.com/your_luffy_icon.jpg'; // Placeholder para ícono de Luffy
+  const redesLuffy = 'https://one-piece.com/'; // Placeholder para URL de One Piece
+
   const contextInfo = {
     mentionedJid: [m.sender],
     isForwarded: true,
@@ -16,10 +21,10 @@ var handler = async (m, { conn, args, usedPrefix, command }) => {
       serverMessageId: -1
     },
     externalAdReply: {
-      title: namebot,
-      body: dev,
-      thumbnail: icons,
-      sourceUrl: redes,
+      title: namebotLuffy, // Usando el nombre temático de Luffy
+      body: devLuffy, // Usando la frase temática de Luffy
+      thumbnail: iconsLuffy, // Usando el placeholder para el ícono de Luffy
+      sourceUrl: redesLuffy, // Usando el placeholder para la URL de One Piece
       mediaType: 1,
       renderLargerThumbnail: false
     }
@@ -28,7 +33,7 @@ var handler = async (m, { conn, args, usedPrefix, command }) => {
   if (!args[0]) {
     return conn.reply(
       m.chat,
-      `${emoji} *Oh senpai~* pásame un link de YouTube para traerte el videito.\n\nEjemplo de uso:\n*${usedPrefix + command} https://youtu.be/3vWtHIA2b7c*`,
+      `${emoji} *¡Oye, nakama!* Necesito un enlace de YouTube para descargar ese video. ¡Vamos, no perdamos el tiempo!\n\nEjemplo de uso:\n*${usedPrefix + command} https://youtu.be/3vWtHIA2b7c*`,
       m,
       { contextInfo, quoted: m }
     );
@@ -37,7 +42,8 @@ var handler = async (m, { conn, args, usedPrefix, command }) => {
   try {
     await conn.reply(
       m.chat,
-      `🌺 *E S P E R E*\n- 🍃 Se está descargando su video, dame un momentito >w<`,
+      `🍖 *¡Gomu Gomu no... Descarga!*
+- 🏴‍☠️ ¡Estoy en ello, nakama! Dame un segundo para traer ese video.`,
       m,
       { contextInfo, quoted: m }
     );
@@ -50,7 +56,7 @@ var handler = async (m, { conn, args, usedPrefix, command }) => {
     if (json.status !== 200 || !json.result?.download?.url) {
       return conn.reply(
         m.chat,
-        `❌ *No pude descargar el video.*\nRazón: ${json.message || 'Respuesta inválida.'}`,
+        `❌ *¡Rayos! No pude descargar el video, nakama.*\nRazón: ${json.message || 'La respuesta no es la que esperaba. ¡Quizás el Grand Line es más difícil de lo que pensaba!'}.`,
         m,
         { contextInfo, quoted: m }
       );
@@ -79,15 +85,15 @@ var handler = async (m, { conn, args, usedPrefix, command }) => {
       m.chat,
       {
         video: videoBuffer,
-        caption: 
-`╭━━━━[ 𝚈𝚃𝙼𝙿𝟺 𝙳𝚎𝚌𝚘𝚍𝚎𝚍 ]━━━━⬣
+        caption:
+`╭━━━━[ 🏴‍☠️ YTMP4 del Rey de los Piratas 🏴‍☠️ ]━━━━⬣
 📹 *Título:* ${title}
-🧑‍💻 *Autor:* ${author?.name || 'Desconocido'}
-🕒 *Duración:* ${timestamp}
-📅 *Publicado:* ${json.result.metadata.ago}
-👁️ *Vistas:* ${views.toLocaleString()}
-🎞️ *Calidad:* ${quality}
-📄 *Descripción:*
+🧑‍💻 *Tripulación:* ${author?.name || 'Desconocido'}
+🕒 *Duración de la Aventura:* ${timestamp}
+📅 *Fecha de Zarpe:* ${json.result.metadata.ago}
+👁️ *Vistas por la Tripulación:* ${views.toLocaleString()}
+🎞️ *Calidad de la Aventura:* ${quality}
+📄 *Bitácora del Capitán:*
 ${description}
 ╰━━━━━━━━━━━━━━━━━━⬣`,
         mimetype: 'video/mp4',
@@ -99,7 +105,7 @@ ${description}
     console.error(e);
     await conn.reply(
       m.chat,
-      `❌ *Ocurrió un error al procesar el video.*\nDetalles: ${e.message}`,
+      `❌ *¡Problemas en el Grand Line!* Ocurrió un error al procesar el video, nakama.\nDetalles: ${e.message}. ¡Necesitamos más carne para esto!`,
       m,
       { contextInfo, quoted: m }
     );
