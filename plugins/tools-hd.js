@@ -7,7 +7,7 @@ const rwait = "⏳";  // Emoji espera
 const done = "✅";   // Emoji listo
 const error = "❌";  // Emoji error
 const emoji = "❕";  // Emoji info
-const dev = "👑 luffy-sama te cuida ~";
+const dev = "👑 Luffy-sama te cuida ~";
 
 function formatBytes(bytes) {
   if (bytes === 0) return '0 B';
@@ -58,23 +58,11 @@ let handler = async (m, { conn }) => {
     // Construir URL de upscale HD con la API de Stellar
     let apiUpscaleUrl = `https://api.stellarwa.xyz/tools/upscale?url=${encodeURIComponent(urlCatbox)}&apikey=stellar-o7UYR5SC`;
 
-    // Llamar API para obtener la imagen en HD
+    // Llamar API para obtener la imagen en HD (recibimos binario directo)
     let resUpscale = await fetch(apiUpscaleUrl);
     if (!resUpscale.ok) throw new Error("Upscale API falló, intenta luego.");
 
-    let jsonUpscale = await resUpscale.json();
-
-    if (!jsonUpscale || !jsonUpscale.result || !jsonUpscale.result.url) {
-      throw new Error("No recibí la imagen HD de la API, intenta otra vez.");
-    }
-
-    let urlHD = jsonUpscale.result.url;
-
-    // Descargar la imagen HD para enviarla como buffer
-    let resHD = await fetch(urlHD);
-    if (!resHD.ok) throw new Error("No pude descargar la imagen HD :(");
-
-    let bufferHD = Buffer.from(await resHD.arrayBuffer());
+    let bufferHD = Buffer.from(await resUpscale.arrayBuffer());
 
     // Enviar la imagen HD con texto estilo Luffy
     let textoLuffy = `
