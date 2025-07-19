@@ -46,7 +46,7 @@ const handler = async (m, { conn }) => {
 
 handler.help = ["remini", "hd", "enhance"];
 handler.tags = ["ai", "tools"];
-handler.command = ["luffyhd", "gomuHD", "onepiecehd"];
+handler.command = ["luffyhd", "hd", "onepiecehd"];
 handler.group = true;
 handler.register = true;
 
