@@ -3,6 +3,12 @@ import crypto from "crypto";
 import { FormData, Blob } from "formdata-node";
 import { fileTypeFromBuffer } from "file-type";
 
+const rwait = "⏳";  // Emoji espera
+const done = "✅";   // Emoji listo
+const error = "❌";  // Emoji error
+const emoji = "❕";  // Emoji info
+const dev = "👑 luffy-sama te cuida ~";
+
 function formatBytes(bytes) {
   if (bytes === 0) return '0 B';
   const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
@@ -30,50 +36,63 @@ async function catbox(content) {
   return await response.text();
 }
 
-const rwait = '⏳';   // Emoji esperando
-const done = '✅';   // Emoji hecho
-const error = '❌';  // Emoji error
-
 let handler = async (m, { conn }) => {
-  if (!m.quoted) return conn.reply(m.chat, '🦴 *¡Oye! Responde a una imagen para mejorarla en HD, nakama!*', m);
-  let q = m.quoted;
+  // Revisar si el mensaje es respuesta a imagen
+  let q = m.quoted ? m.quoted : null;
+  if (!q) return conn.reply(m.chat, `${emoji} ¡Oye, responde a una imagen, no seas lento!`, m);
   let mime = (q.msg || q).mimetype || '';
-  if (!mime.includes('image')) return conn.reply(m.chat, '☠️ *¡Solo funciona respondiendo imágenes, amigo!*', m);
+  if (!mime || !mime.startsWith("image/")) return conn.reply(m.chat, `${emoji} ¡Eso no es una imagen, responde a una imagen!`, m);
 
   await m.react(rwait);
 
   try {
-    // Descarga la imagen original
+    // Descargar imagen original
     let media = await q.download();
-    // Sube la imagen original a catbox para obtener URL (opcional, pero sirve para fallback)
-    let originalUrl = await catbox(media);
+    if (!media || media.length === 0) throw new Error("No pude descargar la imagen :(");
 
-    // Llama la API de Stellar para mejorar imagen en HD
-    const apiUrl = `https://api.stellarwa.xyz/tools/upscale?url=${encodeURIComponent(originalUrl)}&apikey=stellar-o7UYR5SC`;
-    const res = await fetch(apiUrl);
-    if (!res.ok) throw new Error('API no respondió bien.');
-    const json = await res.json();
+    // Subir imagen a Catbox para obtener link accesible públicamente
+    let urlCatbox = await catbox(media);
 
-    if (!json.status || !json.result) throw new Error('No se pudo mejorar la imagen.');
+    if (!urlCatbox || !urlCatbox.startsWith("http")) throw new Error("No pude subir la imagen a Catbox, falla de servidor.");
 
-    const hdUrl = json.result;
+    // Construir URL de upscale HD con la API de Stellar
+    let apiUpscaleUrl = `https://api.stellarwa.xyz/tools/upscale?url=${encodeURIComponent(urlCatbox)}&apikey=stellar-o7UYR5SC`;
 
-    // Envía la imagen mejorada
-    let caption = `
-🚀 *¡Aumentando la potencia, nakama!*
-👊 Imagen mejorada en HD lista para ti, ¡disfrútala con toda la fuerza! 💥`;
+    // Llamar API para obtener la imagen en HD
+    let resUpscale = await fetch(apiUpscaleUrl);
+    if (!resUpscale.ok) throw new Error("Upscale API falló, intenta luego.");
+
+    let jsonUpscale = await resUpscale.json();
+
+    if (!jsonUpscale || !jsonUpscale.result || !jsonUpscale.result.url) {
+      throw new Error("No recibí la imagen HD de la API, intenta otra vez.");
+    }
+
+    let urlHD = jsonUpscale.result.url;
+
+    // Descargar la imagen HD para enviarla como buffer
+    let resHD = await fetch(urlHD);
+    if (!resHD.ok) throw new Error("No pude descargar la imagen HD :(");
+
+    let bufferHD = Buffer.from(await resHD.arrayBuffer());
+
+    // Enviar la imagen HD con texto estilo Luffy
+    let textoLuffy = `
+🐒 *¡Oye, mira! Aquí tienes la imagen en HD que me pediste, ¡más clara que el agua del Grand Line!*
+
+🔥 _¡Disfrútala, nakama!_ 💥
+`;
 
     await conn.sendMessage(m.chat, {
-      image: { url: hdUrl },
-      caption,
+      image: bufferHD,
+      caption: textoLuffy.trim()
     }, { quoted: m });
 
     await m.react(done);
-
   } catch (e) {
     console.error(e);
     await m.react(error);
-    return conn.reply(m.chat, '💀 *¡Ugh, algo falló mientras mejoraba la imagen, intenta otra vez!*', m);
+    return conn.reply(m.chat, `⚠️ ¡Uuups! Algo salió mal, intenta de nuevo o dime a Rem-chan qué pasó.\n\n*Error:* ${e.message}`, m);
   }
 };
 
