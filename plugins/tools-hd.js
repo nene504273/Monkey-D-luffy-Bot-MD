@@ -1,6 +1,6 @@
 import fetch from "node-fetch";
-import { FormData, Blob } from "formdata-node";
 import crypto from "crypto";
+import { FormData, Blob } from "formdata-node";
 import { fileTypeFromBuffer } from "file-type";
 
 const luffyEmoji = "🍖🏴‍☠️";
@@ -12,53 +12,60 @@ const luffyError = "¡Maldita sea! ¡La imagen se nos escapó como un Pacifista!
 const handler = async (m, { conn }) => {
   try {
     const q = m.quoted ? m.quoted : m;
-    const mime = (q.msg || q).mimetype || q.mediaType || "";
+    const mime = (q.msg || q).mimetype || "";
 
     if (!mime) return m.reply(`${luffyEmoji} ${luffyPhrase1}`);
     if (!/image\/(jpe?g|png)/.test(mime)) return m.reply(`${luffyEmoji} ${luffyPhrase2}`);
 
-    await m.reply(`${luffyEmoji} ${luffyPhrase3} ¡Activando el Haki del Rey!...`);
+    await conn.reply(m.chat, `${luffyEmoji} ${luffyPhrase3} ¡Activando el Haki del Rey!...`, m);
 
-    const buffer = await q.download();
-    if (!buffer) return m.reply(`${luffyError} No pude descargar la imagen.`);
+    const imgBuffer = await q.download?.();
+    if (!imgBuffer) return m.reply(`${luffyError} No pude descargar la imagen.`);
 
-    const imageUrl = await catbox(buffer);
-    const apiKey = "stellar-o7UYR5SC";
-    const upscaleUrl = `https://api.stellarwa.xyz/tools/upscale?url=${encodeURIComponent(imageUrl)}&apikey=${apiKey}`;
+    const imgUrl = await catbox(imgBuffer);
 
-    const response = await fetch(upscaleUrl);
-    const json = await response.json();
+    if (!imgUrl) return m.reply(`${luffyError} No pude subir la imagen a catbox.`);
 
-    if (!json.status || !json.result?.url) {
-      return m.reply(`${luffyError} No pudimos encontrar el One Piece (la imagen HD) 😞`);
+    const apiUrl = `https://api.stellarwa.xyz/tools/upscale?url=${encodeURIComponent(imgUrl)}&apikey=stellar-o7UYR5SC`;
+    const res = await fetch(apiUrl);
+    const json = await res.json();
+
+    if (!json.status || !json.result) {
+      return m.reply(`${luffyError} No se pudo mejorar la imagen. El Going Merry se hundió 🥲`);
     }
 
+    const improvedUrl = json.result; // URL de la imagen mejorada
+
     await conn.sendMessage(m.chat, {
-      image: { url: json.result.url },
-      caption: `🏴‍☠️ ¡Aquí está tu imagen en modo HD épico, Nakama!`,
+      image: { url: improvedUrl },
+      caption: "✨ Aquí tienes tu imagen mejorada con Haki del Rey! " + luffyEmoji,
     }, { quoted: m });
 
-  } catch (err) {
-    console.error(err);
-    m.reply(`${luffyError} Llama a Franky, ¡esto necesita reparaciones!`);
+  } catch (error) {
+    console.error(error);
+    return m.reply(`${luffyError} Ocurrió un error inesperado. ¡Llama a Franky para arreglar esto!`);
   }
 };
 
-handler.help = ["remini", "hd", "enhance"];
-handler.tags = ["ai", "tools"];
-handler.command = ["luffyhd", "hd", "onepiecehd"];
+handler.help = ["hd", "enhance", "remini"];
+handler.tags = ["tools", "ai"];
+handler.command = ["hd", "enhance", "remini"];
 handler.group = true;
 handler.register = true;
 
 export default handler;
 
+// Función para subir a catbox.moe
 async function catbox(content) {
   const { ext, mime } = (await fileTypeFromBuffer(content)) || {};
-  const blob = new Blob([content.toArrayBuffer()], { type: mime });
+  if (!ext || !mime) throw new Error("No se pudo determinar el tipo de archivo.");
+
+  const blob = new Blob([content], { type: mime });
   const formData = new FormData();
-  const randomBytes = crypto.randomBytes(5).toString("hex");
+
+  const randomName = crypto.randomBytes(5).toString("hex") + "." + ext;
   formData.append("reqtype", "fileupload");
-  formData.append("fileToUpload", blob, randomBytes + "." + ext);
+  formData.append("fileToUpload", blob, randomName);
 
   const response = await fetch("https://catbox.moe/user/api.php", {
     method: "POST",
@@ -69,7 +76,11 @@ async function catbox(content) {
     },
   });
 
-  const url = await response.text();
-  if (!url.startsWith("http")) throw new Error("Error subiendo a Catbox");
-  return url;
+  const text = await response.text();
+
+  if (!text.startsWith("https://")) {
+    throw new Error("Error al subir a catbox: " + text);
+  }
+
+  return text.trim();
 }
