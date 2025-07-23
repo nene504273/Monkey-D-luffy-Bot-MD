@@ -31,7 +31,7 @@ import pkg from 'google-libphonenumber'
 const { PhoneNumberUtil } = pkg
 const phoneUtil = PhoneNumberUtil.getInstance()
 const {DisconnectReason, useMultiFileAuthState, MessageRetryMap, fetchLatestBaileysVersion, makeCacheableSignalKeyStore, jidNormalizedUser} = await import('@whiskeysockets/baileys')
-import readline, { createInterface } => from 'readline'
+import readline, { createInterface } from 'readline'
 import NodeCache from 'node-cache'
 const {CONNECTING} = ws
 const {chain} = lodash
