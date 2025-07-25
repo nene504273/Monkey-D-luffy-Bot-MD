@@ -1,49 +1,26 @@
-
-```javascript
-import { WAMessageStubType } from '@whiskeysockets/baileys';
-import fetch from 'node-fetch';
+import { WAMessageStubType } from '@whiskeysockets/baileys'
+import fetch from 'node-fetch'
 
 export async function before(m, { conn, participants, groupMetadata }) {
-  if (!m.messageStubType || !m.isGroup) return true;
+  if (!m.messageStubType || !m.isGroup) return !0;
 
-  const fkontak = {
-    key: {
-      participants: "0@s.whatsapp.net",
-      remoteJid: "status@broadcast",
-      fromMe: false,
-      id: "Halo"
-    },
-    message: {
-      contactMessage: {
-        vcard: `BEGIN:VCARD\nVERSION:3.0\nN:Sy;Bot;;;\nFN:y\nitem1.TEL;waid=${m.sender.split('@')[0]}:${m.sender.split('@')[0]}\nitem1.X-ABLabel:Ponsel\nEND:VCARD`
-      }
-    },
-    participant: "0@s.whatsapp.net"
-  };
+  let who = m.messageStubParameters[0]
+  let taguser = `@${who.split('@')[0]}`
+  let chat = global.db.data.chats[m.chat]
+  let pp = await conn.profilePictureUrl(m.messageStubParameters[0], 'image').catch(_ => 'https://files.catbox.moe/xr2m6u.jpg')
+  let img = await (await fetch(`${pp}`)).buffer()
 
-  const username = encodeURIComponent(m.messageStubParameters[0].split('@')[0]);
-  const guildName = encodeURIComponent(groupMetadata.subject);
-  const memberCount = participants.length + (m.messageStubType === 27 ? 1 : 0) - ((m.messageStubType === 28 || m.messageStubType === 32) ? 1 : 0);
-  const avatar = encodeURIComponent(await conn.profilePictureUrl(m.messageStubParameters[0], 'image').catch(() => 'https://files.catbox.moe/emwtzj.png'));
-
-  const backgroundWelcome = encodeURIComponent('https://files.catbox.moe/o871ey.jpg');
-  const backgroundGoodbye = encodeURIComponent('https://files.catbox.moe/3lw6bx.jpg');
-
-  const welcomeApiUrl = `https://api.siputzx.my.id/api/canvas/welcomev1?username=${username}&guildName=${guildName}&memberCount=${memberCount}&avatar=${avatar}&background=${backgroundWelcome}&quality=80`;
-  const goodbyeApiUrl = `https://api.siputzx.my.id/api/canvas/welcomev1?username=${username}&guildName=${guildName}&memberCount=${memberCount}&avatar=${avatar}&background=${backgroundGoodbye}&quality=80`;
-
-  async function fetchImage(url, fallbackUrl) {
-    try {
-      const res = await fetch(url);
-      if (!res.ok) throw new Error('No se pudo descargar');
-      return await res.buffer();
-    } catch {
-      const resFallback = await fetch(fallbackUrl);
-      if (!resFallback.ok) throw new Error('No se pudo descargar fallback');
-      return await resFallback.buffer();
+    if (chat.welcome && m.messageStubType === WAMessageStubType.GROUP_PARTICIPANT_ADD) {
+      let bienvenida = `❀ *Bienvenido* a ${groupMetadata.subject}\n ✰ ${taguser}\n${global.welcom1}\n •(=^●ω●^=)• Disfruta tu estadía en el grupo!\n> ✐ Puedes usar *#help* para ver la lista de comandos.`
+      await conn.sendMessage(m.chat, { image: img, caption: bienvenida, mentions: [who] })
     }
-  }
+       
+    if (chat.welcome && m.messageStubType === WAMessageStubType.GROUP_PARTICIPANT_LEAVE) {
+      let bye = `❀ *Adiós* de ${groupMetadata.subject}\n ✰ ${taguser}\n${global.welcom2}\n •(=^●ω●^=)• Te esperamos pronto!\n> ✐ Puedes usar *#help* para ver la lista de comandos.`
+      await conn.sendMessage(m.chat, { image: img, caption: bye, mentions: [who] })
+    }
 
-  let chat = global.db.data.chats[m.chat];
-  let txtWelcome = 'ゲ◜៹ New Member ៹◞ゲ';
-  let txtGoodbye = 'ゲ◜
+    if (chat.welcome && m.messageStubType === WAMessageStubType.GROUP_PARTICIPANT_REMOVE) { 
+      let kick = `❀ *Adiós* de ${groupMetadata.subject}\n ✰ ${taguser}\n${global.welcom2}\n •(=^●ω●^=)• Te esperamos pronto!\n> ✐ Puedes usar *#help* para ver la lista de comandos.`
+      await conn.sendMessage(m.chat, { image: img, caption: kick, mentions: [who] })
+  }}
