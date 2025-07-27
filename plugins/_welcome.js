@@ -54,10 +54,12 @@ export async function handler(m, { conn }) {
     const args = m.text.split(' ');
     if (args[0] === '.setwelcome') {
       welcomeMessages.custom = args.slice(1).join(' ');
-      await conn.reply(m.chat, 'Mensaje de bienvenida configurado correctamente');
+      await conn.reply(m.chat, 'Puedes editar el mensaje de bienvenida a tu manera, nakama. ¡Listo!');
     } else if (args[0] === '.setbye') {
       byeMessages.custom = args.slice(1).join(' ');
-      await conn.reply(m.chat, 'Mensaje de despedida configurado correctamente');
+      await conn.reply(m.chat, 'Puedes editar el mensaje de despedida a tu manera, nakama. ¡Listo!');
+    } else if (args[0] === '.help') {
+      await conn.reply(m.chat, 'Comandos disponibles:\n.setwelcome <mensaje>\n.setbye <mensaje>');
     }
   } catch (error) {
     console.error('Error en el plugin _welcome.js:', error);
