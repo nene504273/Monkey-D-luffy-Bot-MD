@@ -24,3 +24,13 @@ export async function before(m, { conn, groupMetadata }) {
   }
 
   if (text) {
+
+await conn.sendMessage(m.chat, { image: img, caption: text, mentions: [who] })
+  }
+}
+```
+
+✅ Puedes editar mensajes con:  
+- `#setwelcome Tu mensaje de bienvenida con %user y %subject`  
+- `#setbye Tu mensaje de despedida con %user y %subject`
+
