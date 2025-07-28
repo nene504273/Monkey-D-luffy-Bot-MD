@@ -1,71 +1,103 @@
-```js
-import { WAMessageStubType } from '@whiskeysockets/baileys';
-import fetch from 'node-fetch';
+import { WAMessageStubType } from '@whiskeysockets/baileys'
+import fetch from 'node-fetch'
 
-const welcomeMessages = {
-  custom: '',
-  default: '👋 ¡Luffy te da la bienvenida, {taguser}! Únete a la tripulación de *{group}*!'
-};
+export async function before(m, { conn, participants, groupMetadata }) {
+  // Solo para grupos y mensajes de tipo stub (entrada/salida)
+  if (!m.isGroup || !m.messageStubType) return true;
 
-const byeMessages = {
-  custom: '',
-  default: '👋 ¡Hasta luego, {taguser}! Esperamos verte de nuevo en *{group}*!'
-};
+  // Valida stub parameters
+  const stubParams = m.messageStubParameters || [];
+  if (!Array.isArray(stubParams) || stubParams.length === 0) return true;
 
-export async function before(m, { conn, groupMetadata }) {
-  if (!m.isGroup || !m.messageStubType) return;
+  // Datos de usuario
+  let userJid = stubParams[0];
+  if (!userJid) return true;
+  let username = userJid.split('@')[0];
+  let mention = '@' + username;
 
-  const chat = global.db.data.chats[m.chat];
-  if (!chat?.welcome) return;
+  // Member count seguro
+  let memberCount = groupMetadata.participants?.length || participants.length || 0;
+  if (m.messageStubType == 27) memberCount++;
+  if (m.messageStubType == 28 || m.messageStubType == 32) memberCount = Math.max(0, memberCount - 1);
 
-  const who = m.messageStubParameters?.[0];
-  if (!who) return;
-
-  const taguser = `@${who.split('@')[0]}`;
-  const group = groupMetadata.subject;
-
-  const pp = await conn.profilePictureUrl(who, 'image').catch(() => 'https://telegra.ph/file/6e0b8d8f2c3b44b27df5d.jpg');
-  const img = await fetch(pp).then(res => res.buffer());
-
-  let text = '';
-  if (m.messageStubType === WAMessageStubType.GROUP_PARTICIPANT_ADD) {
-    text = (welcomeMessages.custom || welcomeMessages.default)
-      .replace('{taguser}', taguser)
-      .replace('{group}', group);
-} else if (m.messageStubType === WAMessageStubType.GROUP_PARTICIPANT_REMOVE) {
-    text = (byeMessages.custom || byeMessages.default)
-      .replace('{taguser}', taguser)
-      .replace('{group}', group);
+  // Avatar seguro
+  let avatar;
+  try {
+    avatar = await conn.profilePictureUrl(userJid, 'image');
+  } catch {
+    avatar = 'https:                               
   }
 
-  if (text) {
-    await conn.sendMessage(m.chat, { image: img, caption: text, mentions: [who] });
-  }
-}
-
-export async function handler(m, { conn, isGroup }) {
-  const text = m.text || '';
-  const command = text.split(' ')[0];
-  const content = text.split(' ').slice(1).join(' ');
-
-  if (!isGroup) return;
-
-  if (command === '.setwelcome') {
-    welcomeMessages.custom = content || '';
-    await conn.reply(m.chat, '✅ Mensaje de bienvenida actualizado.');
+                      
+  let guildName = encodeURIComponent(groupMetadata.subject);
+  let apiBase = "https:                                
+  let welcomeApiUrl = `${apiBase}/welcomev2?username=${username}&guildName=${guildName}&memberCount=${memberCount}&avatar=${encodeURIComponent(avatar)}&background=${encodeURIComponent('//files.catbox.moe/emwtzj.png';
   }
 
-  if (command === '.setbye') {
-    byeMessages.custom = content || '';
-    await conn.reply(m.chat, '✅ Mensaje de despedida actualizado.');
+  // Imágenes y fondo
+  let guildName = encodeURIComponent(groupMetadata.subject);
+  let apiBase = "https://api.siputzx.my.id/api/canvas";
+  let welcomeApiUrl = `${apiBase}/welcomev2?username=${username}&guildName=${guildName}&memberCount=${memberCount}&avatar=${encodeURIComponent(avatar)}&background=${encodeURIComponent('https://files.catbox.moe/w1r8jh.jpeg')}`;
+  let goodbyeApiUrl = `${apiBase}/goodbyev2?username=${username}&guildName=${guildName}&memberCount=${memberCount}&avatar=${encodeURIComponent(avatar)}&background=${encodeURIComponent('https:                                   
+
+  async function fetchImage(url, fallbackUrl) {
+    try {
+      const res = await fetch(url);
+      if (!res.ok) throw new Error('Error al descargar imagen');
+      return await res.buffer();
+    } catch {
+      const fallbackRes = await fetch(fallbackUrl);
+      return await fallbackRes.buffer();
+    }
   }
 
-  const welcomeMessages = {
-  custom: '',
-  default: '🎉👋 ¡Luffy te da la bienvenida, {taguser}! ¡Únete a la tripulación de los Sombrero de Paja en *{group}*! 🌟 ¡Vamos a navegar por el Grand Line juntos! 🚣‍♂️'
-};
+                                  
+  let chat = global.db.data.chats[m.chat] || {};
 
-const byeMessages = {
-  custom: '',
-  default: '👋 ¡Hasta luego, {taguser}! Esperamos verte de nuevo en *{group}*! 🌊 ¡No te rindas en tu búsqueda del One Piece! 💪 ¡La tripulación de los Sombrero de Paja te espera! 🤝'
-};
+                                                  
+  if (typeof chat.welcome === 'undefined') chat.welcome = true;
+
+                                   
+  let txtWelcome = '🎉👋 ¡Bienvenido a bordo, nakama!';
+  let txtGoodbye = '👋 ¡Hasta luego, nakama!';
+  let bienvenida = `//files.catbox.moe/w1r8jh.jpeg')}`;
+
+  async function fetchImage(url, fallbackUrl) {
+    try {
+      const res = await fetch(url);
+      if (!res.ok) throw new Error('Error al descargar imagen');
+      return await res.buffer();
+    } catch {
+      const fallbackRes = await fetch(fallbackUrl);
+      return await fallbackRes.buffer();
+    }
+  }
+
+  // Prepara base de datos de chat
+  let chat = global.db.data.chats[m.chat] || {};
+
+  // Si no tiene bien la propiedad (grupos nuevos)
+  if (typeof chat.welcome === 'undefined') chat.welcome = true;
+
+  // Textos de bienvenida/despedida
+  let txtWelcome = '🎉👋 ¡Bienvenido a bordo, nakama!';
+  let txtGoodbye = '👋 ¡Hasta luego, nakama!';
+  let bienvenida = `🎉 *¡Luffy te da la bienvenida a ${groupMetadata.subject}!* 🌟\n✰ ${mention}\n${global.welcom1 || ''}\n✦ Ahora somos ${memberCount} Miembros de la tripulación de los Sombrero de Paja.\n•(=^●ω●^=)• ¡Disfruta tu estadía en el grupo y no te rindas en tu búsqueda del One Piece! 🏴‍☠️`;
+  let bye = `👋 *¡Luffy se despide de ${groupMetadata.subject}!* 🌊\n✰ ${mention}\n${global.welcom2 || ''}\n✦ Ahora somos ${memberCount} Miembros de la tripulación de los Sombrero de Paja.\n•(=^●ω●^=)• ¡Te esperamos pronto, nakama! 🤝`;
+
+  // Envía welcome/bye si corresponde
+  if (chat.welcome) {
+    if (m.messageStubType == 27) {
+      // joined
+      let imgBuffer = await fetchImage(welcomeApiUrl, avatar);
+      try {
+        await conn.sendMini?.(m.chat, txtWelcome, dev, bienvenida, imgBuffer, imgBuffer, redes, fkontak)
+      } catch {
+        // Fallback a sendMessage normal
+        await conn.sendMessage(m.chat, { image: imgBuffer, caption: bienvenida, mentions: [userJid] }, { quoted: m });
+      }
+    } else if (m.messageStubType == 28 || m.messageStubType == 32) {
+      // left/kicked
+      let imgBuffer = await fetchImage(goodbyeApiUrl, avatar);
+      try {
+        await conn.sendMini?.(m.chat, txtGoodbye, dev, bye, imgBuffer, imgBuffer, redes, fkontak
