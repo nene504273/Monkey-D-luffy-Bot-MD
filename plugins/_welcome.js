@@ -60,14 +60,12 @@ export async function handler(m, { conn, isGroup }) {
     await conn.reply(m.chat, '✅ Mensaje de despedida actualizado.');
   }
 
-  if (command === '.resetwelcome') {
-    welcomeMessages.custom = '';
-    await conn.reply(m.chat, '🔄 Mensaje de bienvenida restablecido al predeterminado.');
-  }
+  const welcomeMessages = {
+  custom: '',
+  default: '🎉👋 ¡Luffy te da la bienvenida, {taguser}! ¡Únete a la tripulación de los Sombrero de Paja en *{group}*! 🌟 ¡Vamos a navegar por el Grand Line juntos! 🚣‍♂️'
+};
 
-  if (command === '.resetbye') {
-    byeMessages.custom = '';
-    await conn.reply(m.chat, '🔄 Mensaje de despedida restablecido al predeterminado.');
-  }
-}
-```
+const byeMessages = {
+  custom: '',
+  default: '👋 ¡Hasta luego, {taguser}! Esperamos verte de nuevo en *{group}*! 🌊 ¡No te rindas en tu búsqueda del One Piece! 💪 ¡La tripulación de los Sombrero de Paja te espera! 🤝'
+};
