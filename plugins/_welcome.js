@@ -8,11 +8,13 @@ export async function before(m, { conn, participants, groupMetadata }) {
   let chat = global.db.data.chats[m.chat]
   let pp = await conn.profilePictureUrl(m.messageStubParameters[0], 'image').catch(_ => 'https://files.catbox.moe/xr2m6u.jpg')
   let img = await (await fetch(`${pp}`)).buffer()
+  let totalMembers = participants.length
 
   if (chat.welcome && m.messageStubType === WAMessageStubType.GROUP_PARTICIPANT_ADD) {
     let bienvenida = `
 🎉 **¡BIENVENIDO A BORDO, NAKAMA!** 🎉
 ${taguser} se ha unido al grupo: ${groupMetadata.subject} 🤝
+Ahora somos ${totalMembers + 1} miembros 👥
 ¡Vamos a encontrar el One Piece juntos! 🏴‍☠️
 •(=^●ω●^=)• Disfruta tu estadía en el grupo y no te rindas nunca! 💪
 > ✐ Puedes usar *#help* para ver la lista de comandos.
@@ -24,6 +26,7 @@ ${taguser} se ha unido al grupo: ${groupMetadata.subject} 🤝
     let bye = `
 😢 **¡ADIÓS, NAKAMA!** 😢
 ${taguser} ha salido del grupo: ${groupMetadata.subject} 👋
+Ahora somos ${totalMembers - 1} miembros 👥
 ¡Que tengas un buen viaje y no te olvides de nosotros! 🌊
 •(=^●ω●^=)• Te esperamos pronto!
 > ✐ Puedes usar *#help* para ver la lista de comandos.
@@ -35,6 +38,7 @@ ${taguser} ha salido del grupo: ${groupMetadata.subject} 👋
     let kick = `
 😢 **¡ADIÓS, NAKAMA!** 😢
 ${taguser} ha sido expulsado del grupo: ${groupMetadata.subject} 👋
+Ahora somos ${totalMembers - 1} miembros 👥
 ¡No te rindas nunca y sigue adelante! 💪
 •(=^●ω●^=)• Te esperamos pronto!
 > ✐ Puedes usar *#help* para ver la lista de comandos.
