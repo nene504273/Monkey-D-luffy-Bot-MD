@@ -2,40 +2,25 @@ import { WAMessageStubType } from '@whiskeysockets/baileys'
 import fetch from 'node-fetch'
 
 export async function before(m, { conn, participants, groupMetadata }) {
-  if (!m.isGroup || !m.messageStubType) return
-  const chat = global.db.data.chats[m.chat]
-  if (!chat.welcome) return
-  const who = m.messageStubParameters?.[0]
-  if (!who) return
-  const taguser = `@${who.split('@')[0]}`
-  const pp = await conn.profilePictureUrl(who, 'image').catch(() => 'https:                                             
-  const img = await fetch(pp).then(res => res.buffer())
-  const count = groupMetadata.participants.length
-  const group = groupMetadata.subject
-  let text = '//telegra.ph/file/6e0b8d8f2c3b44b27df5d.jpg')
-  const img = await fetch(pp).then(res => res.buffer())
-  const count = groupMetadata.participants.length
-  const group = groupMetadata.subject
-  let text = ''
-  if (m.messageStubType === WAMessageStubType.GROUP_PARTICIPANT_ADD) {
-    text = (chat.welcomeText || `👒 *¡Bienvenido al barco pirata, ${taguser}!* ⚓\n📍 Grupo: *${group}*👥 Miembros: *${count}*\n\nEscribe *#help* para ver los comandos.\n¡Nakama, prepárate para la aventura hacia el One Piece!`)
-  } else if (m.messageStubType === WAMessageStubType.GROUP_PARTICIPANT_REMOVE) {
-    text = (chat.byeText || `💨 *${taguser} ha abandonado la tripulación...*📍 Grupo: *${group}*\n👥 Quedamos: *${count}*\n\n¡Zarpa sin ti, nakama!`)
-  }
-  if (text) {
-    await conn.sendMessage(m.chat, { image: img, caption: text, mentions: [who] })
-  }
-}
+  if (!m.messageStubType || !m.isGroup) return !0;
 
-export const commands = ['setwelcome', 'setbye']
-export const handler = async (m, { command, args, conn }) => {
-  const chat = global.db.data.chats[m.chat]
-  const text = args.join(' ')
-  if (command === 'setwelcome') {
-    chat.welcomeText = text
-    m.reply('✅ Mensaje de bienvenida actualizado.')
-  } else if (command === 'setbye') {
-    chat.byeText = text
-    m.reply('✅ Mensaje de despedida actualizado.')
-  }
-}
+  let who = m.messageStubParameters[0]
+  let taguser = `@${who.split('@')[0]}`
+  let chat = global.db.data.chats[m.chat]
+  let pp = await conn.profilePictureUrl(m.messageStubParameters[0], 'image').catch(_ => 'https://files.catbox.moe/xr2m6u.jpg')
+  let img = await (await fetch(`${pp}`)).buffer()
+
+    if (chat.welcome && m.messageStubType === WAMessageStubType.GROUP_PARTICIPANT_ADD) {
+      let bienvenida = `❀ *Bienvenido* a ${groupMetadata.subject}\n ✰ ${taguser}\n${global.welcom1}\n •(=^●ω●^=)• Disfruta tu estadía en el grupo!\n> ✐ Puedes usar *#help* para ver la lista de comandos.`
+      await conn.sendMessage(m.chat, { image: img, caption: bienvenida, mentions: [who] })
+    }
+       
+    if (chat.welcome && m.messageStubType === WAMessageStubType.GROUP_PARTICIPANT_LEAVE) {
+      let bye = `❀ *Adiós* de ${groupMetadata.subject}\n ✰ ${taguser}\n${global.welcom2}\n •(=^●ω●^=)• Te esperamos pronto!\n> ✐ Puedes usar *#help* para ver la lista de comandos.`
+      await conn.sendMessage(m.chat, { image: img, caption: bye, mentions: [who] })
+    }
+
+    if (chat.welcome && m.messageStubType === WAMessageStubType.GROUP_PARTICIPANT_REMOVE) { 
+      let kick = `❀ *Adiós* de ${groupMetadata.subject}\n ✰ ${taguser}\n${global.welcom2}\n •(=^●ω●^=)• Te esperamos pronto!\n> ✐ Puedes usar *#help* para ver la lista de comandos.`
+      await conn.sendMessage(m.chat, { image: img, caption: kick, mentions: [who] })
+  }}
