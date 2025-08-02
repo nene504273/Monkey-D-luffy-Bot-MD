@@ -2,54 +2,40 @@ import { WAMessageStubType } from '@whiskeysockets/baileys'
 import fetch from 'node-fetch'
 
 export async function before(m, { conn, participants, groupMetadata }) {
-  // Solo para grupos y mensajes de tipo stub (entrada/salida)
-  if (!m.isGroup || !m.messageStubType) return true;
-
-  // Valida stub parameters
-  const stubParams = m.messageStubParameters || [];
-  if (!Array.isArray(stubParams) || stubParams.length === 0) return true;
-
-  // Datos de usuario
-  let userJid = stubParams[0];
-  if (!userJid) return true;
-  let username = userJid.split('@')[0];
-  let mention = '@' + username;
-
-  // Member count seguro
-  let memberCount = groupMetadata.participants?.length || participants.length || 0;
-  if (m.messageStubType == 27) memberCount++;
-  if (m.messageStubType == 28 || m.messageStubType == 32) memberCount = Math.max(0, memberCount - 1);
-
-  // Prepara base de datos de chat
-  let chat = global.db.data.chats[m.chat] || {};
-  if (typeof chat.welcome === 'undefined') chat.welcome = true;
-
-  // API de bienvenida y despedida
-  let guildName = encodeURIComponent(groupMetadata.subject);
-  let welcomeApiUrl = `https:                                                               
-  let goodbyeApiUrl = `//api.example.com/welcome?name=${username}&group=${guildName}`;
-  let goodbyeApiUrl = `https://api.example.com/goodbye?name=${username}&group=${guildName}`;
-
-  async function fetchText(url) {
-    try {
-      const res = await fetch(url);
-      if (!res.ok) throw new Error('Error al obtener texto');
-      return await res.text();
-    } catch {
-      return 'Error al obtener texto';
-    }
+  if (!m.isGroup || !m.messageStubType) return
+  const chat = global.db.data.chats[m.chat]
+  if (!chat.welcome) return
+  const who = m.messageStubParameters?.[0]
+  if (!who) return
+  const taguser = `@${who.split('@')[0]}`
+  const pp = await conn.profilePictureUrl(who, 'image').catch(() => 'https:                                             
+  const img = await fetch(pp).then(res => res.buffer())
+  const count = groupMetadata.participants.length
+  const group = groupMetadata.subject
+  let text = '//telegra.ph/file/6e0b8d8f2c3b44b27df5d.jpg')
+  const img = await fetch(pp).then(res => res.buffer())
+  const count = groupMetadata.participants.length
+  const group = groupMetadata.subject
+  let text = ''
+  if (m.messageStubType === WAMessageStubType.GROUP_PARTICIPANT_ADD) {
+    text = (chat.welcomeText || `👒 *¡Bienvenido al barco pirata, ${taguser}!* ⚓\n📍 Grupo: *${group}*👥 Miembros: *${count}*\n\nEscribe *#help* para ver los comandos.\n¡Nakama, prepárate para la aventura hacia el One Piece!`)
+  } else if (m.messageStubType === WAMessageStubType.GROUP_PARTICIPANT_REMOVE) {
+    text = (chat.byeText || `💨 *${taguser} ha abandonado la tripulación...*📍 Grupo: *${group}*\n👥 Quedamos: *${count}*\n\n¡Zarpa sin ti, nakama!`)
   }
+  if (text) {
+    await conn.sendMessage(m.chat, { image: img, caption: text, mentions: [who] })
+  }
+}
 
-  // Envía welcome/bye si corresponde
-  if (chat.welcome) {
-    if (m.messageStubType == 27) {
-      // joined
-      let welcomeText = await fetchText(welcomeApiUrl);
-      await conn.sendMessage(m.chat, { text: welcomeText, mentions: [userJid] }, { quoted: m });
-    } else if (m.messageStubType == 28 || m.messageStubType == 32) {
-      // left/kicked
-      let goodbyeText = await fetchText(goodbyeApiUrl);
-      await conn.sendMessage(m.chat, { text: goodbyeText, mentions: [userJid] }, { quoted: m });
-    }
+export const commands = ['setwelcome', 'setbye']
+export const handler = async (m, { command, args, conn }) => {
+  const chat = global.db.data.chats[m.chat]
+  const text = args.join(' ')
+  if (command === 'setwelcome') {
+    chat.welcomeText = text
+    m.reply('✅ Mensaje de bienvenida actualizado.')
+  } else if (command === 'setbye') {
+    chat.byeText = text
+    m.reply('✅ Mensaje de despedida actualizado.')
   }
 }
