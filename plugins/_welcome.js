@@ -1,47 +1,44 @@
-import { WAMessageStubType } from '@whiskeysockets/baileys';
-import fetch from 'node-fetch';
+import { WAMessageStubType } from '@whiskeysockets/baileys'
+import fetch from 'node-fetch'
 
 export async function before(m, { conn, participants, groupMetadata }) {
   if (!m.messageStubType || !m.isGroup) return !0;
+  let who = m.messageStubParameters[0]
+  let taguser = `@${who.split('@')[0]}`
+  let chat = global.db.data.chats[m.chat]
+  let pp = await conn.profilePictureUrl(m.messageStubParameters[0], 'image').catch(_ => 'https://files.catbox.moe/xr2m6u.jpg')
+  let img = await (await fetch(`${pp}`)).buffer()
 
-  const fkontak = {
-    key: {
-      participants: '0@s.whatsapp.net',
-      remoteJid: 'status@broadcast',
-      fromMe: false,
-      id: 'Halo',
-    },
-    message: {
-      contactMessage: {
-        vcard: `BEGIN:VCARD\nVERSION:3.0\nN:Monkey D. Luffy;;;\nFN:Luffy\nitem1.TEL;waid=${m.sender.split('@')[0]}:${m.sender.split('@')[0]}\nitem1.X-ABLabel:Pirata\nEND:VCARD`,
-      },
-    },
-    participant: '0@s.whatsapp.net',
-  };
-
-  let pp = await conn.profilePictureUrl(m.messageStubParameters[0], 'image').catch(() => 'https:                                
-  let img = await (await fetch(pp)).buffer();
-  let chat = global.db.data.chats[m.chat];
-  let txt = '//files.catbox.moe/wm4w1x.jpg');
-  let img = await (await fetch(pp)).buffer();
-  let chat = global.db.data.chats[m.chat];
-  let txt = '🏴‍☠️ ¡Nuevo Tripulante! 🏴‍☠️';
-  let txt1 = '🌊 ¡Adiós, Amigo! 🌊';
-  let groupSize = participants.length;
-
-  if (m.messageStubType == 27) {
-    groupSize++;
-  } else if (m.messageStubType == 28 || m.messageStubType == 32) {
-    groupSize--;
+  if (chat.welcome && m.messageStubType === WAMessageStubType.GROUP_PARTICIPANT_ADD) {
+    let bienvenida = `
+🎉 **¡BIENVENIDO A BORDO, NAKAMA!** 🎉
+${taguser} se ha unido al grupo: ${groupMetadata.subject} 🤝
+¡Vamos a encontrar el One Piece juntos! 🏴‍☠️
+•(=^●ω●^=)• Disfruta tu estadía en el grupo y no te rindas nunca! 💪
+> ✐ Puedes usar *#help* para ver la lista de comandos.
+`
+    await conn.sendMessage(m.chat, { image: img, caption: bienvenida, mentions: [who] })
   }
 
-  if (chat.welcome && m.messageStubType == 27) {
-    let bienvenida = `🎉 *¡Bienvenido a la tripulación!* 🎉\n\n🏴‍☠️ @${m.messageStubParameters[0].split('@')[0]} 🏴‍☠️\n\n💪 ${global.welcom1} 💪\n\n🌟 ¡Ahora somos ${groupSize} piratas en busca de One Piece! 🌟\n\n🏴‍☠️ ¡Prepárate para la aventura! 🏴‍☠️\n\n> 🎤 Usa *#help* para ver todos los comandos del capitán Luffy! ✨\n> 𝙋𝙄𝙍𝘼𝙏𝘼𝙎 𝘿𝙀𝙇 𝙈𝙊𝙉𝙆𝙀𝙔`;
-    await conn.sendMini(m.chat, txt, dev, bienvenida, img, img, redes, fkontak, m, rcanal);
+  if (chat.welcome && m.messageStubType === WAMessageStubType.GROUP_PARTICIPANT_LEAVE) {
+    let bye = `
+😢 **¡ADIÓS, NAKAMA!** 😢
+${taguser} ha salido del grupo: ${groupMetadata.subject} 👋
+¡Que tengas un buen viaje y no te olvides de nosotros! 🌊
+•(=^●ω●^=)• Te esperamos pronto!
+> ✐ Puedes usar *#help* para ver la lista de comandos.
+`
+    await conn.sendMessage(m.chat, { image: img, caption: bye, mentions: [who] })
   }
 
-  if (chat.welcome && (m.messageStubType == 28 || m.messageStubType == 32)) {
-    let bye = `🌊 *¡Hasta luego, amigo!* 🌊\n\n🏴‍☠️ @${m.messageStubParameters[0].split('@')[0]} 🏴‍☠️\n\n💪 ${global.welcom2} 💪\n\n🌟 Ahora somos ${groupSize} piratas esperándote 🌟\n\n🏴‍☠️ ¡Esperamos verte pronto en nuestro próximo viaje! 🏴‍☠️\n\n> 🎵 ¡La música de los piratas siempre te acompañará! ✨\n> 𝙋𝙄𝙍𝘼𝙏𝘼𝙎 𝘿𝙀𝙇 𝙈𝙊𝙉𝙆𝙀𝙔`;
-    await conn.sendMini(m.chat, txt1, dev, bye, img, img, redes, fkontak, m, rcanal);
+  if (chat.welcome && m.messageStubType === WAMessageStubType.GROUP_PARTICIPANT_REMOVE) {
+    let kick = `
+😢 **¡ADIÓS, NAKAMA!** 😢
+${taguser} ha sido expulsado del grupo: ${groupMetadata.subject} 👋
+¡No te rindas nunca y sigue adelante! 💪
+•(=^●ω●^=)• Te esperamos pronto!
+> ✐ Puedes usar *#help* para ver la lista de comandos.
+`
+    await conn.sendMessage(m.chat, { image: img, caption: kick, mentions: [who] })
   }
 }
