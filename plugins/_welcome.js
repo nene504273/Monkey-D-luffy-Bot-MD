@@ -1,41 +1,41 @@
-import { WAMessageStubType } from '@whiskeysockets/baileys'
-import fetch from 'node-fetch'
+const WAMessageStubType = {
+  GROUP_PARTICIPANT_ADD: 27,
+  GROUP_PARTICIPANT_REMOVE: 28,
+  GROUP_PARTICIPANT_PROMOTE: 29,
+  GROUP_PARTICIPANT_DEMOTE: 30,
+};
 
-export async function before(m, { conn, participants, groupMetadata }) {
-  if (!m.messageStubType || !m.isGroup) return !0;
-  let who = m.messageStubParameters[0]
-  let taguser = `@${who.split('@')[0]}`
-  let chat = global.db.data.chats[m.chat]
-  let pp = await conn.profilePictureUrl(m.messageStubParameters[0], 'image').catch(_ => 'https:                               
-  let img = await (await fetch(`${pp}`)).buffer()
+module.exports = {
+  async before(m, { conn, participants, groupMetadata }) {
+    if (!m.messageStubType || !m.isGroup) return;
 
-  if (chat.welcome && m.messageStubType === WAMessageStubType.GROUP_PARTICIPANT_ADD) {
-    let bienvenida = ` 🎉 **¡BIENVENIDO A BORDO, NAKAMA!** 🎉 ${taguser} se ha unido al grupo: ${groupMetadata.subject} 🤝 ¡Vamos a encontrar el One Piece juntos! 🏴‍☠️ •(=^●ω●^=)• Disfruta tu estadía en el grupo y no te rindas nunca! 💪 > ✐ Puedes usar *#help* para ver la lista de comandos. `
-    await conn.sendMessage(m.chat, { image: img, caption: bienvenida, mentions: [who] })
-  }
+    const pp = await conn.profilePictureUrl(m.messageStubParameters[0], 'image').catch(() => 'https:                                
+    const img = await (await fetch(pp)).buffer();
 
-  if (chat.welcome && [WAMessageStubType.GROUP_PARTICIPANT_LEAVE, WAMessageStubType.GROUP_PARTICIPANT_REMOVE].includes(m.messageStubType)) {
-    let texto = m.messageStubType === WAMessageStubType.GROUP_PARTICIPANT_LEAVE ? '//files.catbox.moe/xr2m6u.jpg')
-  let img = await (await fetch(`${pp}`)).buffer()
+    if (m.messageStubType === WAMessageStubType.GROUP_PARTICIPANT_ADD) {
+      const welcomeText = `🎉 *¡Bienvenido a ${groupMetadata.subject}!* 🎉\n\n👑 @${m.messageStubParameters[0].split('//files.catbox.moe/wm4w1x.jpg');
+    const img = await (await fetch(pp)).buffer();
 
-  if (chat.welcome && m.messageStubType === WAMessageStubType.GROUP_PARTICIPANT_ADD) {
-    let bienvenida = ` 🎉 **¡BIENVENIDO A BORDO, NAKAMA!** 🎉 ${taguser} se ha unido al grupo: ${groupMetadata.subject} 🤝 ¡Vamos a encontrar el One Piece juntos! 🏴‍☠️ •(=^●ω●^=)• Disfruta tu estadía en el grupo y no te rindas nunca! 💪 > ✐ Puedes usar *#help* para ver la lista de comandos. `
-    await conn.sendMessage(m.chat, { image: img, caption: bienvenida, mentions: [who] })
-  }
+    if (m.messageStubType === WAMessageStubType.GROUP_PARTICIPANT_ADD) {
+      const welcomeText = `🎉 *¡Bienvenido a ${groupMetadata.subject}!* 🎉\n\n👑 @${m.messageStubParameters[0].split('@')[0]} 👑\n\n💪 ¡Ahora somos ${participants.length} piratas en busca de One Piece en este barco llamado ${groupMetadata.subject}! 💪\n\n🏴‍☠️ ¡Prepárate para la aventura! 🏴‍☠️\n\n👉 *Disfruta tu estancia en nuestro grupo!* 👈`;
+      await conn.sendMessage(m.chat, { image: img, caption: welcomeText, mentions: [m.messageStubParameters[0]] });
+    }
 
-  if (chat.welcome && [WAMessageStubType.GROUP_PARTICIPANT_LEAVE, WAMessageStubType.GROUP_PARTICIPANT_REMOVE].includes(m.messageStubType)) {
-    let texto = m.messageStubType === WAMessageStubType.GROUP_PARTICIPANT_LEAVE ? 'ha salido del grupo' : 'ha sido expulsado del grupo'
-    let bye = ` 😢 **¡ADIÓS, NAKAMA!** 😢 ${taguser} ${texto}: ${groupMetadata.subject} 👋 ¡No te rindas nunca y sigue adelante! 💪 •(=^●ω●^=)• Te esperamos pronto! > ✐ Puedes usar *#help* para ver la lista de comandos. `
-    await conn.sendMessage(m.chat, { image: img, caption: bye, mentions: [who] })
-  }
+    if (m.messageStubType === WAMessageStubType.GROUP_PARTICIPANT_REMOVE) {
+      const goodbyeText = `🌊 *¡Hasta luego, amigo!* 🌊\n\n👑 @${m.messageStubParameters[0].split('@')[0]} 👑\n\n💔 ¡Esperamos verte pronto en nuestro próximo viaje en ${groupMetadata.subject}! 💔\n\n🏴‍☠️ ¡La música de los piratas siempre te acompañará! 🎵\n\n👉 *¡Que tengas un buen viaje!* 👈`;
+      const pp2 = await conn.profilePictureUrl(m.messageStubParameters[0], 'image').catch(() => 'https://files.catbox.moe/wm4w1x.jpg');
+      const img2 = await (await fetch(pp2)).buffer();
+      await conn.sendMessage(m.chat, { image: img2, caption: goodbyeText, mentions: [m.messageStubParameters[0]] });
+    }
 
-  if (chat.welcome && m.messageStubType === WAMessageStubType.GROUP_PARTICIPANT_PROMOTE) {
-    let promoteText = ` 👑 **¡FELICIDADES!** 👑 ${taguser} ha sido promovido a administrador del grupo ${groupMetadata.subject}! 🎉`
-    await conn.sendMessage(m.chat, { text: promoteText, mentions: [who] })
-  }
+    if (m.messageStubType === WAMessageStubType.GROUP_PARTICIPANT_PROMOTE) {
+      const promoteText = `👑 *¡Felicidades!* 👑\n\n@${m.messageStubParameters[0].split('@')[0]} ha sido promovido a administrador del grupo ${groupMetadata.subject}! 🎉`;
+      await conn.sendMessage(m.chat, { text: promoteText, mentions: [m.messageStubParameters[0]] });
+    }
 
-  if (chat.welcome && m.messageStubType === WAMessageStubType.GROUP_PARTICIPANT_DEMOTE) {
-    let demoteText = ` 👑 **¡NOTICIAS!** 👑 ${taguser} ha sido degradado de administrador del grupo ${groupMetadata.subject}! 😅`
-    await conn.sendMessage(m.chat, { text: demoteText, mentions: [who] })
-  }
-}
+    if (m.messageStubType === WAMessageStubType.GROUP_PARTICIPANT_DEMOTE) {
+      const demoteText = `👑 *¡Noticias!* 👑\n\n@${m.messageStubParameters[0].split('@')[0]} ha sido degradado de administrador del grupo ${groupMetadata.subject}! 😅`;
+      await conn.sendMessage(m.chat, { text: demoteText, mentions: [m.messageStubParameters[0]] });
+    }
+  },
+};
