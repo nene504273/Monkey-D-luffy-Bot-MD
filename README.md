@@ -17,11 +17,6 @@ Este es un proyecto Bot que será usado para el uso de todos los usuarios en gen
 
 </details>
 
-## **`💠 MAKI HOST 💠`**
-<a href="https://dash-makihost.ddns.net/home"><img src="https://qu.ax/TGBlr.jpg" height="100px"></a>
-</details>
-</details>
- <summary><b>:paperclip: Enlaces Importantes</b></summary>
 
 
 </details>
