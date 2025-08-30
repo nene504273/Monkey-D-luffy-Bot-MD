@@ -23,9 +23,6 @@ Este es un proyecto Bot que será usado para el uso de todos los usuarios en gen
 </details>
  <summary><b>:paperclip: Enlaces Importantes</b></summary>
 
-- **Dash:** [`Aquí`](https://dash-makihost.ddns.net/home)
-- **Panel:** [`Aquí`](https://panel-makihost.ddns.net)
-
 
 </details>
 <summary><b>PROPIETARIO</b></summary>
