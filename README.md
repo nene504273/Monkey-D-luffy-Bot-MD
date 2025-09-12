@@ -4,7 +4,9 @@
   <img src="https://files.catbox.moe/81l14y.jpg" width="350" alt="Luffy">
 </p>
 
-<h3 align="center">"¡No voy a perder contra nadie, porque voy a ser el Rey de los Piratas!" - Monkey D. Luffy</h3>
+<p align="center">
+  <img src="https://readme-typing-svg.demolab.com?font=Pirata+One&size=30&duration=3000&pause=1000&color=FF0000&center=true&vCenter=true&width=600&lines=¡Voy+a+ser+el+Rey+de+los+Piratas!;Un+bot+de+WhatsApp+al+estilo+Luffy;Hecho+para+tu+aventura+digital+⚓" alt="Typing SVG" />
+</p>
 
 ---
 
@@ -19,19 +21,3 @@ Responde, juega, y hace que tus chats se sientan como un viaje por Grand Line. �
 - 🎭 Comandos personalizables.
 - 📂 Manejo de stickers, imágenes y más.
 - 🏴‍☠️ Inspirado en la energía de Luffy.
-
----
-
-## 🔧 Instalación
-```bash
-# Clonar este repo
-https://github.com/nene504273/Monkey-D-luffy-Bot-MD
-
-# Entrar en la carpeta
-cd tu-repo
-
-# Instalar dependencias
-npm install
-
-# Iniciar el bot
-npm start
