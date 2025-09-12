@@ -1,39 +1,48 @@
 
-<h1 align="center">🔥 MONKEY D LLUFFY BOT 🔥</h1>
+```markdown
+<h1 align="center">
+  ☠️ Monkey D. Luffy - WhatsApp Bot MD 👒
+</h1>
 
 <p align="center">
- <img
-src="https://qu.ax/TxDpu.jpg"
-alt="Monkey Bot MD" />
+  <img src="https://files.catbox.moe/81l14y.jpg" width="300"/>
+</p>
+
+<p align="center">
+  <strong>“¡Yo seré el Rey de los Bots!”</strong><br>
+  Un poderoso bot de WhatsApp estilo pirata, hecho para dominar los mares digitales. ⚓
+</p>
 
 ---
 
-## 𝐃𝐞𝐬𝐜𝐫𝐢𝐩𝐜𝐢𝐨́𝐧 
+🏴‍☠️ ¿Qué es Monkey D. Luffy Bot?
 
-Este es un proyecto Bot que será usado para el uso de todos los usuarios en general.
-
-
----
-
-</details>
-
-
-
-</details>
-<summary><b>PROPIETARIO</b></summary>
-
-<a href="https://readme.creado.por.felix.com" style="display:inline-block; text-decoration: none;">
-    <img src="https://qu.ax/TxDpu.jpg" width="130" height="130" alt="Nene" style="border-radius: 50%;"/>
-</a>
+Un bot automatizado de WhatsApp inspirado en *One Piece*, usando *Baileys MD*, con múltiples funciones de gestión de grupo, diversión, personalización y estilo único pirata. Diseñado para clanes, grupos de juegos como Free Fire, comunidades anime y más.
 
 ---
 
+✨ Características
 
-</details>
-<summary><b>🔥 COLABORADOR🔥</b></summary>
-
-<a href="https://github.com/mantis-has/Makima" style="display:inline-block; text-decoration: none;">
-    <img src="https://qu.ax/Ywcsu.jpg" width="130" height="130" alt="Félix oficial" style="border-radius: 50%;"/>
-</a>
+- 🎉 Bienvenidas y despedidas con imagen
+- ⚙️ Comandos `.setwelcome` y `.setbye` personalizables
+- 🚫 Anti-enlaces / anti-spam / anti-tox
+- 🎮 Juegos, niveles, economía y comandos anime
+- 📥 Descargas de TikTok, YouTube, IG y más
+- 🐵 Decoración visual estilo *Luffy Nakama*
 
 ---
+
+🚀 Cómo empezar
+
+```bash
+git clone https://github.com/nene504273/Monkey-D-luffy-Bot-MD
+cd Monkey-D-luffy-Bot-MD
+npm install
+npm start
+```
+
+> Recuerda configurar tu archivo `config.js` y escanear tu código QR.
+
+---
+
+🔧 Comandos Útiles
