@@ -2,7 +2,7 @@ import {googleImage} from '@bochilteam/scraper';
 const handler = async (m, {conn, text, usedPrefix, command}) => {
 if (!text) return conn.reply(m.chat, `${emoji} Por favor, ingresa un término de búsqueda.`, m);
 await m.react(rwait)
-conn.reply(m.chat, '🍭 Descargando su imagen, espere un momento...', m)
+conn.reply(m.chat, '🍖 Descargando su imagen, espere un momento...', m)
 const res = await googleImage(text);
 const image = await res.getRandom();
 const link = image;
