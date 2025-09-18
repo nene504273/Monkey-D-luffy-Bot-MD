@@ -14,7 +14,7 @@ let handler = async (m, { conn, usedPrefix, isRowner}) => {
   let speed = neww - old
   const used = process.memoryUsage()
   
-  let info = `🔥 **¡Hola, soy Luffy!** 🔥\n`
+  let info = `🔥 *¡Hola, soy Luffy!* 🔥\n`
   info += `👑 *Creador* ⇢ ɴ͡ᴇ͜ɴᴇ❀᭄☂️\n`
   info += `💫 *Prefijo* ⇢ [ ${usedPrefix} ]\n`
   info += `🚣‍♂️ *Versión* ⇢ ${vs}\n`
