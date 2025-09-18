@@ -1,6 +1,6 @@
 import ws from 'ws'
 
-let handler = async (m, { conn, usedPrefix, isRowner}) => {
+let handler = async (m, { conn, usedPrefix, isRowner }) => {
   let _uptime = process.uptime() * 1000;
   let totalreg = Object.keys(global.db.data.users).length
   let totalchats = Object.keys(global.db.data.chats).length
@@ -12,8 +12,7 @@ let handler = async (m, { conn, usedPrefix, isRowner}) => {
   let old = performance.now()
   let neww = performance.now()
   let speed = neww - old
-  const used = process.memoryUsage()
-  
+
   let info = `🔥 *¡Hola, soy Luffy!* 🔥\n`
   info += `👑 *Creador* ⇢ ɴ͡ᴇ͜ɴᴇ❀᭄☂️\n`
   info += `💫 *Prefijo* ⇢ [ ${usedPrefix} ]\n`
@@ -26,7 +25,10 @@ let handler = async (m, { conn, usedPrefix, isRowner}) => {
   info += `⚡️ *Velocidad* ⇢ ${(speed * 1000).toFixed(0) / 1000}\n`
   info += `🤖 *Sub-Bots Activos* ⇢ ${totalUsers || '0'}`
 
-  await conn.reply(m.chat, info, fkontak)
+  await conn.sendMessage(m.chat, {
+    image: { url: 'https://files.catbox.moe/uw0lmt.jpg' },
+    caption: info
+  }, { quoted: m })
 }
 
 handler.help = ['estado']
