@@ -9,7 +9,7 @@ import os from 'os';
 import fs from 'fs';
 
 // Reemplaza 'TU_CLAVE_API' con tu clave real de la API de Nevi.
-const NEVI_API_KEY = 'ellen'; // Cambia esto por tu clave real
+const NEVI_API_KEY = 'luffy'; // Cambia esto por tu clave real
 
 const SIZE_LIMIT_MB = 100;
 const newsletterJid = '120363420846835529@newsletter';
