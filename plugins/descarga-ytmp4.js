@@ -1,8 +1,11 @@
 //código creado por Dioneibi-rip
-import fetch from 'node-fetch';
+//modificado por nevi-dev
 
-// Considera si estos JIDs y nombres son estáticos o si deben ser dinámicos.
-// Si el error está relacionado con el envío de mensajes, estos podrían ser un punto a revisar.
+import fetch from 'node-fetch';
+import axios from 'axios'; // Mantenido por si se requiere en otras partes, aunque no se usa directamente para la descarga principal aquí.
+
+// --- Constantes y Configuración de Transmisión ---
+const NEVI_API_KEY = 'luffy'; // Asegúrate de que esta clave sea válida para la API de NEVI.
 const newsletterJid = '120363447935700207@newsletter'; // Asegúrate de que este JID sea válido para tu entorno
 const newsletterName = '⏤͟͞ू⃪፝͜⁞⟡『 🏴‍☠️MONKEY • D • L U F F Y🏴‍☠️ 』࿐⟡';
 
@@ -10,27 +13,24 @@ var handler = async (m, { conn, args, usedPrefix, command }) => {
   const emoji = '🏴‍☠️';
   const namebotLuffy = 'Sombrero de Paja Bot';
   const devLuffy = '¡Por el Rey de los Piratas!';
+  const name = conn.getName(m.sender); // Identificando al Proxy
 
   // Configuración para la vista previa del mensaje en WhatsApp.
   const contextInfo = {
     mentionedJid: [m.sender],
     isForwarded: true,
     forwardingScore: 999,
-    // Esta sección es específica para mensajes de boletín (newsletter).
-    // Si tu bot no está diseñado para esto o si es una característica nueva/experimental,
-    // podría ser una fuente de errores. Si tienes problemas para enviar mensajes,
-    // intenta comentar temporalmente esta sección para descartarla como causa.
     forwardedNewsletterMessageInfo: {
       newsletterJid,
       newsletterName,
-      serverMessageId: -1 // -1 es un valor común para mensajes nuevos, pero verifica la documentación de tu librería.
+      serverMessageId: -1
     },
     externalAdReply: {
       title: namebotLuffy,
       body: devLuffy,
-      thumbnail: icons,
+      thumbnail: icons, // Asegúrate de que 'icons' y 'redes' estén definidos globalmente o pasados
       sourceUrl: redes,
-      mediaType: 1, // 1 para imagen (thumbnail), 2 para video. Asegúrate de que sea correcto.
+      mediaType: 1, // 1 para imagen (thumbnail), 2 para video.
       renderLargerThumbnail: false
     }
   };
@@ -38,7 +38,7 @@ var handler = async (m, { conn, args, usedPrefix, command }) => {
   if (!args[0]) {
     return conn.reply(
       m.chat,
-      `${emoji} *¡Oye, nakama!* Necesito un enlace de YouTube para descargar ese video. ¡Vamos, no perdamos el tiempo!\n\nEjemplo de uso:\n*${usedPrefix + command} https://www.youtube.com/watch?v=dQw4w9WgXcQ* (¡Este es un ejemplo real de URL de YouTube!)`, // Ejemplo de URL real
+      `${emoji} *¡Oye, nakama!* Necesito un enlace de YouTube para descargar ese video. ¡Vamos, no perdamos el tiempo!\n\nEjemplo de uso:\n*${usedPrefix + command} https://www.youtube.com/watch?v=dQw4w9WgXcQ*`,
       m,
       { contextInfo, quoted: m }
     );
@@ -66,97 +66,92 @@ var handler = async (m, { conn, args, usedPrefix, command }) => {
       { contextInfo, quoted: m }
     );
 
-    const api = `https://api.vreden.my.id/api/ytmp4?url=${encodeURIComponent(url)}`;
-    console.log(`[DEBUG] Llamando a la API externa: ${api}`); // **Paso de Depuración 2: Rastrea la llamada a la API**
+    // *** CAMBIO: Usando la API de NEVI ***
+    const neviApiUrl = `http://neviapi.ddns.net:5000/download`;
+    console.log(`[DEBUG] Llamando a la API de NEVI: ${neviApiUrl}`);
 
-    const res = await fetch(api);
-    console.log(`[DEBUG] Estado de la respuesta de la API: ${res.status}`); // **Paso de Depuración 3: Verifica el estado de la respuesta**
+    const res = await fetch(neviApiUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-API-KEY': NEVI_API_KEY, // Usando la clave de API definida
+      },
+      body: JSON.stringify({
+        url: url,
+        format: "mp4" // Solicitando formato MP4
+      }),
+    });
 
-    // **Paso de Depuración 4: Manejo robusto de la respuesta JSON**
-    // Intenta parsear la respuesta como JSON. Si falla, intenta leerla como texto para ver el error crudo.
-    const jsonResponse = await res.clone().json().catch(e => {
-        console.error(`[ERROR] No se pudo parsear la respuesta JSON de la API: ${e.message}`);
-        return null; // Retorna null si no se puede parsear como JSON
+    console.log(`[DEBUG] Estado de la respuesta de la API de NEVI: ${res.status}`);
+
+    const jsonResponse = await res.json().catch(e => {
+        console.error(`[ERROR] No se pudo parsear la respuesta JSON de la API de NEVI: ${e.message}`);
+        return null;
     });
 
     if (!jsonResponse) {
         const rawText = await res.text().catch(() => "No se pudo obtener el texto de la respuesta.");
         return conn.reply(
             m.chat,
-            `❌ *¡Rayos! La API no me dio una respuesta JSON válida, nakama.*\nPodría ser un problema con la API o un formato inesperado.\nRespuesta cruda (si disponible, primeros 200 caracteres): ${rawText.substring(0, 200)}...`,
+            `❌ *¡Rayos! La API de NEVI no me dio una respuesta JSON válida, nakama.*\nPodría ser un problema con la API o un formato inesperado.\nRespuesta cruda (si disponible, primeros 200 caracteres): ${rawText.substring(0, 200)}...`,
             m,
             { contextInfo, quoted: m }
         );
     }
 
-    if (jsonResponse.status !== 200 || !jsonResponse.result?.download?.url) {
-      console.error(`[ERROR] Fallo de la API externa (respuesta completa):`, jsonResponse); // **Paso de Depuración 5: Log el JSON completo del error de la API**
+    // *** CAMBIO: Adaptando la verificación de la respuesta de NEVI ***
+    if (jsonResponse.status !== "success" || !jsonResponse.download_link) {
+      console.error(`[ERROR] Fallo de la API de NEVI (respuesta completa):`, jsonResponse);
       return conn.reply(
         m.chat,
-        `❌ *¡Rayos! No pude descargar el video, nakama.*\nRazón: ${jsonResponse.message || 'La respuesta no es la que esperaba. ¡Quizás el Grand Line es más difícil de lo que pensaba!'}.`,
+        `❌ *¡Rayos! No pude descargar el video, nakama.*\nRazón: ${jsonResponse.message || 'La API de NEVI no devolvió un enlace de descarga válido. ¡Quizás el Grand Line es más difícil de lo que pensaba!'}.`,
         m,
         { contextInfo, quoted: m }
       );
     }
 
+    // *** CAMBIO: Extrayendo datos directamente del JSON de NEVI ***
     const {
       title,
       description,
-      timestamp, // Esto parece ser la duración del video (ej: "00:05:30")
+      duration, // La API de NEVI devuelve la duración como 'duration'
       views,
-      // image, // No se usa en el caption, pero podrías usarlo para el thumbnail si lo deseas.
       author,
-      // url: videoURL // Esto es la URL original del video de YouTube, no la de descarga
-    } = jsonResponse.result.metadata;
+      quality, // La API de NEVI puede proporcionar la calidad directamente
+      ago, // Fecha de subida relativa
+    } = jsonResponse;
 
-    const {
-      url: downloadURL,
-      quality,
-      filename
-    } = jsonResponse.result.download;
+    const downloadURL = jsonResponse.download_link;
+    const filename = `${title || 'video'}.mp4`; // Nombre de archivo sugerido
 
-    console.log(`[DEBUG] URL de descarga del video obtenida: ${downloadURL}`); // **Paso de Depuración 6: Verifica la URL de descarga**
+    console.log(`[DEBUG] URL de descarga del video obtenida de NEVI: ${downloadURL}`);
 
-    const videoRes = await fetch(downloadURL);
-
-    // **Paso de Depuración 7: Verifica si la descarga del video fue exitosa**
-    if (!videoRes.ok) { // `videoRes.ok` es true si el estado HTTP es 2xx
-        console.error(`[ERROR] Fallo al descargar el video del URL: ${downloadURL}, Estado HTTP: ${videoRes.status}`);
-        return conn.reply(
-            m.chat,
-            `❌ *¡Problemas en el Grand Line!* No pude obtener el archivo de video. El servidor de descarga respondió con un error ${videoRes.status}.`,
-            m,
-            { contextInfo, quoted: m }
-        );
-    }
-
-    const videoBuffer = await videoRes.buffer();
-    console.log(`[DEBUG] Video descargado en buffer. Tamaño: ${videoBuffer.length} bytes`); // **Paso de Depuración 8: Verifica el tamaño del buffer**
-
+    // *** CAMBIO: Enviando el video directamente con la URL de descarga ***
+    // Esto es más eficiente ya que no descarga el video al bot primero.
     await conn.sendMessage(
       m.chat,
       {
-        video: videoBuffer,
+        video: { url: downloadURL }, // Envía el video directamente desde la URL
         caption:
 `╭━━━━[ 🏴‍☠️ YTMP4 del Rey de los Piratas 🏴‍☠️ ]━━━━⬣
-📹 *Título:* ${title}
+📹 *Título:* ${title || 'Desconocido'}
 🧑‍💻 *Tripulación:* ${author?.name || 'Desconocido'}
-🕒 *Duración de la Aventura:* ${timestamp}
-📅 *Fecha de Zarpe:* ${jsonResponse.result.metadata.ago}
-👁️ *Vistas por la Tripulación:* ${views.toLocaleString()}
-🎞️ *Calidad de la Aventura:* ${quality}
+🕒 *Duración de la Aventura:* ${duration || 'Desconocida'}
+📅 *Fecha de Zarpe:* ${ago || 'Desconocida'}
+👁️ *Vistas por la Tripulación:* ${views?.toLocaleString() || '0'}
+🎞️ *Calidad de la Aventura:* ${quality || 'Desconocida'}
 📄 *Bitácora del Capitán:*
 ${description ? description.substring(0, 500) + (description.length > 500 ? '...' : '') : 'Sin descripción.'}
-╰━━━━━━━━━━━━━━━━━━⬣`, // Limita la descripción para evitar mensajes demasiado largos
+╰━━━━━━━━━━━━━━━━━━⬣`,
         mimetype: 'video/mp4',
-        fileName: filename || `${title}.mp4` // Asegura que siempre haya un nombre de archivo
+        fileName: filename
       },
       { contextInfo, quoted: m }
     );
-    console.log(`[DEBUG] Video enviado exitosamente.`); // **Paso de Depuración 9: Confirmación de envío**
+    console.log(`[DEBUG] Video enviado exitosamente.`);
 
   } catch (e) {
-    console.error(`[ERROR FATAL] Ocurrió un error inesperado en el manejador:`, e); // **Paso de Depuración 10: Captura errores inesperados**
+    console.error(`[ERROR FATAL] Ocurrió un error inesperado en el manejador:`, e);
     await conn.reply(
       m.chat,
       `❌ *¡Problemas en el Grand Line!* Ocurrió un error al procesar el video, nakama.\nDetalles: ${e.message}. ¡Necesitamos más carne para esto!`,
