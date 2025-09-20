@@ -1,35 +1,43 @@
-let handler = async (m, { conn }) => {}
+import { WAMessageStubType } from '@whiskeysockets/baileys';
+import fetch from 'node-fetch';
 
-handler.event = 'group-participants-update'
-handler.disabled = false
+export async function before(m, { conn, participants, groupMetadata }) {
+  if (!m.messageStubType || !m.isGroup) return !0;
 
-handler.before = async function (m, { conn }) {
-  let user = m.participants[0]
-  let group = m.chat
+  let who = m.messageStubParameters[0];
+  let taguser = `@${who.split('@')[0]}`;
+  let chat = global.db.data.chats[m.chat];
+  let pp = await conn.profilePictureUrl(m.messageStubParameters[0], 'image').catch(() => '');
+  let img = await (await fetch(pp)).buffer();
 
-  if (!global.db.data.chats[group].welcome) return
+  if (chat.welcome && m.messageStubType === WAMessageStubType.GROUP_PARTICIPANT_ADD) {
+    let bienvenida = `
+    ¡Voy a ser el Rey de los Piratas! 
+    *¡Bienvenido/a!* ${taguser} a ${groupMetadata.subject}
+    Disfruta tu estadía en el grupo y no olvides leer las reglas.
+    Usa *#help* para ver la lista de comandos disponibles.
+    `;
+    await conn.sendMessage(m.chat, { image: img, caption: bienvenida, mentions: [who] });
+  }
 
-  try {
-    if (m.action == 'add') {
-      let pp = 'https:                                             
-      let name = await conn.getName(user)
-      let text = `✨ Bienvenido/a ${name} 👒 Al grupo de los piratas - Monkey D Luffy MD Lee las reglas, convive y prepárate para la aventura 🏴‍☠️⚔️`
-      await conn.sendFile(group, pp, '//telegra.ph/file/265c672094dfa87caea19.jpg' 
-      let name = await conn.getName(user)
-      let text = `✨ Bienvenido/a ${name} 👒 Al grupo de los piratas - Monkey D Luffy MD Lee las reglas, convive y prepárate para la aventura 🏴‍☠️⚔️`
-      await conn.sendFile(group, pp, 'welcome.jpg', text, m)
-    } else if (m.action == 'remove' && m.participants[0] !== conn.user.jid) {
-      let name = await conn.getName(user)
-      let text = `🚫 ${name} ha sido eliminado del grupo. ¡No te preocupes, siempre serás recordado en Grand Line! 🌊😢`
-      await conn.sendMessage(group, { text }, { quoted: m })
-    } else if (m.action == 'remove') {
-      let name = await conn.getName(user)
-      let text = `👋 Adiós ${name} ¡Otro que no resistió la presión de Grand Line! 🌊☠️`
-      await conn.sendMessage(group, { text }, { quoted: m })
-    } 
-  } catch (e) {
-    console.error(e)
+  if (chat.welcome && m.messageStubType === WAMessageStubType.GROUP_PARTICIPANT_LEAVE) {
+    let bye = `
+    ¡Hasta luego! ${taguser} de ${groupMetadata.subject}
+    Esperamos verte de nuevo pronto.
+    Recuerda que puedes usar *#help* para obtener ayuda en cualquier momento.
+    `;
+    await conn.sendMessage(m.chat, { image: img, caption: bye, mentions: [who] });
+  }
+
+  if (chat.welcome && m.messageStubType === WAMessageStubType.GROUP_PARTICIPANT_REMOVE) {
+    let kick = `
+    ¡Adiós! ${taguser} de ${groupMetadata.subject}
+    Esperamos que vuelvas pronto.
+    Si necesitas ayuda, no dudes en usar *#help*.
+    `;
+    await conn.sendMessage(m.chat, { image: img, caption: kick, mentions: [who] });
   }
 }
 
-export default handler
+// Powered by Monkey-D-luffy-Bot-MD
+// "¡No voy a perder contra nadie, porque voy a ser el Rey de los Piratas!" - Monkey D. Luffy
