@@ -1,44 +1,33 @@
-import { WAMessageStubType } from '@whiskeysockets/baileys'
-import fetch from 'node-fetch'
+// plugins/welcome.js
+let handler = async (m, { conn }) => {}
 
-export async function before(m, { conn, participants, groupMetadata }) {
-  if (!m.messageStubType || !m.isGroup) return !0;
-  let who = m.messageStubParameters[0]
-  let taguser = `@${who.split('@')[0]}`
-  let chat = global.db.data.chats[m.chat]
-  let pp = await conn.profilePictureUrl(m.messageStubParameters[0], 'image').catch(_ => 'https://files.catbox.moe/xr2m6u.jpg')
-  let img = await (await fetch(`${pp}`)).buffer()
+handler.event = 'group-participants-update'
+handler.disabled = false
 
-  if (chat.welcome && m.messageStubType === WAMessageStubType.GROUP_PARTICIPANT_ADD) {
-    let bienvenida = `
-🎉 **¡BIENVENIDO A BORDO, NAKAMA!** 🎉
-${taguser} se ha unido al grupo: ${groupMetadata.subject} 🤝
-¡Vamos a encontrar el One Piece juntos! 🏴‍☠️
-•(=^●ω●^=)• Disfruta tu estadía en el grupo y no te rindas nunca! 💪
-> ✐ Puedes usar *#help* para ver la lista de comandos.
-`
-    await conn.sendMessage(m.chat, { image: img, caption: bienvenida, mentions: [who] })
-  }
+handler.before = async function (m, { conn }) {
+  let user = m.participants[0]
+  let group = m.chat
 
-  if (chat.welcome && m.messageStubType === WAMessageStubType.GROUP_PARTICIPANT_LEAVE) {
-    let bye = `
-😢 **¡ADIÓS, NAKAMA!** 😢
-${taguser} ha salido del grupo: ${groupMetadata.subject} 👋
-¡Que tengas un buen viaje y no te olvides de nosotros! 🌊
-•(=^●ω●^=)• Te esperamos pronto!
-> ✐ Puedes usar *#help* para ver la lista de comandos.
-`
-    await conn.sendMessage(m.chat, { image: img, caption: bye, mentions: [who] })
-  }
+  // Verifica si se activó la bienvenida en el grupo
+  if (!global.db.data.chats[group].welcome) return
 
-  if (chat.welcome && m.messageStubType === WAMessageStubType.GROUP_PARTICIPANT_REMOVE) {
-    let kick = `
-😢 **¡ADIÓS, NAKAMA!** 😢
-${taguser} ha sido expulsado del grupo: ${groupMetadata.subject} 👋
-¡No te rindas nunca y sigue adelante! 💪
-•(=^●ω●^=)• Te esperamos pronto!
-> ✐ Puedes usar *#help* para ver la lista de comandos.
-`
-    await conn.sendMessage(m.chat, { image: img, caption: kick, mentions: [who] })
+  try {
+    if (m.action == 'add') {
+      let pp = 'https:                                                                                   
+      let name = await conn.getName(user)
+      let text = `✨ Bienvenido/a ${name} 👒 Al grupo de los piratas - *Monkey D Luffy MD* Lee las reglas, convive y prepárate para la aventura 🏴‍☠️⚔️`
+      await conn.sendFile(group, pp, '//telegra.ph/file/265c672094dfa87caea19.jpg' // imagen de bienvenida predeterminada
+      let name = await conn.getName(user)
+      let text = `✨ Bienvenido/a ${name} 👒 Al grupo de los piratas - *Monkey D Luffy MD* Lee las reglas, convive y prepárate para la aventura 🏴‍☠️⚔️`
+      await conn.sendFile(group, pp, 'welcome.jpg', text, m)
+    } else if (m.action == 'remove') {
+      let name = await conn.getName(user)
+      let text = `👋 Adiós ${name} ¡Otro que no resistió la presión de Grand Line! 🌊☠️`
+      await conn.sendMessage(group, { text }, { quoted: m })
+    }
+  } catch (e) {
+    console.error(e)
   }
 }
+
+export default handler
