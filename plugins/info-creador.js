@@ -33,16 +33,6 @@ async function handler(m, { conn }) {
       region: '🇩🇴 República Dominicana',
       web: 'https://github.com/dioneibi-rip',
       biografia: await conn.fetchStatus('18294868853@s.whatsapp.net').then(res => res.status).catch(_ => 'Sin biografía')
-    },
-    {
-      numero: '18293142989',
-      nombre: '𓆩‌۫᷼ ִֶָღܾ݉͢ғ꯭ᴇ꯭፝ℓɪ꯭ͨא𓆪',
-      cargo: 'Desarrollador y ayudante',
-      nota: 'Resolucion de probremas',
-      correo: 'sin información',
-      region: '🇩🇴 República Dominicana',
-      web: 'https://github.com/mantis-has',
-      biografia: await conn.fetchStatus('18293142989@s.whatsapp.net').then(res => res.status).catch(_ => 'Sin biografía')
     }
   ]
 
