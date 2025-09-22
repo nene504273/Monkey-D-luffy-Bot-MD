@@ -21,7 +21,20 @@ export async function before(m, { conn, participants, groupMetadata }) {
     } else if (m.action === 'remove') {
         const user = m.participant ? m.participant.split('@')[0] : '';
 
-        if (m.participant !== conn.user.jid) {
+        // Si el que se va es el bot
+        if (m.participant === conn.user.jid) {
+            // Este mensaje no se puede enviar porque el bot ya no estará en el grupo.
+            // Es una lógica que no se puede ejecutar.
+            const mensajeEliminacion = `
+😤 *¡¡¿Me acaban de echar del barco?!!*
+❌ ¡Esto no se hace a un futuro Rey de los Piratas!
+🍖 *Volveré más fuerte... ¡y con carne!*
+- *Monkey D. Luffy fuera del grupo... pero no del mar.* 🌊👒
+`;
+            // Opcionalmente, puedes registrar este evento en un log, pero no puedes enviar el mensaje.
+            // console.log('El bot ha sido eliminado del grupo:', group);
+        } else {
+            // Si se va un usuario normal
             const despedida = `😢 *Ohh… otro nakama se fue del barco.*
 ✋ ¡Adiós, @${user}! Siempre serás parte de esta tripulación.
 ⚓ ¡Sigue navegando tu propia ruta, algún día nos reencontraremos en Grand Line!
