@@ -1,43 +1,39 @@
-import { WAMessageStubType } from '@whiskeysockets/baileys';
-import fetch from 'node-fetch';
+import { WAMessageStubType, WASocket } from '@whiskeysockets/baileys';
+
+// ==========================================================================
+// |                             Monkey D. Luffy Bot MD                     |
+// |                Desarrollado por nene                                    |
+// |                                                                        |
+// |  No está permitido copiar, modificar o distribuir este código sin       |
+// |  permiso explícito del autor.                                          |
+// ==========================================================================
 
 export async function before(m, { conn, participants, groupMetadata }) {
-  if (!m.messageStubType || !m.isGroup) return !0;
-
-  let who = m.messageStubParameters[0];
-  let taguser = `@${who.split('@')[0]}`;
-  let chat = global.db.data.chats[m.chat];
-  let pp = await conn.profilePictureUrl(m.messageStubParameters[0], 'image').catch(() => '');
-  let img = await (await fetch(pp)).buffer();
-
-  if (chat.welcome && m.messageStubType === WAMessageStubType.GROUP_PARTICIPANT_ADD) {
+  if (m.action === 'add') {
     let bienvenida = `
-    ¡Voy a ser el Rey de los Piratas! 
-    *¡Bienvenido/a!* ${taguser} a ${groupMetadata.subject}
-    Disfruta tu estadía en el grupo y no olvides leer las reglas.
-    Usa *#help* para ver la lista de comandos disponibles.
+    ʚ🍖ɞ *¡Yoshaaa! Bienvenido al barco, nakama!*
+    🏴‍☠️ ¡Yo soy *Monkey D. Luffy*, y seré el Rey de los Piratas!
+    📍 Has llegado a *${groupMetadata.subject}*, un lugar para grandes aventuras.
+    ✨ Usa `#menu` para ver los comandos del bot.
+    *¡Prepárate para zarpar, que esto apenas comienza!* 👒
     `;
-    await conn.sendMessage(m.chat, { image: img, caption: bienvenida, mentions: [who] });
-  }
-
-  if (chat.welcome && m.messageStubType === WAMessageStubType.GROUP_PARTICIPANT_LEAVE) {
-    let bye = `
-    ¡Hasta luego! ${taguser} de ${groupMetadata.subject}
-    Esperamos verte de nuevo pronto.
-    Recuerda que puedes usar *#help* para obtener ayuda en cualquier momento.
+    let pp = await conn.profilePictureUrl(m.participants[0], 'image');
+    await conn.sendMessage(m.chat, { image: { url: pp }, caption: bienvenida, mentions: [m.participants[0]] });
+  } else if (m.action === 'remove' && m.participant !== conn.user.jid) {
+    let despedida = `
+    😢 *Ohh… otro nakama se fue del barco.*
+    ✋ ¡Adiós, @${m.participant.split('@')[0]}! Siempre serás parte de esta tripulación.
+    ⚓ ¡Sigue navegando tu propia ruta, algún día nos reencontraremos en Grand Line!
+    - *Monkey D. Luffy* 👒
     `;
-    await conn.sendMessage(m.chat, { image: img, caption: bye, mentions: [who] });
-  }
-
-  if (chat.welcome && m.messageStubType === WAMessageStubType.GROUP_PARTICIPANT_REMOVE) {
-    let kick = `
-    ¡Adiós! ${taguser} de ${groupMetadata.subject}
-    Esperamos que vuelvas pronto.
-    Si necesitas ayuda, no dudes en usar *#help*.
+    await conn.sendMessage(m.chat, { text: despedida, mentions: [m.participant] });
+  } else if (m.action === 'remove' && m.participant === conn.user.jid) {
+    let mensajeEliminacion = `
+    😤 *¡¡¿Me acaban de echar del barco?!!*
+    ❌ ¡Esto no se hace a un futuro Rey de los Piratas!
+    🍖 *Volveré más fuerte... ¡y con carne!*
+    - *Monkey D. Luffy fuera del grupo... pero no del mar.* 🌊👒
     `;
-    await conn.sendMessage(m.chat, { image: img, caption: kick, mentions: [who] });
+    await conn.sendMessage(m.chat, { text: mensajeEliminacion });
   }
 }
-
-// Powered by Monkey-D-luffy-Bot-MD
-// "¡No voy a perder contra nadie, porque voy a ser el Rey de los Piratas!" - Monkey D. Luffy
