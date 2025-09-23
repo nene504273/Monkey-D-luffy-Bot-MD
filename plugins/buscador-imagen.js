@@ -8,7 +8,7 @@ const image = await res.getRandom();
 const link = image;
 const messages = [['Imagen 1', dev, await res.getRandom(),
 [[]], [[]], [[]], [[]]], ['Imagen 2', dev, await res.getRandom(), [[]], [[]], [[]], [[]]], ['Imagen 3', dev, await res.getRandom(), [[]], [[]], [[]], [[]]], ['Imagen 4', dev, await res.getRandom(), [[]], [[]], [[]], [[]]]]
-await conn.sendCarousel(m.chat, `${emoji} Resultado de ${text}`, '⪛✰ Imagen - Búsqueda ✰⪜', null, messages, m);
+await conn.sendCarousel(m.chat, `🏴‍☠️ Resultado de ${text}`, '⪛✰ Imagen - Búsqueda ✰⪜', null, messages, m);
 };
 handler.help = ['imagen'];
 handler.tags = ['buscador', 'tools', 'descargas'];
