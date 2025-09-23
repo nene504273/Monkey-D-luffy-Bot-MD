@@ -1,37 +1,22 @@
-// Monkey D. Luffy Bot MD - Welcome and Bye Events Plugin
-// Desarrollado por nene
-// Repositorio: https://github.com/nene504273
-// ⚠️ No copiar, modificar o distribuir sin permiso explícito del autor
-// nevi-dev chambeo aqui
+// Este archivo solo maneja los eventos de bienvenida y despedida.
+// Se conecta al sistema de activación/desactivación que ya tienes.
 
 import { WAMessageStubType } from '@whiskeysockets/baileys';
 import fetch from 'node-fetch';
 
 /**
  * Esta función maneja los eventos de unión y salida de un grupo,
- * utilizando los mensajes personalizados guardados en la base de datos.
+ * verificando si la función está activada en la base de datos.
  */
 export async function before(m, { conn, groupMetadata, isBotAdmin, participants }) {
     // Salir si no es un evento de grupo.
     if (!m.isGroup) return;
 
-    // --- Lógica de la Base de Datos ---
-
     const chatId = m.chat;
-
-    // Inicializar la configuración del grupo si no existe.
-    if (!global.db.data.chats[chatId]) {
-        global.db.data.chats[chatId] = {
-            customWelcome: null,
-            customBye: null
-        };
-    }
-    const chatConfig = global.db.data.chats[chatId];
+    const chatConfig = global.db.data.chats[chatId] || {};
     const groupName = groupMetadata?.subject || 'este grupo';
     const memberCount = participants.length;
-
-    // --- Lógica de Eventos de Unión y Salida ---
-
+    
     // Salir si no es un evento de unión/salida o el bot no es administrador.
     if (!m.messageStubType || !isBotAdmin) return;
 
@@ -49,8 +34,8 @@ export async function before(m, { conn, groupMetadata, isBotAdmin, participants 
     };
 
     // Evento de 'adición' (unirse al grupo)
-    if (m.messageStubType === WAMessageStubType.GROUP_PARTICIPANT_ADD) {
-        // Usa el mensaje personalizado si existe, de lo contrario usa el predeterminado
+    // Se activa si la propiedad 'welcome' es verdadera
+    if (m.messageStubType === WAMessageStubType.GROUP_PARTICIPANT_ADD && chatConfig.welcome) {
         const welcomeMessage = chatConfig.customWelcome || `
 ʚ🍖ɞ *¡Yoshaaa! Bienvenido al barco, nakama!*
 🏴‍☠️ ¡Yo soy *Monkey D. Luffy*, y seré el Rey de los Piratas!
@@ -63,11 +48,10 @@ export async function before(m, { conn, groupMetadata, isBotAdmin, participants 
     }
 
     // Evento de 'salida' (el usuario se fue o fue removido)
-    if (m.messageStubType === WAMessageStubType.GROUP_PARTICIPANT_REMOVE) {
-        // Verifica si el participante que se va no es el bot.
+    // Se activa si la propiedad 'bye' es verdadera
+    if (m.messageStubType === WAMessageStubType.GROUP_PARTICIPANT_REMOVE && chatConfig.bye) {
         if (who === conn.user.jid) return;
 
-        // Usa el mensaje personalizado si existe, de lo contrario usa el predeterminado
         const byeMessage = chatConfig.customBye || `
 😢 *Ohh… otro nakama se fue del barco.*
 ✋ ¡Adiós, @user! Siempre serás parte de esta tripulación.
