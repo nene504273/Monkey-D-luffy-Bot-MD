@@ -2,6 +2,7 @@
 // Desarrollado por nene
 // Repositorio: https://github.com/nene504273
 // ⚠️ No copiar, modificar o distribuir sin permiso explícito del autor
+// nevi-dev chambeo aqui
 
 import { WAMessageStubType } from '@whiskeysockets/baileys';
 import fetch from 'node-fetch';
