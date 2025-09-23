@@ -1,12 +1,12 @@
-// Este archivo solo maneja los eventos de bienvenida y despedida.
-// Se conecta al sistema de activación/desactivación que ya tienes.
+// Este es un código hecho por nevi-dev para el bot Monkey D. Luffy de nene.
+// ⚠️ Este código no puede ser modificado, copiado o usado sin el permiso explícito de su creador.
 
 import { WAMessageStubType } from '@whiskeysockets/baileys';
 import fetch from 'node-fetch';
 
 /**
- * Esta función maneja los eventos de unión y salida de un grupo,
- * verificando si la función está activada en la base de datos.
+ * Esta función maneja los eventos de unión y salida de un grupo.
+ * Se activa si la función 'welcome' está habilitada en la base de datos.
  */
 export async function before(m, { conn, groupMetadata, isBotAdmin, participants }) {
     // Salir si no es un evento de grupo.
@@ -48,8 +48,8 @@ export async function before(m, { conn, groupMetadata, isBotAdmin, participants 
     }
 
     // Evento de 'salida' (el usuario se fue o fue removido)
-    // Se activa si la propiedad 'bye' es verdadera
-    if (m.messageStubType === WAMessageStubType.GROUP_PARTICIPANT_REMOVE && chatConfig.bye) {
+    // Se activa si la propiedad 'welcome' es verdadera
+    if (m.messageStubType === WAMessageStubType.GROUP_PARTICIPANT_REMOVE && chatConfig.welcome) {
         if (who === conn.user.jid) return;
 
         const byeMessage = chatConfig.customBye || `
