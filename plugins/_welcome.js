@@ -2,7 +2,6 @@
 // Desarrollado por nene
 // Repositorio: https://github.com/nene504273
 // ⚠️ No copiar, modificar o distribuir sin permiso explícito del autor
-// nevi-dev estuvo aquí
 
 import { WAMessageStubType } from '@whiskeysockets/baileys';
 import fetch from 'node-fetch';
@@ -17,7 +16,7 @@ export async function before(m, { conn, groupMetadata }) {
     const group = groupMetadata?.subject || 'este grupo';
 
     // Obtiene la foto de perfil del usuario o usa una imagen por defecto.
-    const pp = await conn.profilePictureUrl(who, 'image').catch(() => 'https://static.wikia.nocookie.net/onepiece/images/a/a2/Monkey_D._Luffy_Anime_Saga_East_Blue_Frente.png');
+    const pp = await conn.profilePictureUrl(who, 'image').catch(() => 'https://files.catbox.moe/xr2m6u.jpg');
     const img = await (await fetch(pp)).buffer();
 
     // Evento de 'adición' (unirse al grupo)
@@ -29,7 +28,7 @@ export async function before(m, { conn, groupMetadata }) {
 ✨ Usa \`#menu\` para ver los comandos del bot.
 *¡Prepárate para zarpar, que esto apenas comienza!* 👒
 `;
-        await conn.sendMessage(m.chat, { image: { url: pp }, caption: bienvenida, mentions: [who] });
+        await conn.sendMessage(m.chat, { image: img, caption: bienvenida, mentions: [who] });
     }
 
     // Evento de 'salida' (el usuario se fue o fue removido)
@@ -42,6 +41,6 @@ export async function before(m, { conn, groupMetadata }) {
 ⚓ ¡Sigue navegando tu propia ruta, algún día nos reencontraremos en Grand Line!
 - *Monkey D. Luffy* 👒
 `;
-        await conn.sendMessage(m.chat, { text: despedida, mentions: [who] });
+        await conn.sendMessage(m.chat, { image: img, caption: despedida, mentions: [who] });
     }
 }
