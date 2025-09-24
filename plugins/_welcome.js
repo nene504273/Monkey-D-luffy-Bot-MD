@@ -25,6 +25,10 @@ export async function before(m, { conn, groupMetadata, isBotAdmin, participants 
     const pp = await conn.profilePictureUrl(who, 'image').catch(() => 'https://files.catbox.moe/xr2m6u.jpg');
     const img = await (await fetch(pp)).buffer();
 
+    // Marca de agua para welcome y goodbye
+    let txtWelcome = 'ゲ◜៹ New Member ៹◞ゲ';
+    let txtGoodbye = 'ゲ◜៹ Bye Member ៹◞ゲ';
+
     // Reemplazar los placeholders en el mensaje
     const formatMessage = (message, userTag) => {
         return message
@@ -34,7 +38,6 @@ export async function before(m, { conn, groupMetadata, isBotAdmin, participants 
     };
 
     // Evento de 'adición' (unirse al grupo)
-    // Se activa si la propiedad 'welcome' es verdadera
     if (m.messageStubType === WAMessageStubType.GROUP_PARTICIPANT_ADD && chatConfig.welcome) {
         const welcomeMessage = chatConfig.customWelcome || `
 ʚ🍖ɞ *¡Yoshaaa! Bienvenido al barco, nakama!*
@@ -44,11 +47,14 @@ export async function before(m, { conn, groupMetadata, isBotAdmin, participants 
 *¡Prepárate para zarpar, que esto apenas comienza!* 👒
         `;
 
-        await conn.sendMessage(m.chat, { image: img, caption: formatMessage(welcomeMessage, taguser), mentions: [who] });
+        await conn.sendMessage(m.chat, { 
+            image: img, 
+            caption: `${txtWelcome}\n\n${formatMessage(welcomeMessage, taguser)}`, 
+            mentions: [who] 
+        });
     }
 
     // Evento de 'salida' (el usuario se fue o fue removido)
-    // Se activa si la propiedad 'welcome' es verdadera
     if (m.messageStubType === WAMessageStubType.GROUP_PARTICIPANT_REMOVE && chatConfig.welcome) {
         if (who === conn.user.jid) return;
 
@@ -59,6 +65,10 @@ export async function before(m, { conn, groupMetadata, isBotAdmin, participants 
 - *Monkey D. Luffy* 👒
         `;
 
-        await conn.sendMessage(m.chat, { image: img, caption: formatMessage(byeMessage, taguser), mentions: [who] });
+        await conn.sendMessage(m.chat, { 
+            image: img, 
+            caption: `${txtGoodbye}\n\n${formatMessage(byeMessage, taguser)}`, 
+            mentions: [who] 
+        });
     }
 }
