@@ -3,10 +3,10 @@ import crypto from "crypto";
 import { FormData, Blob } from "formdata-node";
 import { fileTypeFromBuffer } from "file-type";
 
-const rwait = "⏳";  // Emoji espera
-const done = "✅";   // Emoji listo
-const error = "❌";  // Emoji error
-const emoji = "❕";  // Emoji info
+const rwait = "⏳"; // Emoji espera
+const done = "✅"; // Emoji listo
+const error = "❌"; // Emoji error
+const emoji = "❕"; // Emoji info
 const dev = "👑 Luffy-sama te cuida ~";
 
 function formatBytes(bytes) {
@@ -55,14 +55,26 @@ let handler = async (m, { conn }) => {
 
     if (!urlCatbox || !urlCatbox.startsWith("http")) throw new Error("No pude subir la imagen a Catbox, falla de servidor.");
 
-    // Construir URL de upscale HD con la API de Stellar
-    let apiUpscaleUrl = `https://api.stellarwa.xyz/tools/upscale?url=${encodeURIComponent(urlCatbox)}&apikey=stellar-o7UYR5SC`;
+    // Construir URL de upscale HD con la nueva API
+    let apiUpscaleUrl = `https://api.vreden.my.id/api/v1/artificial/imglarger/upscale?url=${encodeURIComponent(urlCatbox)}&scale=2`;
 
-    // Llamar API para obtener la imagen en HD (recibimos binario directo)
+    // Llamar a la API para obtener el enlace de la imagen en HD
     let resUpscale = await fetch(apiUpscaleUrl);
     if (!resUpscale.ok) throw new Error("Upscale API falló, intenta luego.");
 
-    let bufferHD = Buffer.from(await resUpscale.arrayBuffer());
+    let jsonResponse = await resUpscale.json();
+
+    if (!jsonResponse.status || !jsonResponse.result || !jsonResponse.result.download) {
+        throw new Error("La respuesta de la API no fue exitosa o no contiene la URL de descarga.");
+    }
+
+    let upscaledImageUrl = jsonResponse.result.download;
+
+    // Llamar a la URL de descarga para obtener la imagen directamente
+    let resImage = await fetch(upscaledImageUrl);
+    if (!resImage.ok) throw new Error("No pude descargar la imagen mejorada.");
+
+    let bufferHD = Buffer.from(await resImage.arrayBuffer());
 
     // Enviar la imagen HD con texto estilo Luffy
     let textoLuffy = `
