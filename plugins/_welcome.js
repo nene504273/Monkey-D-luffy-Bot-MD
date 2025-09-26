@@ -7,7 +7,7 @@ import nodeHtmlToImage from 'node-html-to-image'; // Librería clave para render
 
 // --- CONFIGURACIÓN DE IMÁGENES ---
 const DEFAULT_AVATAR_URL = 'https://files.catbox.moe/xr2m6u.jpg'; 
-const BACKGROUND_IMAGE_URL = 'URL_DE_TU_IMAGEN_DE_FONDO.png'; // ⬅️ REEMPLAZA ESTA URL CON TU PROPIO DISEÑO DE FONDO
+const BACKGROUND_IMAGE_URL = 'https://files.catbox.moe/1rou90.jpg'; // ⬅️ REEMPLAZA ESTA URL CON TU PROPIO DISEÑO DE FONDO
 
 // --- FUNCIONES CENTRALES ---
 
