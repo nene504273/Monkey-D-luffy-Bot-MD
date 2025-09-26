@@ -60,7 +60,9 @@ async function generateImageFromAPI(type, userName, groupName, memberCount, avat
 /**
  * Esta función maneja los eventos de unión y salida de un grupo.
  */
-export async function before(m, { conn, groupMetadata, isBotAdmin, participants }) {
+export async function before(m, { conn, groupMetadata, participants }) {
+    // Nota: Se ha eliminado 'isBotAdmin' de los parámetros.
+
     // 1. Validaciones iniciales
     if (!m.isGroup || !m.messageStubType) return;
 
@@ -93,7 +95,8 @@ export async function before(m, { conn, groupMetadata, isBotAdmin, participants 
     // ---------------------------------------------
     // --- Lógica de Bienvenida (GROUP_PARTICIPANT_ADD / INVITE) ---
     // ---------------------------------------------
-    if ((m.messageStubType === WAMessageStubType.GROUP_PARTICIPANT_ADD || m.messageStubType === WAMessageStubType.GROUP_PARTICIPANT_INVITE) && isBotAdmin) {
+    // Se ha eliminado la verificación '&& isBotAdmin'
+    if (m.messageStubType === WAMessageStubType.GROUP_PARTICIPANT_ADD || m.messageStubType === WAMessageStubType.GROUP_PARTICIPANT_INVITE) {
 
         const mediaBuffer = await generateImageFromAPI('welcome', taguser, groupName, memberCount, ppUrl);
 
@@ -128,9 +131,8 @@ export async function before(m, { conn, groupMetadata, isBotAdmin, participants 
         // Ignorar si el bot es quien se fue/fue removido
         if (who === conn.user.jid) return;
 
-        // Se requiere que el bot sea admin para enviar el mensaje de REMOVE, pero lo mantenemos para ambos por seguridad.
-        if (!isBotAdmin) return;
-
+        // Se ha eliminado la verificación '!isBotAdmin'
+        
         const mediaBuffer = await generateImageFromAPI('goodbye', taguser, groupName, memberCount, ppUrl);
 
         const byeMessage = chatConfig.customBye || `
