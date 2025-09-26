@@ -155,5 +155,3 @@ export async function before(m, { conn, groupMetadata, participants }) {
         }
     }
 }
-
-export default before;
