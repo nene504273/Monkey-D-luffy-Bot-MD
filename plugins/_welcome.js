@@ -1,17 +1,17 @@
 // Este es un código hecho por nevi-dev para el bot Monkey D. Luffy de nene.
 // ⚠️ Este código no puede ser modificado, copiado o usado sin el permiso explícito de su creador.
 
-// Corregimos la importación de MessageMedia usando la convención moderna
 import * as baileys from '@whiskeysockets/baileys';
-import fetch from 'node-fetch'; // Necesario para la llamada a la API
+import fetch from 'node-fetch'; 
 
 const { WAMessageStubType } = baileys; 
 
 // --- CONFIGURACIÓN DE API Y CONSTANTES ---
 const API_URL = 'http://neviapi.ddns.net:5000/welcome'; // Endpoint de la API
 const API_KEY = 'luffy'; // Clave de la API
-const DEFAULT_AVATAR_URL = 'https://files.catbox.moe/xr2m6u.jpg'; 
-const BACKGROUND_IMAGE_URL = 'https://files.catbox.moe/1rou90.jpg'; // URL de fondo que se enviará a la API
+// Usar una URL de fallback que esté disponible
+const DEFAULT_AVATAR_URL = 'https://i.imgur.com/8B4QYQY.png'; 
+const BACKGROUND_IMAGE_URL = 'https://files.catbox.moe/1rou90.jpg';
 
 // --- FUNCIONES CENTRALES ---
 
@@ -22,12 +22,13 @@ const BACKGROUND_IMAGE_URL = 'https://files.catbox.moe/1rou90.jpg'; // URL de fo
 async function generateImageFromAPI(type, userName, groupName, memberCount, avatarUrl) {
     const action = type === 'welcome' ? 'welcome' : 'bye';
 
+    // Se asume que la API acepta el body JSON
     const payload = {
-        username: userName.replace('@', ''), // La API probablemente prefiere el nombre sin el '@'
+        username: userName.replace('@', ''), 
         action: action,
         group_name: groupName,
         member_count: memberCount,
-        background_url: BACKGROUND_IMAGE_URL, // Usamos la constante de fondo
+        background_url: BACKGROUND_IMAGE_URL, 
         profile_url: avatarUrl
     };
 
@@ -36,19 +37,17 @@ async function generateImageFromAPI(type, userName, groupName, memberCount, avat
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'X-API-KEY': API_KEY
+                'X-API-KEY': API_KEY // Asegúrate de que este header es el correcto para tu API
             },
             body: JSON.stringify(payload)
         });
 
-        // 1. Revisamos si la respuesta es exitosa (código 200-299)
         if (!response.ok) {
-            console.error(`Error en la respuesta de la API (Status: ${response.status}).`);
+            // Loguear más detalles del error para depuración
+            console.error(`Error en la respuesta de la API (Status: ${response.status}). Body: ${await response.text()}`);
             return null;
         }
 
-        // 2. Usamos .buffer() para obtener los datos binarios de la imagen directamente.
-        // Esto es correcto cuando la API responde solo con la imagen.
         return await response.buffer(); 
 
     } catch (e) {
@@ -62,19 +61,24 @@ async function generateImageFromAPI(type, userName, groupName, memberCount, avat
  * Esta función maneja los eventos de unión y salida de un grupo.
  */
 export async function before(m, { conn, groupMetadata, isBotAdmin, participants }) {
-    // Salir si no es un evento de grupo o no hay un StubType.
+    // 1. Validaciones iniciales
     if (!m.isGroup || !m.messageStubType) return;
 
+    // **CORRECCIÓN CLAVE:** Asegurar que los parámetros del stub existen
+    const stubParams = m.messageStubParameters;
+    if (!Array.isArray(stubParams) || stubParams.length === 0) return;
+
     const chatId = m.chat;
+    // Usamos el operador || para asegurar que siempre haya un objeto de chat
     const chatConfig = global.db.data.chats[chatId] || {};
     const groupName = groupMetadata?.subject || 'este grupo';
-    const memberCount = participants.length;
+    const memberCount = participants?.length || 0;
 
     // Salir si la función de bienvenida no está habilitada.
     if (!chatConfig.welcome) return;
 
     // Obtener los datos del usuario afectado
-    let who = m.messageStubParameters[0];
+    let who = stubParams[0]; // Extraer el JID del primer parámetro
     let taguser = `@${who.split('@')[0]}`;
     const ppUrl = await conn.profilePictureUrl(who, 'image').catch(() => DEFAULT_AVATAR_URL); 
 
@@ -87,12 +91,13 @@ export async function before(m, { conn, groupMetadata, isBotAdmin, participants 
     };
 
     // ---------------------------------------------
-    // --- Lógica de Bienvenida (GROUP_PARTICIPANT_ADD) ---
+    // --- Lógica de Bienvenida (GROUP_PARTICIPANT_ADD / INVITE) ---
     // ---------------------------------------------
-    if (m.messageStubType === WAMessageStubType.GROUP_PARTICIPANT_ADD && isBotAdmin) {
+    if ((m.messageStubType === WAMessageStubType.GROUP_PARTICIPANT_ADD || m.messageStubType === WAMessageStubType.GROUP_PARTICIPANT_INVITE) && isBotAdmin) {
 
         const mediaBuffer = await generateImageFromAPI('welcome', taguser, groupName, memberCount, ppUrl);
 
+        // Usamos chatConfig.customWelcome si existe, si no, el default.
         const welcomeMessage = chatConfig.customWelcome || `
 ʚ🍖ɞ *¡Yoshaaa! Bienvenido al barco, nakama!*
 🏴‍☠️ ¡Yo soy *Monkey D. Luffy*, y seré el Rey de los Piratas!
@@ -109,21 +114,21 @@ export async function before(m, { conn, groupMetadata, isBotAdmin, participants 
         if (mediaBuffer) {
             await conn.sendMessage(m.chat, { image: mediaBuffer, ...messageOptions });
         } else {
+            // Envía solo texto si la imagen falla.
             await conn.sendMessage(m.chat, { text: messageOptions.caption, mentions: messageOptions.mentions });
             console.warn(`[WARNING] Fallo la generación de imagen para ${taguser} usando la API. Enviando solo texto.`);
         }
     }
 
     // ----------------------------------------------------------------------
-    // --- Lógica de Despedida (GROUP_PARTICIPANT_LEAVE / GROUP_PARTICIPANT_REMOVE) ---
+    // --- Lógica de Despedida (LEAVE / REMOVE) ---
     // ----------------------------------------------------------------------
     if (m.messageStubType === WAMessageStubType.GROUP_PARTICIPANT_LEAVE || m.messageStubType === WAMessageStubType.GROUP_PARTICIPANT_REMOVE) {
 
         // Ignorar si el bot es quien se fue/fue removido
         if (who === conn.user.jid) return;
 
-        // Si es REMOVE, el bot debe ser admin para enviar el mensaje. Si es LEAVE, no hace falta.
-        // Simplificaremos y solo enviamos si el bot es admin, ya que el mensaje de la imagen requiere serlo.
+        // Se requiere que el bot sea admin para enviar el mensaje de REMOVE, pero lo mantenemos para ambos por seguridad.
         if (!isBotAdmin) return;
 
         const mediaBuffer = await generateImageFromAPI('goodbye', taguser, groupName, memberCount, ppUrl);
