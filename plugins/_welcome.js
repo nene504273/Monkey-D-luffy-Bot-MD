@@ -1,9 +1,12 @@
 // Este es un código hecho por nevi-dev para el bot Monkey D. Luffy de nene.
 // ⚠️ Este código no puede ser modificado, copiado o usado sin el permiso explícito de su creador.
 
-import { WAMessageStubType, MessageMedia } from '@whiskeysockets/baileys';
+// Corregimos la importación de MessageMedia usando la convención moderna
+import * as baileys from '@whiskeysockets/baileys';
 import fetch from 'node-fetch';
 import nodeHtmlToImage from 'node-html-to-image'; // Librería clave para renderizar HTML/CSS a imagen
+
+const { WAMessageStubType } = baileys; // Ahora accedemos a WAMessageStubType desde el objeto 'baileys'
 
 // --- CONFIGURACIÓN DE IMÁGENES ---
 const DEFAULT_AVATAR_URL = 'https://files.catbox.moe/xr2m6u.jpg'; 
@@ -13,9 +16,12 @@ const BACKGROUND_IMAGE_URL = 'https://files.catbox.moe/1rou90.jpg'; // ⬅️ RE
 
 /**
  * Genera la imagen de bienvenida/despedida usando una plantilla HTML/CSS interna.
+ * * ⚠️ IMPORTANTE: Esta función ha sido modificada para DEVOLVER el Buffer de la imagen.
+ * No devuelve MessageMedia, ya que conn.sendMessage acepta el Buffer directamente.
  */
 async function generateImageFromHTML(type, userName, groupName, memberCount, avatarUrl) {
     // Definimos el color y texto principal según el tipo de evento
+    // Esta parte asegura que la imagen de despedida se vea diferente (rojo)
     const color = type === 'welcome' ? '#FFD700' : '#8B0000'; // Dorado para bienvenida, Rojo para adiós
     const title = type === 'welcome' ? '¡BIENVENIDO NAKAMA!' : '¡ADIÓS AMIGO!';
     const messageLine = type === 'welcome' 
@@ -72,7 +78,7 @@ async function generateImageFromHTML(type, userName, groupName, memberCount, ava
                     <div class="title">${title}</div>
                     <div class="name">${userName}</div>
                     <div class="group">${messageLine}</div>
-                    <div class="count">¡Ahora somos ${memberCount} nakamas!</div>
+                    <div class="count">${type === 'welcome' ? `¡Ahora somos ${memberCount} nakamas!` : `Nos quedan ${memberCount} nakamas.`}</div>
                 </div>
             </div>
         </body>
@@ -88,8 +94,9 @@ async function generateImageFromHTML(type, userName, groupName, memberCount, ava
             type: 'png' // Aseguramos el formato
         });
 
-        // 3. Crear y devolver el objeto MessageMedia
-        return new MessageMedia('image/png', Buffer.from(imageBuffer).toString('base64'), 'bot_image.png');
+        // 3. Devolver el Buffer de la imagen (¡CORREGIDO!)
+        // En lugar de devolver MessageMedia, devolvemos el Buffer directamente
+        return imageBuffer; 
 
     } catch (e) {
         console.error('Error al generar la imagen con node-html-to-image:', e);
@@ -129,9 +136,9 @@ export async function before(m, { conn, groupMetadata, isBotAdmin, participants 
 
     // --- Evento de 'adición' (unirse al grupo) ---
     if (m.messageStubType === WAMessageStubType.GROUP_PARTICIPANT_ADD && chatConfig.welcome) {
-        
-        // 1. Generar la imagen usando la plantilla HTML/CSS
-        const media = await generateImageFromHTML('welcome', taguser, groupName, memberCount, ppUrl);
+
+        // 1. Generar la imagen usando la plantilla HTML/CSS para BIENVENIDA
+        const mediaBuffer = await generateImageFromHTML('welcome', taguser, groupName, memberCount, ppUrl);
 
         const welcomeMessage = chatConfig.customWelcome || `
 ʚ🍖ɞ *¡Yoshaaa! Bienvenido al barco, nakama!*
@@ -141,10 +148,10 @@ export async function before(m, { conn, groupMetadata, isBotAdmin, participants 
 *¡Prepárate para zarpar, que esto apenas comienza!* 👒
         `;
 
-        if (media) {
-            // Enviar la imagen generada dinámicamente
+        if (mediaBuffer) {
+            // Enviar la imagen generada dinámicamente (CORREGIDO: usamos mediaBuffer)
             await conn.sendMessage(m.chat, { 
-                image: media.buffer, 
+                image: mediaBuffer, 
                 caption: formatMessage(welcomeMessage, taguser), 
                 mentions: [who] 
             });
@@ -162,8 +169,8 @@ export async function before(m, { conn, groupMetadata, isBotAdmin, participants 
     if (m.messageStubType === WAMessageStubType.GROUP_PARTICIPANT_REMOVE && chatConfig.welcome) {
         if (who === conn.user.jid) return;
 
-        // 1. Generar la imagen usando la plantilla HTML/CSS
-        const media = await generateImageFromHTML('goodbye', taguser, groupName, memberCount, ppUrl);
+        // 1. Generar la imagen usando la plantilla HTML/CSS para DESPEDIDA
+        const mediaBuffer = await generateImageFromHTML('goodbye', taguser, groupName, memberCount, ppUrl);
 
         const byeMessage = chatConfig.customBye || `
 😢 *Ohh… otro nakama se fue del barco.*
@@ -172,10 +179,10 @@ export async function before(m, { conn, groupMetadata, isBotAdmin, participants 
 - *Monkey D. Luffy* 👒
         `;
 
-        if (media) {
-            // Enviar la imagen generada dinámicamente
+        if (mediaBuffer) {
+            // Enviar la imagen generada dinámicamente (CORREGIDO: usamos mediaBuffer)
             await conn.sendMessage(m.chat, { 
-                image: media.buffer, 
+                image: mediaBuffer, 
                 caption: formatMessage(byeMessage, taguser), 
                 mentions: [who] 
             });
@@ -189,3 +196,5 @@ export async function before(m, { conn, groupMetadata, isBotAdmin, participants 
         }
     }
 }
+
+export default before;
