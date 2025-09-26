@@ -1,127 +1,145 @@
-/* 
-- aquie de que se trata de CPF By Alex
-- Power By Team Code Titans
-- https://whatsapp.com/channel/0029ValMlRS6buMFL9d0iQ0S 
-*/
+// Importa las librerías necesarias
+import fetch from "node-fetch";
+import axios from 'axios';
+import fs from 'fs';
 
-// DOWNLOAD - SPOTIFY
+// ¡Asegúrate de cambiar esto a tu clave de API real!
+const NEVI_API_KEY = 'TU_CLAVE_API_REAL';
 
-import axios from 'axios'
-import fetch from 'node-fetch'
+const SIZE_LIMIT_MB = 100;
+// --- PERSONALIZACIÓN: Masha (Maria Kujou), la hermana menor ---
+// Variables de estilo de Masha
+const newsletterJid = '120363456789012345@newsletter'; // *Reemplazar si tienes un newsletter real.*
+const newsletterName = '🌸 𝐌𝐚𝐬𝐡𝐚 (𝐌𝐚𝐫𝐢𝐚) 𝐁𝐨𝐭-𝐒𝐞𝐫𝐯𝐢𝐜𝐞 ♡';
+// Las variables 'icons' y 'redes' se asumen definidas globalmente.
+// ----------------------------------------------------
 
-let handler = async (m, { conn, text, usedPrefix, command }) => {
+const handler = async (m, { conn, args, usedPrefix, command }) => {
+  const name = conn.getName(m.sender);
+  const spotifyUrl = args[0];
 
-    if (!text) return conn.reply(m.chat, `${emoji} Por favor proporciona el nombre de una canción o artista.`, m)
-
-    try {
-        let songInfo = await spotifyxv(text)
-        if (!songInfo.length) throw `${emoji2} No se encontró la canción.`
-        let song = songInfo[0]
-        const res = await fetch(`https://archive-ui.tanakadomp.biz.id/download/spotify?url=${song.url}`)
-
-        if (!res.ok) throw `Error al obtener datos de la API, código de estado: ${res.status}`
-
-        const data = await res.json().catch((e) => { 
-            console.error('Error parsing JSON:', e)
-            throw "Error al analizar la respuesta JSON."
-        })
-
-        if (!data || !data.result || !data.result.data || !data.result.data.download) throw "No se pudo obtener el enlace de descarga."
-
-        const info = `「✦」Descargando: ${data.result.data.title}\n\n> 👤 *Artista:* ${data.result.data.artis}\n> 💽 *Álbum:* ${song.album}\n> 🕒 *Duración:* ${timestamp(data.result.data.durasi)}\n> 🔗 *Enlace:* ${song.url}`
-
-        await conn.sendMessage(m.chat, { text: info, contextInfo: { forwardingScore: 9999999, isForwarded: false, 
-        externalAdReply: {
-            showAdAttribution: true,
-            containsAutoReply: true,
-            renderLargerThumbnail: true,
-            title: packname,
-            body: dev,
-            mediaType: 1,
-            thumbnailUrl: data.result.data.image,
-            mediaUrl: data.result.data.download,
-            sourceUrl: data.result.data.download
-        }}}, { quoted: m })
-
-        conn.sendMessage(m.chat, { audio: { url: data.result.data.download }, fileName: `${data.result.data.title}.mp3`, mimetype: 'audio/mp4', ptt: true }, { quoted: m })
-
-    } catch (e1) {
-        m.reply(`${e1.message || e1}`)
+  const contextInfo = {
+    mentionedJid: [m.sender],
+    isForwarded: true,
+    forwardingScore: 999,
+    forwardedNewsletterMessageInfo: {
+      newsletterJid,
+      newsletterName,
+      serverMessageId: -1
+    },
+    externalAdReply: {
+      title: '💖 ⏤͟͟͞͞𝐌𝐀𝐒𝐇𝐀 - 𝐊𝐔𝐉𝐎𝐔 𝐁𝐎𝐓 ᨶ႒ᩚ',
+      body: `✨ *¡Hola, ${name}-san! Estoy lista para ayudarte con tu música. 😊*`,
+      thumbnail: icons,
+      sourceUrl: redes,
+      mediaType: 1,
+      renderLargerThumbnail: false
     }
-}
+  };
 
-handler.help = ['spotify', 'music']
-handler.tags = ['downloader']
-handler.command = ['spotify', 'splay']
-handler.group = true
-handler.register = true
+  if (!spotifyUrl) {
+    return conn.reply(m.chat, `🎶 *¡Oh, parece que olvidaste el enlace!*
+No te preocupes. ¿Podrías darme la **URL de Spotify** que quieres descargar, por favor?
 
-export default handler
+🎧 *Ejemplo (Por favor, dime):*
+${usedPrefix}spotify https://open.spotify.com/track/1234567890`, m, { contextInfo });
+  }
 
-async function spotifyxv(query) {
-    let token = await tokens()
-    let response = await axios({
-        method: 'get',
-        url: 'https://api.spotify.com/v1/search?q=' + query + '&type=track',
-        headers: {
-            Authorization: 'Bearer ' + token
-        }
-    })
-    const tracks = response.data.tracks.items
-    const results = tracks.map((track) => ({
-        name: track.name,
-        artista: track.artists.map((artist) => artist.name),
-        album: track.album.name,
-        duracion: timestamp(track.duration_ms),
-        url: track.external_urls.spotify,
-        imagen: track.album.images.length ? track.album.images[0].url : ''
-    }))
-    return results
-}
+  const isSpotifyUrl = /^(https?:\/\/)?(www\.)?open\.spotify\.com\/.+$/i.test(spotifyUrl);
+  if (!isSpotifyUrl) {
+    return conn.reply(m.chat, `💔 *¡Oh no! Esa URL no funciona.*
+¿Estás seguro de que es un enlace de Spotify válido? Inténtalo de nuevo. ¡Yo te espero!`, m, { contextInfo });
+  }
 
-async function tokens() {
-    const response = await axios({
-        method: 'post',
-        url: 'https://accounts.spotify.com/api/token',
-        headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-            Authorization: 'Basic ' + Buffer.from('acc6302297e040aeb6e4ac1fbdfd62c3:0e8439a1280a43aba9a5bc0a16f3f009').toString('base64')
-        },
-        data: 'grant_type=client_credentials'
-    })
-    return response.data.access_token
-}
+  await m.react("📥"); // Emoji de descarga/espera
 
-function timestamp(time) {
-    const minutes = Math.floor(time / 60000)
-    const seconds = Math.floor((time % 60000) / 1000)
-    return minutes + ':' + (seconds < 10 ? '0' : '') + seconds
-}
+  // Helper function to convert milliseconds to minutes and seconds
+  const msToTime = (ms) => {
+    const minutes = Math.floor(ms / 60000);
+    const seconds = ((ms % 60000) / 1000).toFixed(0);
+    return minutes + ":" + (seconds < 10 ? '0' : '') + seconds;
+  };
 
-async function getBuffer(url, options) {
-    try {
-        options = options || {}
-        const res = await axios({
-            method: 'get',
-            url,
-            headers: {
-                DNT: 1,
-                'Upgrade-Insecure-Request': 1
-            },
-            ...options,
-            responseType: 'arraybuffer'
-        })
-        return res.data
-    } catch (err) {
-        return err
+  try {
+    const neviApiUrl = `http://neviapi.ddns.net:5000/spotify`;
+    const res = await fetch(neviApiUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-API-KEY': NEVI_API_KEY,
+      },
+      body: JSON.stringify({
+        url: spotifyUrl,
+      }),
+    });
+
+    const json = await res.json();
+
+    if (json.status === true && json.result && json.result.download) {
+      const result = json.result;
+
+      // Create the caption with all the song metadata - Estilo Masha (Amable y Dulce)
+      const caption = `
+🌸────── *𝐌𝐚𝐬𝐡𝐚'𝐬 𝐌𝐮𝐬𝐢𝐜 𝐒𝐞𝐫𝐯𝐢𝐜𝐞* ──────🌸
+*¡Aquí está tu canción, ${name}-san! Espero que la disfrutes mucho.*
+
+> 🎶 *Título:* ${result.title}
+> 🎤 *Artista:* ${result.artists}
+> 💿 *Álbum:* ${result.album}
+> ⏱️ *Duración:* ${msToTime(result.duration_ms)}
+> 🗓️ *Lanzamiento:* ${result.release_date}
+═════════════════════
+*Si necesitas algo más, solo tienes que pedírmelo. (Спаси́бо - Spasíbo)* ♡`; // Spasíbo = Gracias (Masha es muy educada)
+
+      // Send the image with the metadata caption
+      await conn.sendMessage(m.chat, {
+        image: { url: result.cover_url },
+        caption: caption,
+        footer: 'Escucha esta canción y ten un día maravilloso. ¡頑張って! (Ganbatte - ¡Ánimo!)',
+        headerType: 4,
+        contextInfo
+      }, { quoted: m });
+
+      await m.react("💖"); // Un emoji de cariño
+
+      // **Descarga del archivo de audio.**
+      const responseAudio = await axios.get(result.download, { responseType: 'arraybuffer' });
+      const audioBuffer = Buffer.from(responseAudio.data);
+
+      const fileSizeMb = audioBuffer.length / (1024 * 1024);
+      if (fileSizeMb > SIZE_LIMIT_MB) {
+          await conn.sendMessage(m.chat, {
+              document: audioBuffer,
+              fileName: `${result.title} - Masha.mp3`,
+              mimetype: 'audio/mpeg',
+              caption: `⚠️ *¡Ups! La canción es un poco grande (${fileSizeMb.toFixed(2)} MB).*
+Te la envío como documento para que la puedas descargar mejor. ¡Ten paciencia!
+🎵 *Pista:* ${result.title}`
+          }, { quoted: m });
+          await m.react("📄");
+      } else {
+          await conn.sendMessage(m.chat, {
+              audio: audioBuffer,
+              mimetype: "audio/mpeg",
+              fileName: `${result.title} - Masha.mp3`
+          }, { quoted: m });
+          await m.react("🎧"); 
+      }
+      return;
     }
-}
+    throw new Error("NEVI API falló.");
+  } catch (e) {
+    console.error("Error con NEVI API:", e);
+    await conn.reply(m.chat, `💔 *Oh, ¡lo siento mucho!*
+Hubo un error y no pude conseguir tu pista. Por favor, inténtalo de nuevo más tarde.`, m);
+    await m.react("😔"); // Un emoji de tristeza/disculpa
+  }
+};
 
-async function getTinyURL(text) {
-    try {
-        let response = await axios.get(`https://tinyurl.com/api-create.php?url=${text}`)
-        return response.data
-    } catch (error) {
-        return text
-    }
-}
+handler.help = ['spotify'].map(v => v + ' <URL de Spotify>');
+handler.tags = ['descargas'];
+handler.command = ['spotify'];
+handler.register = true;
+handler.prefix = /^[./#]/;
+
+export default handler;
