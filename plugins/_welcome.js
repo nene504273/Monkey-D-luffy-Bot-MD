@@ -6,7 +6,7 @@ import * as baileys from '@whiskeysockets/baileys';
 import fetch from 'node-fetch';
 import nodeHtmlToImage from 'node-html-to-image'; // Librería clave para renderizar HTML/CSS a imagen
 
-const { WAMessageStubType } = baileys; // Ahora accedemos a WAMessageStubType desde el objeto 'baileys'
+const { WAMessageStubType } = baileys; 
 
 // --- CONFIGURACIÓN DE IMÁGENES ---
 const DEFAULT_AVATAR_URL = 'https://files.catbox.moe/xr2m6u.jpg'; 
@@ -16,19 +16,17 @@ const BACKGROUND_IMAGE_URL = 'https://files.catbox.moe/1rou90.jpg'; // ⬅️ RE
 
 /**
  * Genera la imagen de bienvenida/despedida usando una plantilla HTML/CSS interna.
- * * ⚠️ IMPORTANTE: Esta función ha sido modificada para DEVOLVER el Buffer de la imagen.
- * No devuelve MessageMedia, ya que conn.sendMessage acepta el Buffer directamente.
+ * Devuelve el Buffer de la imagen.
  */
 async function generateImageFromHTML(type, userName, groupName, memberCount, avatarUrl) {
-    // Definimos el color y texto principal según el tipo de evento
-    // Esta parte asegura que la imagen de despedida se vea diferente (rojo)
+    // Define el color y texto principal según el tipo de evento
     const color = type === 'welcome' ? '#FFD700' : '#8B0000'; // Dorado para bienvenida, Rojo para adiós
     const title = type === 'welcome' ? '¡BIENVENIDO NAKAMA!' : '¡ADIÓS AMIGO!';
     const messageLine = type === 'welcome' 
         ? `Se une al barco: ${groupName}` 
         : `Nos deja: ${groupName}`;
 
-    // 1. Plantilla HTML y CSS para el diseño
+    // Plantilla HTML y CSS para el diseño (sin cambios en la plantilla)
     const htmlTemplate = `
         <html>
         <head>
@@ -37,7 +35,6 @@ async function generateImageFromHTML(type, userName, groupName, memberCount, ava
                 .card {
                     width: 700px; 
                     height: 400px;
-                    /* Usar la URL de tu imagen de fondo */
                     background: url('${BACKGROUND_IMAGE_URL}') no-repeat center center / cover; 
                     color: white;
                     position: relative;
@@ -45,7 +42,7 @@ async function generateImageFromHTML(type, userName, groupName, memberCount, ava
                 .avatar-container {
                     position: absolute;
                     top: 150px;
-                    left: 50px; /* Posiciona el avatar a la izquierda */
+                    left: 50px; 
                     width: 150px;
                     height: 150px;
                     border-radius: 50%;
@@ -60,7 +57,6 @@ async function generateImageFromHTML(type, userName, groupName, memberCount, ava
                     left: 250px;
                     width: 400px;
                     text-align: left;
-                    /* Contorno de texto para mejorar la visibilidad */
                     text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7); 
                 }
                 .title { font-size: 38px; font-weight: 900; color: ${color}; margin-bottom: 5px; }
@@ -85,17 +81,16 @@ async function generateImageFromHTML(type, userName, groupName, memberCount, ava
         </html>
     `;
 
-    // 2. Generar la imagen (devuelve un Buffer)
+    // Generar la imagen (devuelve un Buffer)
     try {
         const imageBuffer = await nodeHtmlToImage({
             html: htmlTemplate,
             puppeteerArgs: { args: ['--no-sandbox', '--disable-setuid-sandbox'] },
-            encoding: 'binary', // Para que devuelva un Buffer
-            type: 'png' // Aseguramos el formato
+            encoding: 'binary', 
+            type: 'png' 
         });
 
-        // 3. Devolver el Buffer de la imagen (¡CORREGIDO!)
-        // En lugar de devolver MessageMedia, devolvemos el Buffer directamente
+        // Devolvemos el Buffer de la imagen
         return imageBuffer; 
 
     } catch (e) {
@@ -107,26 +102,25 @@ async function generateImageFromHTML(type, userName, groupName, memberCount, ava
 
 /**
  * Esta función maneja los eventos de unión y salida de un grupo.
- * Se activa si la función 'welcome' está habilitada en la base de datos.
  */
 export async function before(m, { conn, groupMetadata, isBotAdmin, participants }) {
-    // Salir si no es un evento de grupo.
-    if (!m.isGroup) return;
+    // Salir si no es un evento de grupo o no hay un StubType.
+    if (!m.isGroup || !m.messageStubType) return;
 
     const chatId = m.chat;
     const chatConfig = global.db.data.chats[chatId] || {};
     const groupName = groupMetadata?.subject || 'este grupo';
     const memberCount = participants.length;
-
-    // Salir si no es un evento de unión/salida o el bot no es administrador.
-    if (!m.messageStubType || !isBotAdmin) return;
-
+    
+    // Salir si la función de bienvenida no está habilitada.
+    if (!chatConfig.welcome) return;
+    
+    // Obtener los datos del usuario afectado
     let who = m.messageStubParameters[0];
     let taguser = `@${who.split('@')[0]}`;
-    // Usamos el ppUrl para pasarlo al generador de HTML
     const ppUrl = await conn.profilePictureUrl(who, 'image').catch(() => DEFAULT_AVATAR_URL); 
 
-    // Reemplazar los placeholders en el mensaje (solo para el caption de texto)
+    // Función auxiliar para formatear el mensaje de texto
     const formatMessage = (message, userTag) => {
         return message
             .replace(/@user/g, userTag)
@@ -134,10 +128,11 @@ export async function before(m, { conn, groupMetadata, isBotAdmin, participants 
             .replace(/@count/g, memberCount);
     };
 
-    // --- Evento de 'adición' (unirse al grupo) ---
-    if (m.messageStubType === WAMessageStubType.GROUP_PARTICIPANT_ADD && chatConfig.welcome) {
+    // ---------------------------------------------
+    // --- Lógica de Bienvenida (GROUP_PARTICIPANT_ADD) ---
+    // ---------------------------------------------
+    if (m.messageStubType === WAMessageStubType.GROUP_PARTICIPANT_ADD && isBotAdmin) {
 
-        // 1. Generar la imagen usando la plantilla HTML/CSS para BIENVENIDA
         const mediaBuffer = await generateImageFromHTML('welcome', taguser, groupName, memberCount, ppUrl);
 
         const welcomeMessage = chatConfig.customWelcome || `
@@ -148,28 +143,31 @@ export async function before(m, { conn, groupMetadata, isBotAdmin, participants 
 *¡Prepárate para zarpar, que esto apenas comienza!* 👒
         `;
 
+        const messageOptions = { 
+            caption: formatMessage(welcomeMessage, taguser), 
+            mentions: [who] 
+        };
+
         if (mediaBuffer) {
-            // Enviar la imagen generada dinámicamente (CORREGIDO: usamos mediaBuffer)
-            await conn.sendMessage(m.chat, { 
-                image: mediaBuffer, 
-                caption: formatMessage(welcomeMessage, taguser), 
-                mentions: [who] 
-            });
+            await conn.sendMessage(m.chat, { image: mediaBuffer, ...messageOptions });
         } else {
-            // Respaldo en caso de que falle la generación de la imagen
-            await conn.sendMessage(m.chat, { 
-                text: `${formatMessage(welcomeMessage, taguser)}`, 
-                mentions: [who] 
-            });
+            await conn.sendMessage(m.chat, { text: messageOptions.caption, mentions: messageOptions.mentions });
             console.warn(`[WARNING] Fallo la generación de imagen para ${taguser}. Enviando solo texto.`);
         }
     }
 
-    // --- Evento de 'salida' (el usuario se fue o fue removido) ---
-    if (m.messageStubType === WAMessageStubType.GROUP_PARTICIPANT_REMOVE && chatConfig.welcome) {
+    // ----------------------------------------------------------------------
+    // --- Lógica de Despedida (GROUP_PARTICIPANT_LEAVE / GROUP_PARTICIPANT_REMOVE) ---
+    // ----------------------------------------------------------------------
+    if (m.messageStubType === WAMessageStubType.GROUP_PARTICIPANT_LEAVE || m.messageStubType === WAMessageStubType.GROUP_PARTICIPANT_REMOVE) {
+        
+        // Ignorar si el bot es quien se fue/fue removido
         if (who === conn.user.jid) return;
 
-        // 1. Generar la imagen usando la plantilla HTML/CSS para DESPEDIDA
+        // Si es REMOVE, el bot debe ser admin para enviar el mensaje. Si es LEAVE, no hace falta.
+        // Simplificaremos y solo enviamos si el bot es admin, ya que el mensaje de la imagen requiere serlo.
+        if (!isBotAdmin) return;
+        
         const mediaBuffer = await generateImageFromHTML('goodbye', taguser, groupName, memberCount, ppUrl);
 
         const byeMessage = chatConfig.customBye || `
@@ -179,19 +177,15 @@ export async function before(m, { conn, groupMetadata, isBotAdmin, participants 
 - *Monkey D. Luffy* 👒
         `;
 
+        const messageOptions = { 
+            caption: formatMessage(byeMessage, taguser), 
+            mentions: [who] 
+        };
+
         if (mediaBuffer) {
-            // Enviar la imagen generada dinámicamente (CORREGIDO: usamos mediaBuffer)
-            await conn.sendMessage(m.chat, { 
-                image: mediaBuffer, 
-                caption: formatMessage(byeMessage, taguser), 
-                mentions: [who] 
-            });
+            await conn.sendMessage(m.chat, { image: mediaBuffer, ...messageOptions });
         } else {
-            // Respaldo en caso de que falle la generación de la imagen
-            await conn.sendMessage(m.chat, { 
-                text: `${formatMessage(byeMessage, taguser)}`, 
-                mentions: [who] 
-            });
+            await conn.sendMessage(m.chat, { text: messageOptions.caption, mentions: messageOptions.mentions });
             console.warn(`[WARNING] Fallo la generación de imagen para ${taguser}. Enviando solo texto.`);
         }
     }
