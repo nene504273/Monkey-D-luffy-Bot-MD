@@ -18,9 +18,6 @@ let staff = `🏆 *EQUIPO DE CREADORES* 🏆
 ✰ Nevi: soporte y desarrollador. 
 ➪ Github » https://github.com/nevi-dev
 
-✰ Félix: Desarrollador.
-➪ Github » https://github.com/mantis-has
-
 ✰ Dioneibi: Desarrollador y ayudante.
 ➪ Github » https://github.com/Dioneibi-rip
 
