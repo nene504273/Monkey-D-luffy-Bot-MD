@@ -1,8 +1,8 @@
 import translate from '@vitalets/google-translate-api';
 import fetch from 'node-fetch';
 
-const newsletterJid = '120363335626706839@newsletter';
-const newsletterName = '⏤͟͞ू⃪፝͜⁞⟡『 𝐓͢ᴇ𝙖፝ᴍ⃨ 𝘾𝒉꯭𝐚𝑛𝑛𝒆𝑙: 𝑹ᴜ⃜ɓ𝑦-𝑯ᴏ𝒔𝑯𝙞꯭𝑛𝒐 』࿐⟡';
+const newsletterJid = 'const newsletterJid = '120363420846835529@newsletter';
+const newsletterName = '⏤͟͞ू⃪፝͜⁞⟡ m᥆ᥒkᥱᥡ ძ ᥣᥙ𝖿𝖿ᥡ';
 
 let handler = async (m, { conn, args, usedPrefix, command }) => {
   const contextInfo = {
