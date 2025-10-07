@@ -108,5 +108,3 @@ handler.tags = ['rg']
 handler.command = ['verify', 'verificar', 'reg', 'register', 'registrar']
 
 export default handler
-
-Lo que vas hacer con esto es poner una imagen cuando un usuario se registre y cuando no tenga foto se pone una ramdos
