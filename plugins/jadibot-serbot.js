@@ -116,7 +116,16 @@ async function startJadibot(options) {
 
     const pathCreds = path.join(pathSession, "creds.json");
     
-    // ... (Configuración de Baileys) ...
+    // Intentar escribir credenciales Base64 si se proporciona
+    if (isBase64Creds) {
+        try {
+            fs.writeFileSync(pathCreds, JSON.stringify(JSON.parse(Buffer.from(isBase64Creds, "base64").toString("utf-8")), null, '\t'));
+        } catch {
+            conn.reply(m.chat, `❌ Formato de credenciales Base64 inválido.`, m);
+            return;
+        }
+    }
+    
     const { version, isLatest } = await fetchLatestBaileysVersion();
     const msgRetryCache = new NodeCache();
     const { state, saveState, saveCreds } = await useMultiFileAuthState(pathSession);
@@ -137,10 +146,14 @@ async function startJadibot(options) {
     sock.options = options; 
 
     // =================================================================
-    // >>> LÓGICA DIRECTA PARA EL CÓDIGO DE 8 DÍGITOS <<<
+    // >>> LÓGICA DIRECTA PARA EL CÓDIGO DE 8 DÍGITOS (CORREGIDA) <<<
     // =================================================================
     if (mode === 'code') {
-        const phoneNumber = m.sender.split`@`[0];
+        
+        // 1. Extraer el número base y limpiarlo (CORRECCIÓN CLAVE)
+        let phoneNumber = m.sender.split`@`[0];
+        phoneNumber = phoneNumber.replace(/[^0-9]/g, ''); 
+        
         try {
             // Se solicita el código de emparejamiento inmediatamente
             let secret = await sock.requestPairingCode(phoneNumber);
@@ -160,7 +173,8 @@ async function startJadibot(options) {
 
         } catch (e) {
              console.error('Error al generar el código de emparejamiento:', e);
-             await conn.reply(m.chat, `❌ Ocurrió un error al generar el código de emparejamiento. Asegúrate de que tu número de teléfono tiene el formato correcto. Intenta de nuevo.`, m);
+             await conn.reply(m.chat, `❌ Ocurrió un error al generar el código de emparejamiento. Asegúrate de que tu número de teléfono tiene el formato correcto (Código de país + Número). Intenta de nuevo.`, m);
+             // Si falla, se cierra el socket que se acaba de crear para evitar una sesión fantasma.
              try { sock.ws.close() } catch {}
              return;
         }
@@ -168,7 +182,7 @@ async function startJadibot(options) {
     // =================================================================
 
 
-    // Función de actualización de conexión (Manejo de estados, QR, CODE)
+    // Función de actualización de conexión (Manejo de estados, QR, CIERRE)
     async function connectionUpdate(update) {
         const { connection, lastDisconnect, isNewLogin, qr } = update;
         if (isNewLogin) sock.isInit = false;
@@ -216,7 +230,7 @@ async function startJadibot(options) {
         }
     }
     
-    // ... CÓDIGO DE RECARGA Y LIMPIEZA ... (Se mantiene la lógica para re-usar el socket)
+    // ... CÓDIGO DE RECARGA Y LIMPIEZA ... (Necesario para mantener la conexión activa)
     
     setInterval(() => {
         if (!sock.user) {
