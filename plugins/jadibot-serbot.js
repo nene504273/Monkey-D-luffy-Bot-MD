@@ -145,48 +145,55 @@ async function startJadibot(options) {
     let isInit = true;
     sock.options = options; 
 
-    // =================================================================
-    // >>> LÓGICA DIRECTA PARA EL CÓDIGO DE 8 DÍGITOS (CORREGIDA) <<<
-    // =================================================================
-    if (mode === 'code') {
-        
-        // 1. Extraer el número base y limpiarlo (CORRECCIÓN CLAVE)
-        let phoneNumber = m.sender.split`@`[0];
-        phoneNumber = phoneNumber.replace(/[^0-9]/g, ''); 
-        
-        try {
-            // Se solicita el código de emparejamiento inmediatamente
-            let secret = await sock.requestPairingCode(phoneNumber);
-            secret = secret.match(/.{1,4}/g)?.join("-");
-
-            // *** ENVÍO AL CHAT ORIGINAL (m.chat) - GRUPO O PRIVADO ***
-            txtCode = await conn.sendMessage(m.chat, {text : RTX_CODE_FINAL.trim()}, { quoted: m });
-            codeBot = await conn.sendMessage(m.chat, {text: `*🔑 TU CÓDIGO DE NAKAMA:* \n\n\`\`\`${secret}\`\`\`\n\n_Pégalo en WhatsApp en "Vincular con el número de teléfono"_`});
-            
-            // Eliminar los mensajes tras el timeout
-            setTimeout(() => { 
-                try { conn.sendMessage(m.chat, { delete: txtCode.key }) } catch {}
-                try { conn.sendMessage(m.chat, { delete: codeBot.key }) } catch {}
-            }, 45000); 
-            
-            console.log(chalk.yellow(`[CODE] Sesión de ${m.sender} - Código: ${secret} enviado a: ${m.chat}`));
-
-        } catch (e) {
-             console.error('Error al generar el código de emparejamiento:', e);
-             await conn.reply(m.chat, `❌ Ocurrió un error al generar el código de emparejamiento. Asegúrate de que tu número de teléfono tiene el formato correcto (Código de país + Número). Intenta de nuevo.`, m);
-             // Si falla, se cierra el socket que se acaba de crear para evitar una sesión fantasma.
-             try { sock.ws.close() } catch {}
-             return;
-        }
-    }
-    // =================================================================
+    // **NOTA:** La lógica del 'mode === code' YA NO SE EJECUTA AQUÍ INMEDIATAMENTE.
+    // Se ha movido dentro de connectionUpdate para asegurar que el socket esté listo.
 
 
-    // Función de actualización de conexión (Manejo de estados, QR, CIERRE)
+    // Función de actualización de conexión (Manejo de estados, QR, CODE, CIERRE)
     async function connectionUpdate(update) {
         const { connection, lastDisconnect, isNewLogin, qr } = update;
         if (isNewLogin) sock.isInit = false;
 
+        // --- LÓGICA DEL CÓDIGO DE 8 DÍGITOS ---
+        // Se ejecuta si el modo es 'code' y el socket está intentando conectar O está listo para QR.
+        if (mode === 'code' && (connection === 'connecting' || qr)) {
+            
+            // Si no está registrado, pedimos el código de emparejamiento.
+            if (!sock.authState.creds.registered) {
+                
+                // 1. Extraer el número base y limpiarlo (CORRECCIÓN CLAVE)
+                let phoneNumber = m.sender.split`@`[0];
+                phoneNumber = phoneNumber.replace(/[^0-9]/g, ''); 
+
+                try {
+                    let secret = await sock.requestPairingCode(phoneNumber);
+                    secret = secret.match(/.{1,4}/g)?.join("-");
+        
+                    // *** ENVÍO AL CHAT ORIGINAL (m.chat) - GRUPO O PRIVADO ***
+                    txtCode = await conn.sendMessage(m.chat, {text : RTX_CODE_FINAL.trim()}, { quoted: m });
+                    codeBot = await conn.sendMessage(m.chat, {text: `*🔑 TU CÓDIGO DE NAKAMA:* \n\n\`\`\`${secret}\`\`\`\n\n_Pégalo en WhatsApp en "Vincular con el número de teléfono"_`});
+                    
+                    // Eliminar los mensajes tras el timeout
+                    setTimeout(() => { 
+                        try { conn.sendMessage(m.chat, { delete: txtCode.key }) } catch {}
+                        try { conn.sendMessage(m.chat, { delete: codeBot.key }) } catch {}
+                    }, 45000); 
+                    
+                    console.log(chalk.yellow(`[CODE] Sesión de ${m.sender} - Código: ${secret} enviado a: ${m.chat}`));
+                    
+                    // Una vez enviado el código, no necesitamos que el socket siga buscando el código/QR
+                    sock.ev.off('connection.update', sock.connectionUpdate);
+                    
+                } catch (e) {
+                     console.error('Error al generar el código de emparejamiento:', e);
+                     await conn.reply(m.chat, `❌ Ocurrió un error al generar el código de emparejamiento. Asegúrate de que tu número de teléfono tiene el formato correcto (Código de país + Número). Intenta de nuevo.`, m);
+                     // Si falla, cerramos el socket.
+                     try { sock.ws.close() } catch {}
+                     return;
+                }
+            }
+        }
+        
         // --- MANEJO DE QR --- (Solo si se eligió QR)
         if (qr && mode === 'qr') {
             // El QR se envía al chat donde se solicitó (m.chat)
@@ -230,7 +237,7 @@ async function startJadibot(options) {
         }
     }
     
-    // ... CÓDIGO DE RECARGA Y LIMPIEZA ... (Necesario para mantener la conexión activa)
+    // ... CÓDIGO DE RECARGA Y LIMPIEZA ... (Se mantiene la lógica para re-usar el socket)
     
     setInterval(() => {
         if (!sock.user) {
