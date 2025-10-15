@@ -6,16 +6,16 @@ import path from "path";
 import pino from 'pino';
 import chalk from 'chalk';
 import * as ws from 'ws';
-import { makeWASocket } from '../lib/simple.js'; // Asumiendo que usas simple.js para extender Baileys
+import { makeWASocket } from '../lib/simple.js'; // Asegúrate de que esta ruta es correcta
 import { fileURLToPath } from 'url';
 
-// === CONFIGURACIÓN DE ESTILO Y TEXTOS ===
+// === CONFIGURACIÓN BÁSICA ===
 const EMOJI_LUFFY = '🏴‍☠️';
 const NOMBRE_BOT = 'Monkey D Luffy 👒';
 const COOLDOWN_TIME = 120000; // 2 minutos
 const LIMIT_SESSIONS = 30; // Límite máximo de Sub-Bots
 
-// Textos base para el Sub-Bot (Más limpio)
+// --- TEXTOS DE GUÍA ---
 const TEXT_INIT = `*${EMOJI_LUFFY} ¡HOLA, NAKAMA! ${EMOJI_LUFFY}*\n\n`;
 
 const TEXT_QR_GUIDE = `*—• MODO: CÓDIGO QR •—*\n\n` +
@@ -33,18 +33,19 @@ const TEXT_CODE_GUIDE = `*—• MODO: CÓDIGO DE 8 DÍGITOS •—*\n\n` +
 
 const TEXT_FOOTER = `\n⭐ *NOTA:* Este proceso expira rápido. ¡Rápido, Nakama!`;
 
-// Combina los textos para las respuestas finales
 const RTX_QR_FINAL = TEXT_INIT + TEXT_QR_GUIDE + TEXT_FOOTER;
 const RTX_CODE_FINAL = TEXT_INIT + TEXT_CODE_GUIDE + TEXT_FOOTER;
 
-// Ruta base para las sesiones
+// --- RUTAS DE SESIÓN ---
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const SESSIONS_DIR = path.join(__dirname, '..', 'jadibots'); // Carpeta 'jadibots'
+const SESSIONS_DIR = path.join(__dirname, '..', 'jadibots');
 
 if (global.conns instanceof Array) console.log()
-else global.conns = []; // Array global para almacenar las conexiones activas
+else global.conns = [];
 
+// =====================================================================
+// HANDLER PRINCIPAL
 // =====================================================================
 
 let handler = async (m, { conn, args, usedPrefix, command }) => {
@@ -63,7 +64,7 @@ let handler = async (m, { conn, args, usedPrefix, command }) => {
 
     const mode = args[0]?.toLowerCase();
 
-    // 3. MOSTRAR BOTONES SI NO HAY MODO ESPECIFICADO
+    // 3. MOSTRAR BOTONES (Si no se especifica modo)
     if (mode !== 'qr' && mode !== 'code') {
         let buttonMessage = {
             text: `${TEXT_INIT}Selecciona el método para vincular tu dispositivo a la tripulación de *${NOMBRE_BOT}* como Sub-Bot.`,
@@ -92,7 +93,7 @@ let handler = async (m, { conn, args, usedPrefix, command }) => {
         m,
         conn,
         mode,
-        isBase64Creds: args[1], // Para vincular con credenciales base64
+        isBase64Creds: args[1],
         usedPrefix,
         command
     });
@@ -106,23 +107,16 @@ handler.command = ['qr', 'code', 'serbot'];
 export default handler;
 
 // =====================================================================
+// FUNCIÓN PRINCIPAL DE CONEXIÓN
+// =====================================================================
 
 async function startJadibot(options) {
-    let { pathSession, m, conn, mode, isBase64Creds, usedPrefix, command } = options;
+    let { pathSession, m, conn, mode, isBase64Creds } = options;
     let txtQR, codeBot, txtCode;
 
     const pathCreds = path.join(pathSession, "creds.json");
     
-    // Intentar escribir credenciales Base64 si se proporciona
-    if (isBase64Creds) {
-        try {
-            fs.writeFileSync(pathCreds, JSON.stringify(JSON.parse(Buffer.from(isBase64Creds, "base64").toString("utf-8")), null, '\t'));
-        } catch {
-            conn.reply(m.chat, `❌ Formato de credenciales Base64 inválido.`, m);
-            return;
-        }
-    }
-    
+    // ... (Configuración de Baileys) ...
     const { version, isLatest } = await fetchLatestBaileysVersion();
     const msgRetryCache = new NodeCache();
     const { state, saveState, saveCreds } = await useMultiFileAuthState(pathSession);
@@ -132,7 +126,7 @@ async function startJadibot(options) {
         printQRInTerminal: false,
         auth: { creds: state.creds, keys: makeCacheableSignalKeyStore(state.keys, pino({level: 'silent'})) },
         msgRetryCache,
-        browser: [NOMBRE_BOT, 'Chrome','2.0.0'], // Navegador personalizado
+        browser: [NOMBRE_BOT, 'Chrome','2.0.0'],
         version: version,
         generateHighQualityLinkPreview: true,
     };
@@ -143,7 +137,7 @@ async function startJadibot(options) {
     sock.options = options; 
 
     // =================================================================
-    // >>> LÓGICA ESPECIAL PARA EL CÓDIGO DE 8 DÍGITOS (AHORA EN GRUPO) <<<
+    // >>> LÓGICA DIRECTA PARA EL CÓDIGO DE 8 DÍGITOS <<<
     // =================================================================
     if (mode === 'code') {
         const phoneNumber = m.sender.split`@`[0];
@@ -152,11 +146,11 @@ async function startJadibot(options) {
             let secret = await sock.requestPairingCode(phoneNumber);
             secret = secret.match(/.{1,4}/g)?.join("-");
 
-            // *** ENVÍO AL CHAT ORIGINAL (m.chat), SEA GRUPO O PRIVADO ***
+            // *** ENVÍO AL CHAT ORIGINAL (m.chat) - GRUPO O PRIVADO ***
             txtCode = await conn.sendMessage(m.chat, {text : RTX_CODE_FINAL.trim()}, { quoted: m });
             codeBot = await conn.sendMessage(m.chat, {text: `*🔑 TU CÓDIGO DE NAKAMA:* \n\n\`\`\`${secret}\`\`\`\n\n_Pégalo en WhatsApp en "Vincular con el número de teléfono"_`});
             
-            // 3. Eliminar los mensajes tras el timeout
+            // Eliminar los mensajes tras el timeout
             setTimeout(() => { 
                 try { conn.sendMessage(m.chat, { delete: txtCode.key }) } catch {}
                 try { conn.sendMessage(m.chat, { delete: codeBot.key }) } catch {}
@@ -181,7 +175,7 @@ async function startJadibot(options) {
 
         // --- MANEJO DE QR --- (Solo si se eligió QR)
         if (qr && mode === 'qr') {
-            // El QR se maneja automáticamente y se envía al chat (m.chat)
+            // El QR se envía al chat donde se solicitó (m.chat)
             txtQR = await conn.sendMessage(m.chat, { image: await qrcode.toBuffer(qr, { scale: 8 }), caption: RTX_QR_FINAL.trim()}, { quoted: m});
             setTimeout(() => { 
                 try { conn.sendMessage(m.chat, { delete: txtQR.key }) } catch {} 
@@ -194,17 +188,14 @@ async function startJadibot(options) {
             const shouldReconnect = reason !== DisconnectReason.loggedOut;
 
             if (reason === DisconnectReason.loggedOut || reason === 401 || reason === 403) {
-                // Credenciales no válidas, cerrado manual o cuenta en soporte
                 console.log(chalk.red(`[LOGOUT] Sesión (+${path.basename(pathSession)}) eliminada. Razón: ${reason}`));
                 try { 
                     await conn.sendMessage(m.chat, { text: `💔 Tu sesión de Sub-Bot ha sido cerrada permanentemente. Razón: ${reason}. Intenta vincularte de nuevo.` }, { quoted: m });
                 } catch {}
                 fs.rmdirSync(pathSession, { recursive: true });
-                // Eliminar del array global
                 const i = global.conns.indexOf(sock);
                 if (i >= 0) global.conns.splice(i, 1);
             } else if (shouldReconnect) {
-                // Reintento de conexión por otros errores (Timeout, reemplazo, etc.)
                 console.log(chalk.yellow(`[RECONECT] Sesión (+${path.basename(pathSession)}) cerrada. Razón: ${reason}. Reiniciando...`));
                 await creloadHandler(true).catch(console.error);
             }
@@ -225,7 +216,7 @@ async function startJadibot(options) {
         }
     }
     
-    // ... CÓDIGO DE RECARGA Y LIMPIEZA ...
+    // ... CÓDIGO DE RECARGA Y LIMPIEZA ... (Se mantiene la lógica para re-usar el socket)
     
     setInterval(() => {
         if (!sock.user) {
@@ -234,12 +225,11 @@ async function startJadibot(options) {
             let i = global.conns.indexOf(sock);
             if (i >= 0) global.conns.splice(i, 1);
         }
-    }, 60000); // Limpieza de conexiones fallidas cada minuto
+    }, 60000); 
 
-    let handler = await import('../handler.js'); // Importa el handler principal
+    let handler = await import('../handler.js'); 
     
     let creloadHandler = async function (restatConn) {
-        // Recarga el handler para tomar los comandos
         try {
             const Handler = await import(`../handler.js?update=${Date.now()}`).catch(console.error);
             if (Object.keys(Handler || {}).length) handler = Handler;
@@ -247,14 +237,13 @@ async function startJadibot(options) {
             console.error('⚠️ Error al recargar handler: ', e);
         }
         
-        // Reiniciar la conexión (manteniendo el estado si es posible)
         if (restatConn) {
             const oldChats = sock.chats;
             try { sock.ws.close() } catch { }
             sock.ev.removeAllListeners();
             sock = makeWASocket(connectionOptions, { chats: oldChats });
             isInit = true;
-            sock.options = options; // Reasignar opciones
+            sock.options = options; 
         }
         
         if (!isInit) {
@@ -263,7 +252,6 @@ async function startJadibot(options) {
             sock.ev.off('creds.update', sock.credsUpdate);
         }
 
-        // Asignar funciones y listeners
         sock.handler = handler.handler.bind(sock);
         sock.connectionUpdate = connectionUpdate.bind(sock);
         sock.credsUpdate = saveCreds.bind(sock, true);
