@@ -140,44 +140,52 @@ async function startJadibot(options) {
     let sock = makeWASocket(connectionOptions);
     sock.isInit = false;
     let isInit = true;
-    
     sock.options = options; 
+
+    // =================================================================
+    // >>> LÓGICA ESPECIAL PARA EL CÓDIGO DE 8 DÍGITOS (AHORA EN GRUPO) <<<
+    // =================================================================
+    if (mode === 'code') {
+        const phoneNumber = m.sender.split`@`[0];
+        try {
+            // Se solicita el código de emparejamiento inmediatamente
+            let secret = await sock.requestPairingCode(phoneNumber);
+            secret = secret.match(/.{1,4}/g)?.join("-");
+
+            // *** ENVÍO AL CHAT ORIGINAL (m.chat), SEA GRUPO O PRIVADO ***
+            txtCode = await conn.sendMessage(m.chat, {text : RTX_CODE_FINAL.trim()}, { quoted: m });
+            codeBot = await conn.sendMessage(m.chat, {text: `*🔑 TU CÓDIGO DE NAKAMA:* \n\n\`\`\`${secret}\`\`\`\n\n_Pégalo en WhatsApp en "Vincular con el número de teléfono"_`});
+            
+            // 3. Eliminar los mensajes tras el timeout
+            setTimeout(() => { 
+                try { conn.sendMessage(m.chat, { delete: txtCode.key }) } catch {}
+                try { conn.sendMessage(m.chat, { delete: codeBot.key }) } catch {}
+            }, 45000); 
+            
+            console.log(chalk.yellow(`[CODE] Sesión de ${m.sender} - Código: ${secret} enviado a: ${m.chat}`));
+
+        } catch (e) {
+             console.error('Error al generar el código de emparejamiento:', e);
+             await conn.reply(m.chat, `❌ Ocurrió un error al generar el código de emparejamiento. Asegúrate de que tu número de teléfono tiene el formato correcto. Intenta de nuevo.`, m);
+             try { sock.ws.close() } catch {}
+             return;
+        }
+    }
+    // =================================================================
+
 
     // Función de actualización de conexión (Manejo de estados, QR, CODE)
     async function connectionUpdate(update) {
         const { connection, lastDisconnect, isNewLogin, qr } = update;
         if (isNewLogin) sock.isInit = false;
 
-        // --- MANEJO DE QR Y CODE ---
+        // --- MANEJO DE QR --- (Solo si se eligió QR)
         if (qr && mode === 'qr') {
-            // El QR se puede enviar al grupo o privado, no es sensible.
+            // El QR se maneja automáticamente y se envía al chat (m.chat)
             txtQR = await conn.sendMessage(m.chat, { image: await qrcode.toBuffer(qr, { scale: 8 }), caption: RTX_QR_FINAL.trim()}, { quoted: m});
             setTimeout(() => { 
-                try { conn.sendMessage(m.sender, { delete: txtQR.key }) } catch {} 
+                try { conn.sendMessage(m.chat, { delete: txtQR.key }) } catch {} 
             }, 45000); // 45 segundos para el QR
-        }
-        
-        if (qr && mode === 'code') {
-            let secret = await sock.requestPairingCode(m.sender.split`@`[0]);
-            secret = secret.match(/.{1,4}/g)?.join("-");
-            
-            // --- LÓGICA DE GRUPO/PRIVADO ---
-            // Si es un grupo, notificamos que el código se enviará al privado.
-            if (m.chat.endsWith('@g.us')) {
-                 await conn.reply(m.chat, `*${EMOJI_LUFFY} ¡SOLICITUD RECIBIDA, NAKAMA!* Te he enviado las instrucciones y el *CÓDIGO DE 8 DÍGITOS* a tu chat privado. ¡Revisa tu DM!`, m);
-            }
-            
-            // FORZAR ENVÍO DE LA GUÍA Y EL CÓDIGO AL CHAT PRIVADO DEL USUARIO (m.sender)
-            txtCode = await conn.sendMessage(m.sender, {text : RTX_CODE_FINAL.trim()});
-            codeBot = await conn.sendMessage(m.sender, {text: `*🔑 TU CÓDIGO DE NAKAMA:* \n\n\`\`\`${secret}\`\`\`\n\n_Pégalo en WhatsApp en "Vincular con el número de teléfono"_`});
-            
-            // Eliminación de mensajes después del timeout (en el privado del usuario)
-            setTimeout(() => { 
-                try { conn.sendMessage(m.sender, { delete: txtCode.key }) } catch {}
-                try { conn.sendMessage(m.sender, { delete: codeBot.key }) } catch {}
-            }, 45000); 
-            
-            console.log(chalk.yellow(`[CODE] Sesión de ${m.sender} - Código: ${secret} enviado al privado.`));
         }
         
         // --- MANEJO DE CIERRE DE CONEXIÓN ---
