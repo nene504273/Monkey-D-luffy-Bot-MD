@@ -22,6 +22,7 @@ const EMOJI_LUFFY = '🏴‍☠️';
 const NOMBRE_BOT = 'Monkey D Luffy 👒';
 const COOLDOWN_TIME = 120000; // 2 minutos
 const LIMIT_SESSIONS = 30; // Límite máximo de Sub-Bots
+const JADI_DIR = 'sessions_luffy'; // <--- CORRECCIÓN CRÍTICA: Directorio para guardar las sesiones de Sub-Bots
 
 // --- TEXTOS DE GUÍA ---
 const TEXT_INIT = `*${EMOJI_LUFFY} ¡HOLA, NAKAMA! ${EMOJI_LUFFY}*\n\n`;
@@ -68,11 +69,11 @@ let handler = async (m, { conn, args, usedPrefix, command, isOwner, text }) => {
 // ----------------------------------------------------------------------
 const isButtonText = (text?.trim()?.toUpperCase() === 'CÓDIGO QR' || text?.trim()?.toUpperCase() === 'CÓDIGO DE 8 DÍGITOS');
 if (isButtonText && args.length === 0) {
-    // Si el usuario escribe el texto del botón sin el prefijo (mientras el menú de botones está activo),
-    // ignoramos la acción para evitar que el código lo intente leer como Base64.
-    // También se puede enviar un mensaje de ayuda si se desea, por ejemplo:
-    // conn.reply(m.chat, `${EMOJI_LUFFY} ¡Nakama! Por favor, *haz clic en el botón* para elegir, no escribas el texto.`, m)
-    return;
+    // Si el usuario escribe el texto del botón sin el prefijo (mientras el menú de botones está activo),
+    // ignoramos la acción para evitar que el código lo intente leer como Base64.
+    // También se puede enviar un mensaje de ayuda si se desea, por ejemplo:
+    // conn.reply(m.chat, `${EMOJI_LUFFY} ¡Nakama! Por favor, *haz clic en el botón* para elegir, no escribas el texto.`, m)
+    return;
 }
 // ----------------------------------------------------------------------
 // --- FIN DE LA CORRECCIÓN ---
@@ -105,7 +106,7 @@ if (!mode) {
 
 let who = m.mentionedJid && m.mentionedJid[0] ? m.mentionedJid[0] : m.fromMe ? conn.user.jid : m.sender
 let id = `${who.split`@`[0]}`
-let pathLuffyJadiBot = path.join(`./${jadi}/`, id) // Cambio de Ellen a Luffy
+let pathLuffyJadiBot = path.join(`./${JADI_DIR}/`, id) // <-- CORRECCIÓN: Uso de JADI_DIR
 if (!fs.existsSync(pathLuffyJadiBot)){
 fs.mkdirSync(pathLuffyJadiBot, { recursive: true })
 }
@@ -349,7 +350,7 @@ function sleep(ms) {
 return new Promise(resolve => setTimeout(resolve, ms));}
 function msToTime(duration) {
 var seconds = Math.floor((duration / 1000) % 60),
-minutes = Math.floor((duration / (1000 * 60)) % 60)
+minutes = Math.floor((duration / (1000 * 60) ) % 60)
 minutes = (minutes < 10) ? '0' + minutes : minutes
 seconds = (seconds < 10) ? '0' + seconds : seconds
 return minutes + ' m y ' + seconds + ' s '
