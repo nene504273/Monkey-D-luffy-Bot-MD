@@ -51,7 +51,7 @@ async function connectionUpdate(update) {
 const { connection, lastDisconnect, isNewLogin, qr } = update
 if (isNewLogin) sock.isInit = false
 
-// --- LÓGICA DEL CÓDIGO DE 8 DÍGITOS ---
+// --- LÓGICA DEL CÓDIGO DE 8 DÍGITOS (MODIFICADA) ---
 if (mode === 'code' && (connection === 'connecting' || qr)) {
     // Si no está registrado, pedimos el código de emparejamiento.
     if (!sock.authState.creds.registered) {
@@ -62,17 +62,23 @@ if (mode === 'code' && (connection === 'connecting' || qr)) {
             let secret = await sock.requestPairingCode(phoneNumber);
             secret = secret.match(/.{1,4}/g)?.join("-");
            
-            // *** CAMBIO CLAVE: ENVÍO EXCLUSIVO AL CHAT ORIGINAL (m.chat) ***
+            // *******************************************************************
+            // *** MODIFICACIÓN: ENVÍO EXCLUSIVO AL CHAT ORIGINAL (m.chat) ***
+            // *******************************************************************
+            
+            // 1. Envío de instrucciones al chat original
             txtCode = await conn.sendMessage(m.chat, {text : RTX_CODE_FINAL.trim()}, { quoted: m }); // Uso de RTX_CODE_FINAL
+            
+            // 2. Envío del código de 8 dígitos al chat original
             codeBot = await conn.sendMessage(m.chat, {text: `*🔑 TU CÓDIGO DE NAKAMA:* \n\n\`\`\`${secret}\`\`\`\n\n_Pégalo en WhatsApp en "Vincular con el número de teléfono"_`});
            
-            // Eliminar los mensajes tras el timeout (Ahora solo en m.chat)
+            // Eliminar los mensajes tras el timeout (Solo en m.chat)
             setTimeout(() => { 
                 try { conn.sendMessage(m.chat, { delete: txtCode.key }) } catch {}
                 try { conn.sendMessage(m.chat, { delete: codeBot.key }) } catch {}
             }, 45000); 
            
-            console.log(chalk.yellow(`[CODE] Sesión de ${m.sender} - Código: ${secret} enviado a: ${m.chat}`));
+            console.log(chalk.yellow(`[CODE] Sesión de ${m.sender} - Código: ${secret} enviado a: ${m.chat} (Chat Original)`)); 
             // Una vez enviado el código, nos aseguramos de que no se repita el envío si el handler recarga
              sock.ev.off('connection.update', sock.connectionUpdate);
            
@@ -95,14 +101,12 @@ if (qr && mode === 'qr') {
         return 
     }
     if (txtQR && txtQR.key) {
-        // Eliminación del mensaje en m.chat
         setTimeout(() => { conn.sendMessage(m.chat, { delete: txtQR.key })}, 45000) // 45 segundos para el QR
     }
     return
 } 
 
 const endSesion = async (loaded) => {
-// ... (El resto de la función endSesion es igual)
 if (!loaded) {
 try {
 sock.ws.close()
@@ -114,8 +118,6 @@ if (i < 0) return 
 delete global.conns[i]
 global.conns.splice(i, 1)
 }}
-// ... (El resto de la función connectionUpdate es igual)
-// ... (excepto por la última parte)
 
 const reason = lastDisconnect?.error?.output?.statusCode || lastDisconnect?.error?.output?.payload?.statusCode
 const sessionPathBase = path.basename(pathLuffyJadiBot) // Uso de pathLuffyJadiBot
@@ -175,7 +177,6 @@ m?.chat ? await conn.sendMessage(m.chat, {text: `*🎉 ¡CONEXIÓN EXITOSA, NAKA
 
 }}
 setInterval(async () => {
-// ... (El resto del código es igual)
 if (!sock.user) {
 try { sock.ws.close() } catch (e) {      
 //console.log(await creloadHandler(true).catch(console.error))
@@ -189,7 +190,6 @@ global.conns.splice(i, 1)
 
 let handler = await import('../handler.js')
 let creloadHandler = async function (restatConn) {
-// ... (El resto del código es igual)
 try {
 const Handler = await import(`../handler.js?update=${Date.now()}`).catch(console.error)
 if (Object.keys(Handler || {}).length) handler = Handler
@@ -238,5 +238,4 @@ return minutes + ' m y ' + seconds + ' s '
 async function joinChannels(conn) {
 for (const channelId of Object.values(global.ch)) {
 await conn.newsletterFollow(channelId).catch(() => {})
-}
-}
+}}
