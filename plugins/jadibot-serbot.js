@@ -68,11 +68,11 @@ let handler = async (m, { conn, args, usedPrefix, command, isOwner, text }) => {
 // ----------------------------------------------------------------------
 const isButtonText = (text?.trim()?.toUpperCase() === 'CÓDIGO QR' || text?.trim()?.toUpperCase() === 'CÓDIGO DE 8 DÍGITOS');
 if (isButtonText && args.length === 0) {
-    // Si el usuario escribe el texto del botón sin el prefijo (mientras el menú de botones está activo),
-    // ignoramos la acción para evitar que el código lo intente leer como Base64.
-    // También se puede enviar un mensaje de ayuda si se desea, por ejemplo:
-    // conn.reply(m.chat, `${EMOJI_LUFFY} ¡Nakama! Por favor, *haz clic en el botón* para elegir, no escribas el texto.`, m)
-    return;
+    // Si el usuario escribe el texto del botón sin el prefijo (mientras el menú de botones está activo),
+    // ignoramos la acción para evitar que el código lo intente leer como Base64.
+    // También se puede enviar un mensaje de ayuda si se desea, por ejemplo:
+    // conn.reply(m.chat, `${EMOJI_LUFFY} ¡Nakama! Por favor, *haz clic en el botón* para elegir, no escribas el texto.`, m)
+    return;
 }
 // ----------------------------------------------------------------------
 // --- FIN DE LA CORRECCIÓN ---
@@ -189,17 +189,21 @@ if (mode === 'code' && (connection === 'connecting' || qr)) {
             let secret = await sock.requestPairingCode(phoneNumber);
             secret = secret.match(/.{1,4}/g)?.join("-");
            
-            // *** ENVÍO AL CHAT ORIGINAL (m.chat) - GRUPO O PRIVADO ***
-            txtCode = await conn.sendMessage(m.chat, {text : RTX_CODE_FINAL.trim()}, { quoted: m }); // Uso de RTX_CODE_FINAL
-            codeBot = await conn.sendMessage(m.chat, {text: `*🔑 TU CÓDIGO DE NAKAMA:* \n\n\`\`\`${secret}\`\`\`\n\n_Pégalo en WhatsApp en "Vincular con el número de teléfono"_`});
+            // *** CORRECCIÓN PARA GRUPOS: Notificamos en el chat y enviamos el código al privado (m.sender) para fiabilidad ***
+            // 1. Notificación en el chat original (grupo o privado)
+            await conn.sendMessage(m.chat, {text: `*${EMOJI_LUFFY} ¡ATENCIÓN, NAKAMA!* @${m.sender.split('@')[0]} El *Código de 8 Dígitos* ha sido enviado a tu chat privado. ¡Revisa tu bandeja de entrada!`, mentions: [m.sender]}, { quoted: m });
            
-            // Eliminar los mensajes tras el timeout
+            // 2. Envío del código de vinculación al privado (m.sender)
+            txtCode = await conn.sendMessage(m.sender, {text : RTX_CODE_FINAL.trim()}, { quoted: m }); // Uso de RTX_CODE_FINAL
+            codeBot = await conn.sendMessage(m.sender, {text: `*🔑 TU CÓDIGO DE NAKAMA:* \n\n\`\`\`${secret}\`\`\`\n\n_Pégalo en WhatsApp en "Vincular con el número de teléfono"_`});
+           
+            // Eliminar los mensajes tras el timeout (Ahora en el privado, m.sender)
             setTimeout(() => { 
-                try { conn.sendMessage(m.chat, { delete: txtCode.key }) } catch {}
-                try { conn.sendMessage(m.chat, { delete: codeBot.key }) } catch {}
+                try { conn.sendMessage(m.sender, { delete: txtCode.key }) } catch {}
+                try { conn.sendMessage(m.sender, { delete: codeBot.key }) } catch {}
             }, 45000); 
            
-            console.log(chalk.yellow(`[CODE] Sesión de ${m.sender} - Código: ${secret} enviado a: ${m.chat}`));
+            console.log(chalk.yellow(`[CODE] Sesión de ${m.sender} - Código: ${secret} enviado a: ${m.sender} (Privado)`)); // Log actualizado
             // Una vez enviado el código, nos aseguramos de que no se repita el envío si el handler recarga
              sock.ev.off('connection.update', sock.connectionUpdate);
            
@@ -221,7 +225,7 @@ if (qr && mode === 'qr') {
         return 
     }
     if (txtQR && txtQR.key) {
-        setTimeout(() => { conn.sendMessage(m.sender, { delete: txtQR.key })}, 45000) // 45 segundos para el QR
+        setTimeout(() => { conn.sendMessage(m.chat, { delete: txtQR.key })}, 45000) // 45 segundos para el QR
     }
     return
 } 
