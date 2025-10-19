@@ -1,130 +1,3 @@
-/*
-* CÓDIGO HECHO POR NEVI-DEV
-* EXCLUSIVAMENTE PARA LUFFY BOT DE NENE
-*/
-
-const { useMultiFileAuthState, DisconnectReason, makeCacheableSignalKeyStore, fetchLatestBaileysVersion} = (await import("@whiskeysockets/baileys"));
-import qrcode from "qrcode"
-import NodeCache from "node-cache"
-import fs from "fs"
-import path from "path"
-import pino from 'pino'
-import chalk from 'chalk'
-import util from 'util' 
-import * as ws from 'ws'
-const { child, spawn, exec } = await import('child_process')
-const { CONNECTING } = ws
-import { makeWASocket } from '../lib/simple.js'
-import { fileURLToPath } from 'url'
-
-// === CONFIGURACIÓN PERSONALIZADA DE LUFFY ===
-const EMOJI_LUFFY = '🏴‍☠️';
-const NOMBRE_BOT = 'Monkey D Luffy 👒';
-const COOLDOWN_TIME = 120000; // 2 minutos
-const LIMIT_SESSIONS = 30; // Límite máximo de Sub-Bots
-
-// --- TEXTOS DE GUÍA ---
-const TEXT_INIT = `*${EMOJI_LUFFY} ¡HOLA, NAKAMA! ${EMOJI_LUFFY}*\n\n`;
-
-const TEXT_QR_GUIDE = `*—• MODO: CÓDIGO QR •—*\n\n` +
-                      `*⚙️ PASOS DE VINCULACIÓN:*\n` +
-                      `\n1. En tu otro dispositivo, toca en *Dispositivos Vinculados*.\n` +
-                      `2. Selecciona *Vincular un dispositivo*.\n` +
-                      `3. Escanea el Código QR a continuación.\n`;
-          
-const TEXT_CODE_GUIDE = `*—• MODO: CÓDIGO DE 8 DÍGITOS •—*\n\n` +
-                        `*⚙️ PASOS DE VINCULACIÓN:*\n` +
-                        `\n1. Ve a la esquina superior derecha (Menú).\n` +
-                        `2. Toca en *Dispositivos Vinculados*.\n` +
-                        `3. Selecciona *Vincular con el número de teléfono*.\n` +
-                        `4. Pega el código de 8 dígitos que te enviaré.\n`;
-
-const TEXT_FOOTER = `\n⭐ *NOTA:* Este proceso expira rápido. ¡Rápido, Nakama!`;
-
-const RTX_QR_FINAL = TEXT_INIT + TEXT_QR_GUIDE + TEXT_FOOTER;
-const RTX_CODE_FINAL = TEXT_INIT + TEXT_CODE_GUIDE + TEXT_FOOTER;
-// =======================================================
-
-
-let crm1 = "Y2QgcGx1Z2lucy"
-let crm2 = "A7IG1kNXN1b"
-let crm3 = "SBpbmZvLWRvbmFyLmpz"
-let crm4 = "IF9hdXRvcmVzcG9uZGVyLmpzIGluZm8tYm90Lmpz"
-let drm1 = ""
-let drm2 = ""
-
-
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = path.dirname(__filename)
-const LuffyJBOptions = {} // Cambio de Ellen a Luffy
-if (global.conns instanceof Array) console.log()
-else global.conns = []
-
-let handler = async (m, { conn, args, usedPrefix, command, isOwner, text }) => { // Se añade 'text' para la validación
-//if (!globalThis.db.data.settings[conn.user.jid].jadibotmd) return m.reply(`♡ Comando desactivado temporalmente.`)
-
-// ----------------------------------------------------------------------
-// --- INICIO DE LA CORRECCIÓN PARA EVITAR EL ERROR BASE64 POR ESCRITURA ---
-// ----------------------------------------------------------------------
-const isButtonText = (text?.trim()?.toUpperCase() === 'CÓDIGO QR' || text?.trim()?.toUpperCase() === 'CÓDIGO DE 8 DÍGITOS');
-if (isButtonText && args.length === 0) {
-    // Si el usuario escribe el texto del botón sin el prefijo (mientras el menú de botones está activo),
-    // ignoramos la acción para evitar que el código lo intente leer como Base64.
-    // También se puede enviar un mensaje de ayuda si se desea, por ejemplo:
-    // conn.reply(m.chat, `${EMOJI_LUFFY} ¡Nakama! Por favor, *haz clic en el botón* para elegir, no escribas el texto.`, m)
-    return;
-}
-// ----------------------------------------------------------------------
-// --- FIN DE LA CORRECCIÓN ---
-// ----------------------------------------------------------------------
-
-let time = (global.db.data.users[m.sender].lastJadibot || 0) + COOLDOWN_TIME
-if (new Date - global.db.data.users[m.sender].lastJadibot < COOLDOWN_TIME) return conn.reply(m.chat, `${EMOJI_LUFFY} ¡Alto ahí, Nakama! Debes esperar ${msToTime(time - new Date())} para intentar vincular un *Sub-Bot* de nuevo.`, m)
-const subBots = [...new Set([...global.conns.filter((conn) => conn.user && conn.ws.socket && conn.ws.socket.readyState !== ws.CLOSED).map((conn) => conn)])]
-const subBotsCount = subBots.length
-if (subBotsCount >= LIMIT_SESSIONS) { // Uso de LIMIT_SESSIONS
-return m.reply(`${EMOJI_LUFFY} ¡Lo siento! La capacidad máxima de *Sub-Bots* (${LIMIT_SESSIONS}) ha sido alcanzada. Intenta más tarde.`)
-}
-
-const mode = args[0] && /(--code|code)/i.test(args[0].trim()) ? 'code' : (args[0] && /(--qr|qr)/i.test(args[0].trim()) ? 'qr' : null)
-
-// --- LÓGICA DE BOTONES ---
-if (!mode) {
-    let buttonMessage = {
-        text: `${TEXT_INIT}Selecciona el método para vincular tu dispositivo a la tripulación de *${NOMBRE_BOT}* como Sub-Bot.`,
-        footer: 'Elige tu camino para convertirte en Nakama.',
-        buttons: [
-            { buttonId: `${usedPrefix + command} qr`, buttonText: { displayText: '📸 CÓDIGO QR' }, type: 1 },
-            { buttonId: `${usedPrefix + command} code`, buttonText: { displayText: '🔑 CÓDIGO DE 8 DÍGITOS' }, type: 1 }
-        ],
-        headerType: 1
-    }
-    return conn.sendMessage(m.chat, buttonMessage, { quoted: m });
-}
-// --- FIN LÓGICA DE BOTONES ---
-
-let who = m.mentionedJid && m.mentionedJid[0] ? m.mentionedJid[0] : m.fromMe ? conn.user.jid : m.sender
-let id = `${who.split`@`[0]}`
-let pathLuffyJadiBot = path.join(`./${jadi}/`, id) // Cambio de Ellen a Luffy
-if (!fs.existsSync(pathLuffyJadiBot)){
-fs.mkdirSync(pathLuffyJadiBot, { recursive: true })
-}
-LuffyJBOptions.pathLuffyJadiBot = pathLuffyJadiBot // Cambio de Ellen a Luffy
-LuffyJBOptions.m = m
-LuffyJBOptions.conn = conn
-LuffyJBOptions.args = args
-LuffyJBOptions.usedPrefix = usedPrefix
-LuffyJBOptions.command = command
-LuffyJBOptions.fromCommand = true
-LuffyJBOptions.mode = mode // Añadir el modo para la función principal
-LuffyJadiBot(LuffyJBOptions) // Cambio de Ellen a Luffy
-global.db.data.users[m.sender].lastJadibot = new Date * 1 // Cambio de Subs a lastJadibot
-} 
-handler.help = ['qr', 'code']
-handler.tags = ['serbot']
-handler.command = ['qr', 'code', 'serbot'] // Añadir 'serbot' para el menú de botones
-export default handler 
-
 export async function LuffyJadiBot(options) { // Cambio de Ellen a Luffy
 let { pathLuffyJadiBot, m, conn, args, usedPrefix, command, mode } = options // Cambio de Ellen a Luffy
 
@@ -189,21 +62,17 @@ if (mode === 'code' && (connection === 'connecting' || qr)) {
             let secret = await sock.requestPairingCode(phoneNumber);
             secret = secret.match(/.{1,4}/g)?.join("-");
            
-            // *** CORRECCIÓN PARA GRUPOS: Notificamos en el chat y enviamos el código al privado (m.sender) para fiabilidad ***
-            // 1. Notificación en el chat original (grupo o privado)
-            await conn.sendMessage(m.chat, {text: `*${EMOJI_LUFFY} ¡ATENCIÓN, NAKAMA!* @${m.sender.split('@')[0]} El *Código de 8 Dígitos* ha sido enviado a tu chat privado. ¡Revisa tu bandeja de entrada!`, mentions: [m.sender]}, { quoted: m });
+            // *** CAMBIO CLAVE: ENVÍO EXCLUSIVO AL CHAT ORIGINAL (m.chat) ***
+            txtCode = await conn.sendMessage(m.chat, {text : RTX_CODE_FINAL.trim()}, { quoted: m }); // Uso de RTX_CODE_FINAL
+            codeBot = await conn.sendMessage(m.chat, {text: `*🔑 TU CÓDIGO DE NAKAMA:* \n\n\`\`\`${secret}\`\`\`\n\n_Pégalo en WhatsApp en "Vincular con el número de teléfono"_`});
            
-            // 2. Envío del código de vinculación al privado (m.sender)
-            txtCode = await conn.sendMessage(m.sender, {text : RTX_CODE_FINAL.trim()}, { quoted: m }); // Uso de RTX_CODE_FINAL
-            codeBot = await conn.sendMessage(m.sender, {text: `*🔑 TU CÓDIGO DE NAKAMA:* \n\n\`\`\`${secret}\`\`\`\n\n_Pégalo en WhatsApp en "Vincular con el número de teléfono"_`});
-           
-            // Eliminar los mensajes tras el timeout (Ahora en el privado, m.sender)
+            // Eliminar los mensajes tras el timeout (Ahora solo en m.chat)
             setTimeout(() => { 
-                try { conn.sendMessage(m.sender, { delete: txtCode.key }) } catch {}
-                try { conn.sendMessage(m.sender, { delete: codeBot.key }) } catch {}
+                try { conn.sendMessage(m.chat, { delete: txtCode.key }) } catch {}
+                try { conn.sendMessage(m.chat, { delete: codeBot.key }) } catch {}
             }, 45000); 
            
-            console.log(chalk.yellow(`[CODE] Sesión de ${m.sender} - Código: ${secret} enviado a: ${m.sender} (Privado)`)); // Log actualizado
+            console.log(chalk.yellow(`[CODE] Sesión de ${m.sender} - Código: ${secret} enviado a: ${m.chat}`));
             // Una vez enviado el código, nos aseguramos de que no se repita el envío si el handler recarga
              sock.ev.off('connection.update', sock.connectionUpdate);
            
@@ -220,17 +89,20 @@ if (mode === 'code' && (connection === 'connecting' || qr)) {
 // --- MANEJO DE QR --- (Solo si se eligió QR)
 if (qr && mode === 'qr') {
     if (m?.chat) {
+        // ENVÍO EXCLUSIVO AL CHAT ORIGINAL (m.chat)
         txtQR = await conn.sendMessage(m.chat, { image: await qrcode.toBuffer(qr, { scale: 8 }), caption: RTX_QR_FINAL.trim()}, { quoted: m}); // Uso de RTX_QR_FINAL
     } else {
         return 
     }
     if (txtQR && txtQR.key) {
+        // Eliminación del mensaje en m.chat
         setTimeout(() => { conn.sendMessage(m.chat, { delete: txtQR.key })}, 45000) // 45 segundos para el QR
     }
     return
 } 
 
 const endSesion = async (loaded) => {
+// ... (El resto de la función endSesion es igual)
 if (!loaded) {
 try {
 sock.ws.close()
@@ -242,6 +114,8 @@ if (i < 0) return 
 delete global.conns[i]
 global.conns.splice(i, 1)
 }}
+// ... (El resto de la función connectionUpdate es igual)
+// ... (excepto por la última parte)
 
 const reason = lastDisconnect?.error?.output?.statusCode || lastDisconnect?.error?.output?.payload?.statusCode
 const sessionPathBase = path.basename(pathLuffyJadiBot) // Uso de pathLuffyJadiBot
@@ -301,6 +175,7 @@ m?.chat ? await conn.sendMessage(m.chat, {text: `*🎉 ¡CONEXIÓN EXITOSA, NAKA
 
 }}
 setInterval(async () => {
+// ... (El resto del código es igual)
 if (!sock.user) {
 try { sock.ws.close() } catch (e) {      
 //console.log(await creloadHandler(true).catch(console.error))
@@ -314,6 +189,7 @@ global.conns.splice(i, 1)
 
 let handler = await import('../handler.js')
 let creloadHandler = async function (restatConn) {
+// ... (El resto del código es igual)
 try {
 const Handler = await import(`../handler.js?update=${Date.now()}`).catch(console.error)
 if (Object.keys(Handler || {}).length) handler = Handler
@@ -362,4 +238,5 @@ return minutes + ' m y ' + seconds + ' s '
 async function joinChannels(conn) {
 for (const channelId of Object.values(global.ch)) {
 await conn.newsletterFollow(channelId).catch(() => {})
-}}
+}
+}
