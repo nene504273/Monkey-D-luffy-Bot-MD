@@ -10,8 +10,8 @@ const { WAMessageStubType } = baileys;
 const API_URL = 'http://neviapi.ddns.net:5000/welcome'; // Endpoint de la API
 const API_KEY = 'luffy'; // Clave de la API
 // Usar una URL de fallback que esté disponible
-const DEFAULT_AVATAR_URL = 'https://i.imgur.com/8B4QYQY.png'; 
-const BACKGROUND_IMAGE_URL = 'https://files.catbox.moe/1rou90.jpg';
+const DEFAULT_AVATAR_URL = 'https://files.catbox.moe/za5lnn.jpg'; 
+const BACKGROUND_IMAGE_URL = 'https://files.catbox.moe/mncbs0.jpg';
 
 // --- FUNCIONES CENTRALES ---
 
