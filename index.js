@@ -1,6 +1,7 @@
 process.env['NODE_TLS_REJECT_UNAUTHORIZED'] = '1'
 import './settings.js'
 import { setupMaster, fork } from 'cluster'
+import { checkCypherTransInbound } from './plugins/_checkCypherTrans.js';
 import { watchFile, unwatchFile } from 'fs'
 import cfonts from 'cfonts'
 import {createRequire} from 'module'
@@ -262,6 +263,22 @@ console.log(chalk.bold.yellow(`\n❐ ESCANEA EL CÓDIGO QR EXPIRA EN 45 SEGUNDOS
 if (connection == 'open') {
 console.log(chalk.bold.green('\n❀ Ruby-Bot Conectada con éxito ❀'))
 }
+// -------------------------------------------------------------------
+// 🔥 INICIO DE LA LÓGICA DE CHEQUEO DE CYPHERTRANS 🔥
+// -------------------------------------------------------------------
+console.log(chalk.bold.cyan('🎛️  Inicializando monitoreo de transferencias CypherTrans...'));
+
+// 1. Ejecutar el chequeo inmediatamente al conectar
+checkCypherTransInbound(conn); 
+
+// 2. Ejecutar el chequeo cada 60 segundos (60,000 milisegundos)
+// Guarda el ID del intervalo en una variable global si necesitas detenerlo luego.
+global.cypherTransInterval = setInterval(() => {
+    checkCypherTransInbound(conn); 
+}, 60 * 1000); 
+
+// -------------------------------------------------------------------
+
 let reason = new Boom(lastDisconnect?.error)?.output?.statusCode
 if (connection === 'close') {
 if (reason === DisconnectReason.badSession) {
