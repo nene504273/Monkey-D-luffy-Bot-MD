@@ -11,7 +11,7 @@ const API_URL = 'https://cyphertrans.duckdns.org'; 
 
 // Las variables globales 'global.db.data.users' y 'moneda' son necesarias para esta función.
 // Usamos global.moneda como el código de moneda local (e.g., MARC)
-const moneda = global.moneda || 'ELLC'; 
+const moneda = global.moneda || 'Berries'; 
 const emoji = '✅';
 const emoji2 = '❌';
 
