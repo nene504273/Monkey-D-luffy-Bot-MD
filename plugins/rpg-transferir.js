@@ -3,22 +3,50 @@ import { Buffer } from 'buffer';
 import fs from 'fs/promises';
 import path from 'path';
 
-// --- CONFIGURACIÓN Y CONSTANTES (AJUSTADAS PARA LUFFY) ---
+// --- CONFIGURACIÓN Y CONSTANTES (Actualizadas para Luffy) ---
 const HASH_FILE_PATH = './src/hash.json';
 const API_URL = 'https://cyphertrans.duckdns.org';
-const BOT_API_KEY = 'luffy';       // <--- CLAVE DE LUFFY
-const BOT_KEY_PREFIX = 'LUF';      // <--- PREFIJO DE LUFFY
-const ALL_PREFIXES = ['MAR', 'LUF', 'ELL', 'RUB'];
-const moneda = global.moneda || 'Coin';
+
+// Prefijos actualizados de tu main(6).py
+const BOT_API_KEY = 'luffy'; // Clave de la API para Luffy
+const BOT_KEY_PREFIX = 'BER'; // Nuevo prefijo para Berries (Luffy)
+const ALL_PREFIXES = ['WON', 'BER', 'DEN']; // Wones, Berries, Deniques
+const moneda = global.moneda || 'Berries'; // Moneda local
 const emoji = '✅';
 const emoji2 = '❌';
 const emojiWait = '⏳'; // Usado para transferencias pendientes
 
-// --- FUNCIONES DE SOPORTE BÁSICAS (Ajuste de importación) ---
+// =========================================================================
+// === FUNCIÓN DE SOPORTE: Nombres de Moneda (Temporalmente incluida) ===
+// =========================================================================
+
+/**
+ * Mapea el código de la divisa (ELLC, DEN, BER, WON) a su nombre completo.
+ * NOTA: Esta función DEBE coincidir con la de tu otro handler.
+ */
+function getCurrencyName(code) {
+    if (!code) return 'Moneda Desconocida';
+    const upperCode = code.toUpperCase();
+    switch (upperCode) {
+        case 'ELLC': // Código base anterior
+        case 'DEN':  // Prefijo actual (Deniques)
+            return 'Deniques';
+        case 'BER':  // Prefijo actual (Berries)
+            return 'Berries';
+        case 'WON':  // Prefijo actual (Wones)
+            return 'Wones';
+        default:
+            return code; // Devuelve el código si no es reconocido
+    }
+}
+
+// =========================================================================
+// === FUNCIONES DE SOPORTE BÁSICAS ===
+// =========================================================================
 
 async function getBotHashFromFile() {
     try {
-        // Usar path y fs/promises importados
+        // Corregido: usando path.join para asegurar compatibilidad de rutas
         const fullPath = path.join(process.cwd(), HASH_FILE_PATH);
         const data = await fs.readFile(fullPath, 'utf-8');
         const hashData = JSON.parse(data);
@@ -30,6 +58,21 @@ async function getBotHashFromFile() {
 
 function isNumber(x) {
     return !isNaN(x);
+}
+
+/** Extrae el prefijo (WON, BER, DEN) del número de cuenta CypherTrans. */
+function getAccountPrefix(accountNumber) {
+    if (accountNumber && accountNumber.length >= 7) {
+        // Asume que el prefijo son 3 caracteres antes de los últimos 4 dígitos
+        return accountNumber.slice(-7, -4).toUpperCase();
+    }
+    return null;
+}
+
+/** Verifica si la cuenta es de CypherTrans. */
+function isCypherTransAccount(recipientArg) {
+    const prefix = getAccountPrefix(recipientArg);
+    return ALL_PREFIXES.includes(prefix);
 }
 
 async function callCypherTransAPI(botHash, sender, recipient, amount, type) {
@@ -59,7 +102,9 @@ async function callCypherTransAPI(botHash, sender, recipient, amount, type) {
 }
 
 
-// --- FUNCIONES DE ENVÍO DE MENSAJES CON ESTÉTICA MEJORADA ---
+// =========================================================================
+// === FUNCIONES DE ENVÍO DE MENSAJES ===
+// =========================================================================
 
 /** Envía el mensaje de ayuda (mejor estética). */
 function sendHelpMessage(conn, m, usedPrefix, command) {
@@ -72,13 +117,11 @@ ${usedPrefix}${command} *<cantidad> @mencion*
 > Realiza una transferencia *Local* (banco -> cartera del receptor).
 
 ${usedPrefix}${command} *<cantidad> <CuentaCT>*
-> Inicia una transferencia *Multibot* (requiere seleccionar velocidad).
-
-${usedPrefix}${command} *<cantidad> <CuentaCT> [1|2]*
-> Transferencia *Multibot Rápida*. (1=Normal/Lenta, 2=Instantánea/Rápida)
+> Inicia una transferencia *Multibot* (requiere confirmación).
 
 *Nota:* Las transferencias se realizan desde tu *Banco*.
 `.trim();
+    // Usa la constante 'moneda' (Berries) para el mensaje de ayuda
     return conn.sendMessage(m.chat, { text: helpMessage, mentions: [m.sender] }, { quoted: m });
 }
 
@@ -118,8 +161,9 @@ function sendFinalTransferConfirmation(conn, chatId, txData, amount, newBankBala
     }
 
     // Desglose del mensaje (usando los nuevos campos de la API)
-    const sentCurrency = txData.sent_currency || moneda;
-    const receivedCurrency = txData.received_currency || moneda;
+    // Usamos getCurrencyName()
+    const sentCurrency = getCurrencyName(txData.sent_currency || BOT_KEY_PREFIX);
+    const receivedCurrency = getCurrencyName(txData.received_currency || BOT_KEY_PREFIX);
     const isCrossCurrency = sentCurrency !== receivedCurrency;
     
     let caption = `${emojiStatus} *¡Transferencia Multibot ${statusText}!*`;
@@ -140,7 +184,7 @@ function sendFinalTransferConfirmation(conn, chatId, txData, amount, newBankBala
     
     // 4. IDs y Balances
     caption += `\n*ID Transacción:* \`${txData.tx_id}\``;
-    caption += `\n\n*Tu Nuevo Balance en Banco:* ${newBankBalance} ${moneda}`;
+    caption += `\n\n*Tu Nuevo Balance en Banco:* ${newBankBalance} ${moneda}`; // Usa la moneda local (Berries)
     
     // 5. Tracking URL (Solo si no es aprobada o no tiene imagen)
     if (isPending || !hasReceipt) {
@@ -159,39 +203,59 @@ function sendFinalTransferConfirmation(conn, chatId, txData, amount, newBankBala
     }
 }
 
-// --- FUNCIÓN PRINCIPAL DEL HANDLER ---
+
+// =========================================================================
+// === FUNCIÓN PRINCIPAL DEL HANDLER (MODIFICADA) ===
+// =========================================================================
 
 async function handler(m, { conn, args, usedPrefix, command }) {
-    // *** VERIFICACIÓN CRÍTICA DEL MENSAJE ***
     if (!m || !m.sender) {
         return;
     }
 
     const user = global.db.data.users[m.sender];
     const bankType = 'bank';
+    const txState = 'pendingCypherTransTx'; // Clave para guardar la transacción pendiente
     
     let amount, recipientArg, typeShortcut;
-    let isButtonResponse = false;
+    let isConfirmation = false;
     
-    // 1. Lógica para determinar el tipo de argumento
-    if (args.length === 3 && (args[0] === '1' || args[0] === '2') && isNumber(args[1]) && args[2].length > 7) {
-        // Respuesta del botón o comando rápido/completo
-        typeShortcut = args[0];
+    // 1. Lógica para manejar comandos y respuestas de botones
+
+    // Comandos de confirmación (Sí/No) o ejecución rápida
+    if (args.length === 4 && (args[0] === 'CONFIRM' || args[0] === 'CANCEL') && isNumber(args[1])) {
+        // Formato: .transferir CONFIRM <amount> <recipient> <type>
+        isConfirmation = true;
+        const action = args[0]; // CONFIRM o CANCEL
         amount = parseInt(args[1]);
         recipientArg = args[2].trim();
-        isButtonResponse = true;
-    } else if (args.length >= 2) {
-        // Comando inicial
+        typeShortcut = args[3].trim();
+        
+        // Verifica que la transacción pendiente guardada coincida
+        const pendingTx = user[txState];
+        if (!pendingTx || pendingTx.amount !== amount || pendingTx.recipient !== recipientArg || pendingTx.type !== typeShortcut) {
+            return m.reply(`${emoji2} La confirmación no coincide con la última transferencia pendiente. Intenta de nuevo.`);
+        }
+
+        // Si es CANCEL, borra y notifica
+        if (action === 'CANCEL') {
+            user[txState] = null; // Elimina el estado pendiente
+            return m.reply(`${emoji2} Transferencia a ${recipientArg} por ${amount} ${moneda} *cancelada*.`);
+        }
+        // Si es CONFIRM, continúa la ejecución después del bloque if
+    }
+    // Comando inicial de transferencia
+    else if (args.length >= 2) {
         amount = isNumber(args[0]) ? parseInt(args[0]) : 0;
         recipientArg = args[1].trim();
-        typeShortcut = args[2] ? args[2].trim() : null;
+        typeShortcut = args[2] ? args[2].trim() : null; // Para tipo 1 o 2 en el comando inicial
     } else {
         // Uso incorrecto - Muestra ayuda mejorada
         return sendHelpMessage(conn, m, usedPrefix, command);
     }
 
     amount = Math.min(Number.MAX_SAFE_INTEGER, Math.max(100, amount)) * 1;
-    
+   
     const botHash = await getBotHashFromFile();
     
     // Verificación de balance
@@ -199,10 +263,16 @@ async function handler(m, { conn, args, usedPrefix, command }) {
         return conn.sendMessage(m.chat, {text: `${emoji2} Solo tienes *${user[bankType]} ${moneda}* en el banco para transferir.`, mentions: [m.sender]}, {quoted: m});
     }
 
+    // Si ya existe una transacción pendiente y no es una confirmación, no deja continuar
+    if (user[txState] && !isConfirmation) {
+         return m.reply(`${emojiWait} Ya tienes una transferencia pendiente de confirmación a *${user[txState].recipient}* por *${user[txState].amount} ${moneda}*. Responde al mensaje anterior o usa ${usedPrefix + command} CANCEL.`);
+    }
+
     // --- LÓGICA DE TRANSFERENCIA ---
 
-    // 1. TRANSFERENCIA LOCAL (ya estaba funcionando, solo mejoramos el mensaje)
-    if (!isButtonResponse && (recipientArg.includes('@s.whatsapp.net') || recipientArg.includes('@'))) {
+    // 1. TRANSFERENCIA LOCAL
+    if (recipientArg.includes('@s.whatsapp.net') || recipientArg.includes('@')) {
+        // ... (Lógica local sin cambios, sin confirmación)
         const who = m.mentionedJid && m.mentionedJid[0] ? m.mentionedJid[0] : (recipientArg.replace(/[@ .+-]/g, '') + '@s.whatsapp.net');
         
         if (!who || !(who in global.db.data.users)) {
@@ -215,36 +285,97 @@ async function handler(m, { conn, args, usedPrefix, command }) {
         
         const totalInBank = user[bankType];
         
-        // Muestra confirmación local con estética mejorada
         return sendLocalTransferConfirmation(conn, m, amount, totalInBank, who);
     } 
 
-    // 2. TRANSFERENCIA MULTIBOT
-    const isCypherTransAccount = recipientArg.length > 7 && ALL_PREFIXES.some(prefix => recipientArg.endsWith(prefix + recipientArg.slice(-4)));
-
-    if (isCypherTransAccount) {
+    // 2. TRANSFERENCIA MULTIBOT (CypherTrans)
+    if (isCypherTransAccount(recipientArg)) {
         const senderAccount = global.db.data.users[m.sender]?.cypherTransAccount;
 
         if (!botHash || !senderAccount) {
             return m.reply(`${emoji2} El sistema multibot no está activado o tu cuenta no está vinculada. Usa *${usedPrefix}crearcuenta* o *${usedPrefix}registerbot*.`);
         }
 
-        const recipientPrefix = recipientArg.slice(-7, -4);
+        const recipientPrefix = getAccountPrefix(recipientArg);
         const recipientAccount = recipientArg;
         let transferType = null;
+        // La clave de verificación ahora es el BOT_KEY_PREFIX ('BER')
+        const isInternalBot = BOT_KEY_PREFIX === recipientPrefix;
         
-        // C.1. Transferencia al mismo bot (LUF) o selección de velocidad
-        if (BOT_KEY_PREFIX === recipientPrefix) {
+        // C.1. Transferencia al mismo bot (BER)
+        if (isInternalBot) {
             transferType = 'instant';
-        } else if (typeShortcut === '1' || typeShortcut === '2') {
+        } 
+        // C.2. Tipo de transferencia definido por el usuario (1 o 2)
+        else if (typeShortcut === '1' || typeShortcut === '2') {
              transferType = (typeShortcut === '1' ? 'normal' : 'instant');
         }
+
+        // --- Bucle de Confirmación/Ejecución ---
+
+        // Si es la PRIMERA VEZ (No es confirmación) y requiere tipo (no es interno), se pide la selección
+        if (!isConfirmation && !isInternalBot && !transferType) {
+            
+            // E. Bots Diferentes (Menú de selección)
+            const buttons = [
+                {buttonId: `${usedPrefix + command} ${amount} ${recipientAccount} 1`, buttonText: {displayText: '1: Lenta (Normal) 🐢'}, type: 1},
+                {buttonId: `${usedPrefix + command} ${amount} ${recipientAccount} 2`, buttonText: {displayText: '2: Rápida (Instantánea) ⚡'}, type: 1}
+            ];
         
-        if (transferType) {
+            const buttonMessage = {
+                text: `🌐 *Selecciona la Velocidad de Transferencia*\n\n` + 
+                      `*Destino:* ${getCurrencyName(recipientPrefix)} | *Monto:* ${amount} ${moneda}\n\n` +
+                      `*1. Lenta (Normal):* Tarda hasta 24h. Sin comisión base. (Recomendado)\n` +
+                      `*2. Rápida (Instantánea):* Tarda ~8min. Aplica comisión.`,
+                footer: 'CypherTrans | Selecciona una opción:',
+                buttons: buttons,
+                headerType: 1
+            };
+
+            return conn.sendMessage(m.chat, buttonMessage, { quoted: m });
+        }
+        
+        // Si YA SE TIENE el tipo de transferencia (Interna, o Externa y ya seleccionó), se pide la confirmación SI NO HA CONFIRMADO
+        if (!isConfirmation && transferType) {
+
+            // Guarda el estado de la transacción pendiente
+            user[txState] = { amount, recipient: recipientAccount, type: typeShortcut || 'instant' };
+
+            const buttons = [
+                // Los botones envían el comando completo de confirmación (CONFIRM/CANCEL <amount> <recipient> <type>)
+                {buttonId: `${usedPrefix + command} CONFIRM ${amount} ${recipientAccount} ${typeShortcut || 'instant'}`, buttonText: {displayText: '✅ SÍ, CONFIRMO'}, type: 1},
+                {buttonId: `${usedPrefix + command} CANCEL ${amount} ${recipientAccount} ${typeShortcut || 'instant'}`, buttonText: {displayText: '❌ NO, CANCELAR'}, type: 1}
+            ];
+
+            const transferTypeText = isInternalBot ? 'INSTANTÁNEA (Mismo Bot)' : (transferType === 'instant' ? 'RÁPIDA (Instantánea)' : 'LENTA (Normal)');
+
+            const confirmationMessage = {
+                text: `⚠️ *¿CONFIRMAS ESTA TRANSFERENCIA MULTIBOT?* ⚠️\n\n` + 
+                      `*Monto:* *${amount} ${moneda}*\n` +
+                      `*Destino:* ${recipientAccount} (${getCurrencyName(recipientPrefix)})\n` +
+                      `*Tipo:* ${transferTypeText}\n\n` +
+                      `*¡El dinero será restado de tu banco inmediatamente al confirmar!*`,
+                footer: 'Pulsa SÍ para continuar. Pulsa NO para cancelar.',
+                buttons: buttons,
+                headerType: 1
+            };
+
+            return conn.sendMessage(m.chat, confirmationMessage, { quoted: m });
+        }
+
+        // --- Lógica de EJECUCIÓN FINAL (Solo llega aquí si isConfirmation es true) ---
+        if (isConfirmation) {
+            
+            // Limpia el estado pendiente
+            user[txState] = null;
+            
             // Se resta el dinero ANTES de la llamada a la API
             user[bankType] -= amount * 1;
             
-            const txResponse = await callCypherTransAPI(botHash, senderAccount, recipientAccount, amount, transferType);
+            // Usamos el tipo que viene en el estado, si no, 'instant' (default para interno)
+            const finalTransferType = typeShortcut || 'instant'; 
+            
+            const txResponse = await callCypherTransAPI(botHash, senderAccount, recipientAccount, amount, finalTransferType);
             
             if (txResponse.status === 200) {
                 const txData = txResponse.data;
@@ -254,31 +385,14 @@ async function handler(m, { conn, args, usedPrefix, command }) {
             } else {
                 // Si falla la API, se devuelve el dinero
                 user[bankType] += amount * 1; 
-                return m.reply(`${emoji2} Falló la transferencia a ${recipientAccount}. ${txResponse.data.error || 'Error desconocido'}`);
+                return m.reply(`${emoji2} Falló la transferencia a ${recipientAccount}. Se te ha devuelto el dinero. ${txResponse.data.error || 'Error desconocido'}`);
             }
         }
-        
-        // E. Bots Diferentes (Menú de selección) - Estética mejorada
-        const buttons = [
-            {buttonId: `${usedPrefix + command} 1 ${amount} ${recipientAccount}`, buttonText: {displayText: '1: Lenta (Normal) 🐢'}, type: 1},
-            {buttonId: `${usedPrefix + command} 2 ${amount} ${recipientAccount}`, buttonText: {displayText: '2: Rápida (Instantánea) ⚡'}, type: 1}
-        ];
-        
-        const buttonMessage = {
-            text: `🌐 *Selecciona la Velocidad de Transferencia*\n\n` + 
-                      `*Destino:* ${recipientPrefix} | *Monto:* ${amount} ${moneda}\n\n` +
-                      `*1. Lenta (Normal):* Tarda hasta 24h. Sin comisión base. (Recomendado)\n` +
-                      `*2. Rápida (Instantánea):* Tarda ~8min. Aplica comisión.`,
-            footer: 'CypherTrans | Selecciona una opción:',
-            buttons: buttons,
-            headerType: 1
-        };
 
-        return conn.sendMessage(m.chat, buttonMessage, { quoted: m });
     }
 
     // 3. ERROR DE FORMATO
-    return m.reply(`${emoji2} Formato de destinatario no reconocido. Debe ser @mencion o una cuenta CypherTrans (ej: XXXXXMARC1234).`);
+    return m.reply(`${emoji2} Formato de destinatario no reconocido. Debe ser @mencion o una cuenta CypherTrans (ej: 01234BER1234).`);
 }
 
 
