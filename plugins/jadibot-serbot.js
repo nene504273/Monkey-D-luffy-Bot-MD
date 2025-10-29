@@ -12,7 +12,7 @@ import * as ws from 'ws'
 // o se usan directamente si están disponibles globalmente en el entorno, 
 // pero en un entorno de módulo ES se importan así:
 import { spawn, exec } from
- CONNECTING } = ws
+  } = ws
 import { makeWASocket } from '../lib/simple.js' // Asegúrate de que esta ruta es correcta en tu proyecto
 import { fileURLToPath } from 'url'
 
