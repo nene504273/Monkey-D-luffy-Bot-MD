@@ -2,7 +2,7 @@
 NO QUITES LOS CREDITOS
 */
 
-const { useMultiFileAuthState, DisconnectReason, makeCacheableSignalKeyStore, fetchLatestBaileysVersion} = (await import("@whiskeysockets/baileys"));
+import { useMultiFileAuthState, DisconnectReason, makeCacheableSignalKeyStore, fetchLatestBaileysVersion} from "@whiskeysockets/baileys";
 import qrcode from "qrcode"
 import NodeCache from "node-cache"
 import fs from "fs"
@@ -11,10 +11,16 @@ import pino from 'pino'
 import chalk from 'chalk'
 import util from 'util' 
 import * as ws from 'ws'
-const { child, spawn, exec } = await import('child_process')
+// Importaciones de 'child_process' deben ser asíncronas si se usa 'await import()', 
+// pero 'child', 'spawn', 'exec' son propiedades del módulo, así que se importan normalmente
+// o se usan directamente si están disponibles globalmente en el entorno, 
+// pero en un entorno de módulo ES se importan así:
+import { child, spawn, exec } from 'child_process' 
 const { CONNECTING } = ws
-import { makeWASocket } from '../lib/simple.js'
+import { makeWASocket } from '../lib/simple.js' // Asegúrate de que esta ruta es correcta en tu proyecto
 import { fileURLToPath } from 'url'
+
+// --- Variables y Configuración ---
 let crm1 = "Y2QgcGx1Z2lucy"
 let crm2 = "A7IG1kNXN1b"
 let crm3 = "SBpbmZvLWRvbmFyLmpz"
@@ -27,41 +33,33 @@ let rtx2 = "*︰꯭𞋭🏴‍☠️ CONEXIÓN SUBBOT*\n\n━⧽ MODO CODIGO\n\n
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
+
+// Variables globales simuladas (deben estar definidas o se necesita un polyfill/entorno adecuado)
 const blackJBOptions = {}
 if (global.conns instanceof Array) console.log()
 else global.conns = []
-let handler = async (m, { conn, args, usedPrefix, command, isOwner }) => {
-//if (!globalThis.db.data.settings[conn.user.jid].jadibotmd) return m.reply(`♡ Comando desactivado temporalmente.`)
-let time = global.db.data.users[m.sender].Subs + 120000
-if (new Date - global.db.data.users[m.sender].Subs < 120000) return conn.reply(m.chat, `🕐 Debes esperar ${msToTime(time - new Date())} para volver a vincular un *Sub-Bot.*`, m)
-const subBots = [...new Set([...global.conns.filter((conn) => conn.user && conn.ws.socket && conn.ws.socket.readyState !== ws.CLOSED).map((conn) => conn)])]
-const subBotsCount = subBots.length
-if (subBotsCount === 30) {
-return m.reply(`${emoji2} No se han encontrado servidores para *Sub-Bots* disponibles.`)
+// Asume que 'jadi' y 'loadDatabase' están definidos en el entorno global del bot.
+// También 'globalThis.db.data.settings' y 'global.db.data.users'.
+// Para este ejemplo, solo se incluyen las funciones que has proporcionado.
+
+
+// --- Funciones de Utilidad ---
+
+const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
+function sleep(ms) {
+return new Promise(resolve => setTimeout(resolve, ms));}
+function msToTime(duration) {
+var milliseconds = parseInt((duration % 1000) / 100),
+seconds = Math.floor((duration / 1000) % 60),
+minutes = Math.floor((duration / (1000 * 60)) % 60),
+hours = Math.floor((duration / (1000 * 60 * 60)) % 24)
+hours = (hours < 10) ? '0' + hours : hours
+minutes = (minutes < 10) ? '0' + minutes : minutes
+seconds = (seconds < 10) ? '0' + seconds : seconds
+return minutes + ' m y ' + seconds + ' s '
 }
-/*if (Object.values(global.conns).length === 30) {
-return m.reply(`${emoji2} No se han encontrado espacios para *Sub-Bots* disponibles.`)
-}*/
-let who = m.mentionedJid && m.mentionedJid[0] ? m.mentionedJid[0] : m.fromMe ? conn.user.jid : m.sender
-let id = `${who.split`@`[0]}` //conn.getName(who)
-let pathblackJadiBot = path.join(`./${jadi}/`, id)
-if (!fs.existsSync(pathblackJadiBot)){
-fs.mkdirSync(pathblackJadiBot, { recursive: true })
-}
-blackJBOptions.pathblackJadiBot = pathblackJadiBot
-blackJBOptions.m = m
-blackJBOptions.conn = conn
-blackJBOptions.args = args
-blackJBOptions.usedPrefix = usedPrefix
-blackJBOptions.command = command
-blackJBOptions.fromCommand = true
-blackJadiBot(blackJBOptions)
-global.db.data.users[m.sender].Subs = new Date * 1
-} 
-handler.help = ['qr', 'code']
-handler.tags = ['serbot']
-handler.command = ['qr', 'code']
-export default handler 
+
+// --- Función Principal de Conexión ---
 
 export async function blackJadiBot(options) {
 let { pathblackJadiBot, m, conn, args, usedPrefix, command } = options
@@ -81,7 +79,7 @@ fs.mkdirSync(pathblackJadiBot, { recursive: true })}
 try {
 args[0] && args[0] != undefined ? fs.writeFileSync(pathCreds, JSON.stringify(JSON.parse(Buffer.from(args[0], "base64").toString("utf-8")), null, '\t')) : ""
 } catch {
-conn.reply(m.chat, `${emoji} Use correctamente el comando » ${usedPrefix + command} code`, m)
+conn.reply(m.chat, `${emoji} Use correctamente el comando » ${usedPrefix + command} code`, m) // Asume 'emoji' está definido
 return
 }
 
@@ -105,24 +103,6 @@ version: version,
 generateHighQualityLinkPreview: true
 };
 
-/*const connectionOptions = {
-printQRInTerminal: false,
-logger: pino({ level: 'silent' }),
-auth: { creds: state.creds, keys: makeCacheableSignalKeyStore(state.keys, pino({level: 'silent'})) },
-msgRetry,
-msgRetryCache,
-version: [2, 3000, 1015901307],
-syncFullHistory: true,
-browser: mcode ? ['Ubuntu', 'Chrome', '110.0.5585.95'] : ['Makima-Bot (Sub Bot)', 'Chrome','2.0.0'],
-defaultQueryTimeoutMs: undefined,
-getMessage: async (key) => {
-if (store) {
-//const msg = store.loadMessage(key.remoteJid, key.id)
-//return msg.message && undefined
-} return {
-conversation: 'Makkma-Bot',
-}}}*/
-
 let sock = makeWASocket(connectionOptions)
 sock.isInit = false
 let isInit = true
@@ -144,12 +124,8 @@ return
 if (qr && mcode) {
 let secret = await sock.requestPairingCode((m.sender.split`@`[0]))
 secret = secret.match(/.{1,4}/g)?.join("-")
-//if (m.isWABusiness) {
 txtCode = await conn.sendMessage(m.chat, {text : rtx2}, { quoted: m })
 codeBot = await m.reply(secret)
-//} else {
-//txtCode = await conn.sendButton(m.chat, rtx2.trim(), wm, null, [], secret, null, m) 
-//}
 console.log(secret)
 }
 if (txtCode && txtCode.key) {
@@ -165,7 +141,7 @@ sock.ws.close()
 } catch {
 }
 sock.ev.removeAllListeners()
-let i = global.conns.indexOf(sock)              
+let i = global.conns.indexOf(sock)             
 if (i < 0) return 
 delete global.conns[i]
 global.conns.splice(i, 1)
@@ -211,9 +187,9 @@ if (reason === 403) {
 console.log(chalk.bold.magentaBright(`\n╭┄┄┄┄┄┄┄┄┄┄┄┄┄┄ • • • ┄┄┄┄┄┄┄┄┄┄┄┄┄┄⟡\n┆ Sesión cerrada o cuenta en soporte para la sesión (+${path.basename(pathblackJadiBot)}).\n╰┄┄┄┄┄┄┄┄┄┄┄┄┄┄ • • • ┄┄┄┄┄┄┄┄┄┄┄┄┄┄⟡`))
 fs.rmdirSync(pathblackJadiBot, { recursive: true })
 }}
-if (global.db.data == null) loadDatabase()
+if (global.db.data == null) loadDatabase() // Asume 'loadDatabase' está disponible
 if (connection == `open`) {
-if (!global.db.data?.users) loadDatabase()
+if (!global.db.data?.users) loadDatabase() // Asume 'loadDatabase' está disponible
 let userName, userJid 
 userName = sock.authState.creds.me.name || 'Anónimo'
 userJid = sock.authState.creds.me.jid || `${path.basename(pathblackJadiBot)}@s.whatsapp.net`
@@ -226,7 +202,7 @@ m?.chat ? await conn.sendMessage(m.chat, {text: args[0] ? `@${m.sender.split('@'
 }}
 setInterval(async () => {
 if (!sock.user) {
-try { sock.ws.close() } catch (e) {     
+try { sock.ws.close() } catch (e) {      
 //console.log(await creloadHandler(true).catch(console.error))
 }
 sock.ev.removeAllListeners()
@@ -236,7 +212,7 @@ delete global.conns[i]
 global.conns.splice(i, 1)
 }}, 60000)
 
-let handler = await import('../handler.js')
+let handler = await import('../handler.js') // Asegúrate de que esta ruta es correcta
 let creloadHandler = async function (restatConn) {
 try {
 const Handler = await import(`../handler.js?update=${Date.now()}`).catch(console.error)
@@ -271,16 +247,37 @@ creloadHandler(false)
 })
 }
 
-const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
-function sleep(ms) {
-return new Promise(resolve => setTimeout(resolve, ms));}
-function msToTime(duration) {
-var milliseconds = parseInt((duration % 1000) / 100),
-seconds = Math.floor((duration / 1000) % 60),
-minutes = Math.floor((duration / (1000 * 60)) % 60),
-hours = Math.floor((duration / (1000 * 60 * 60)) % 24)
-hours = (hours < 10) ? '0' + hours : hours
-minutes = (minutes < 10) ? '0' + minutes : minutes
-seconds = (seconds < 10) ? '0' + seconds : seconds
-return minutes + ' m y ' + seconds + ' s '
+// --- Handler (Punto de entrada del comando) ---
+
+let handler = async (m, { conn, args, usedPrefix, command, isOwner }) => {
+//if (!globalThis.db.data.settings[conn.user.jid].jadibotmd) return m.reply(`♡ Comando desactivado temporalmente.`) // Asume 'globalThis.db.data.settings' está disponible
+let time = global.db.data.users[m.sender].Subs + 120000 // Asume 'global.db.data.users' está disponible
+if (new Date - global.db.data.users[m.sender].Subs < 120000) return conn.reply(m.chat, `🕐 Debes esperar ${msToTime(time - new Date())} para volver a vincular un *Sub-Bot.*`, m) // Asume 'global.db.data.users' está disponible
+const subBots = [...new Set([...global.conns.filter((conn) => conn.user && conn.ws.socket && conn.ws.socket.readyState !== ws.CLOSED).map((conn) => conn)])]
+const subBotsCount = subBots.length
+if (subBotsCount === 30) {
+return m.reply(`${emoji2} No se han encontrado servidores para *Sub-Bots* disponibles.`) // Asume 'emoji2' está definido
 }
+let who = m.mentionedJid && m.mentionedJid[0] ? m.mentionedJid[0] : m.fromMe ? conn.user.jid : m.sender
+let id = `${who.split`@`[0]}`
+let pathblackJadiBot = path.join(`./${jadi}/`, id) // Asume 'jadi' está definido
+if (!fs.existsSync(pathblackJadiBot)){
+fs.mkdirSync(pathblackJadiBot, { recursive: true })
+}
+blackJBOptions.pathblackJadiBot = pathblackJadiBot
+blackJBOptions.m = m
+blackJBOptions.conn = conn
+blackJBOptions.args = args
+blackJBOptions.usedPrefix = usedPrefix
+blackJBOptions.command = command
+blackJBOptions.fromCommand = true
+blackJadiBot(blackJBOptions)
+global.db.data.users[m.sender].Subs = new Date * 1 // Asume 'global.db.data.users' está disponible
+} 
+
+handler.help = ['qr', 'code']
+handler.tags = ['serbot']
+handler.command = ['qr', 'code']
+
+// --- Exportación del Handler ---
+export default handler
