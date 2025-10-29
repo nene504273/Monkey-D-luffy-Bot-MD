@@ -1,7 +1,3 @@
-/*CODIGO CREADO POR FÉLIX MANUEL 
-NO QUITES LOS CREDITOS
-*/
-
 import { useMultiFileAuthState, DisconnectReason, makeCacheableSignalKeyStore, fetchLatestBaileysVersion} from "@whiskeysockets/baileys";
 import qrcode from "qrcode"
 import NodeCache from "node-cache"
@@ -61,7 +57,7 @@ return minutes + ' m y ' + seconds + ' s '
 
 // --- Función Principal de Conexión ---
 
-export async function blackJadiBot(options) {
+export async function LuffyJadiBot(options) {
 let { pathblackJadiBot, m, conn, args, usedPrefix, command } = options
 if (command === 'code') {
 command = 'qr'; 
