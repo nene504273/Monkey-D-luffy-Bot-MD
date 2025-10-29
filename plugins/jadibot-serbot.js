@@ -8,7 +8,7 @@ import chalk from 'chalk'
 import util from 'util' 
 import * as ws from 'ws'
 // Importaciones de 'child_process' deben ser asíncronas si se usa 'await import()', 
-// pero 'spawn', 'exec' son propiedades del módulo, así que se importan normalmente
+// pero 'spawn','exec' son propiedades del módulo, así que se importan normalmente
 // o se usan directamente si están disponibles globalmente en el entorno, 
 // pero en un entorno de módulo ES se importan así:
 import { child, spawn, exec } from 'child_process' 
