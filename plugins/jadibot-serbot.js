@@ -11,7 +11,7 @@ import * as ws from 'ws'
 // pero 'spawn','exec' son propiedades del módulo, así que se importan normalmente
 // o se usan directamente si están disponibles globalmente en el entorno, 
 // pero en un entorno de módulo ES se importan así:
-import { child, spawn, exec } from 'child_process' 
+import { spawn, exec } from
 const { CONNECTING } = ws
 import { makeWASocket } from '../lib/simple.js' // Asegúrate de que esta ruta es correcta en tu proyecto
 import { fileURLToPath } from 'url'
