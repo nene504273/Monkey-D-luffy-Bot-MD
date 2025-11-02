@@ -31,7 +31,7 @@
 },
 "license": "MIT-License",
 "dependencies": {
-"@whiskeysockets/baileys": "npm:@izumi-xyz/meta",
+"@whiskeysockets/baileys": "npm:@rexxhayanasi/elaina-bail",
 "@adiwajshing/keyed-db": "^0.2.4",
 "@bochilteam/scraper": "^4.2.4",
 "@bochilteam/scraper-sosmed": "^1.0.5",
@@ -99,4 +99,5 @@
 "optionalDependencies": {
 "wa-sticker-formatter": "^4.3.2",
 "moment-timezone": "^0.5.37"
-}}
+}
+}
