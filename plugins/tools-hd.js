@@ -92,7 +92,7 @@ let handler = async (m, { conn }) => {
   } catch (e) {
     console.error(e);
     await m.react(error);
-    return conn.reply(m.chat, `⚠️ ¡Uuups! Algo salió mal, intenta de nuevo o dime a Rem-chan qué pasó.\n\n*Error:* ${e.message}`, m);
+    return conn.reply(m.chat, `⚠️ ¡Uuups! Algo salió mal, intenta de nuevo o dime a luffy-sempai qué pasó.\n\n*Error:* ${e.message}`, m);
   }
 };
 
