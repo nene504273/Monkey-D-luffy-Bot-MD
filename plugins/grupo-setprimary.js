@@ -13,7 +13,7 @@ subBots.push(global.conn.user.jid)
 const chat = global.db.data.chats[m.chat]
 const mentionedJid = await m.mentionedJid
 const who = mentionedJid[0] ? mentionedJid[0] : m.quoted ? await m.quoted.sender : false
-if (!who) return conn.reply(m.chat, `*☆ Mensiona a uno de los Bots para hacerlo bot primario.`, m)
+if (!who) return conn.reply(m.chat, `*☆ Mensiona a uno de los Bots para hacerlo bot primario.*`, m)
 if (!subBots.includes(who)) return conn.reply(m.chat, `*☆ Esta persona no es un bot vinculado a Monkey d luffy.*`, m)
 if (chat.primaryBot === who) {
 return conn.reply(m.chat, `*☆ Está persona ya era bot primario.*`, m, { mentions: [who] });
