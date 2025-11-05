@@ -2,156 +2,159 @@
 // ⚠️ Este código no puede ser modificado, copiado o usado sin el permiso explícito de su creador.
 
 import * as baileys from '@whiskeysockets/baileys';
-import fetch from 'node-fetch'; 
+import fetch from 'node-fetch'; 
 
-const { WAMessageStubType } = baileys; 
+const { WAMessageStubType } = baileys; 
 
 // --- CONFIGURACIÓN DE API Y CONSTANTES ---
 const API_URL = 'http://neviapi.ddns.net:5000/welcome'; // Endpoint de la API
 const API_KEY = 'luffy'; // Clave de la API
-// Usar una URL de fallback que esté disponible
-const DEFAULT_AVATAR_URL = 'https://files.catbox.moe/za5lnn.jpg'; 
-const BACKGROUND_IMAGE_URL = 'https://files.catbox.moe/mncbs0.jpg';
+
+// -- URLs ACTUALIZADAS --
+// URL para el avatar por defecto (Luffy Sonriente)
+const DEFAULT_AVATAR_URL = 'https://i.imgur.com/G34p9Fq.jpg'; 
+// URL para la imagen de fondo (Luffy Apuntando)
+const BACKGROUND_IMAGE_URL = 'https://i.imgur.com/vH9Z3eG.jpg';
 
 // --- FUNCIONES CENTRALES ---
 
 /**
- * Genera la imagen de bienvenida/despedida haciendo una petición a la API externa.
- * Devuelve el Buffer de la imagen.
- */
+ * Genera la imagen de bienvenida/despedida haciendo una petición a la API externa.
+ * Devuelve el Buffer de la imagen.
+ */
 async function generateImageFromAPI(type, userName, groupName, memberCount, avatarUrl) {
-    const action = type === 'welcome' ? 'welcome' : 'bye';
+    const action = type === 'welcome' ? 'welcome' : 'bye';
 
-    // Se asume que la API acepta el body JSON
-    const payload = {
-        username: userName.replace('@', ''), 
-        action: action,
-        group_name: groupName,
-        member_count: memberCount,
-        background_url: BACKGROUND_IMAGE_URL, 
-        profile_url: avatarUrl
-    };
+    // Se asume que la API acepta el body JSON
+    const payload = {
+        username: userName.replace('@', ''), 
+        action: action,
+        group_name: groupName,
+        member_count: memberCount,
+        background_url: BACKGROUND_IMAGE_URL, 
+        profile_url: avatarUrl
+    };
 
-    try {
-        const response = await fetch(API_URL, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-API-KEY': API_KEY // Asegúrate de que este header es el correcto para tu API
-            },
-            body: JSON.stringify(payload)
-        });
+    try {
+        const response = await fetch(API_URL, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-API-KEY': API_KEY // Asegúrate de que este header es el correcto para tu API
+            },
+            body: JSON.stringify(payload)
+        });
 
-        if (!response.ok) {
-            // Loguear más detalles del error para depuración
-            console.error(`Error en la respuesta de la API (Status: ${response.status}). Body: ${await response.text()}`);
-            return null;
-        }
+        if (!response.ok) {
+            // Loguear más detalles del error para depuración
+            console.error(`Error en la respuesta de la API (Status: ${response.status}). Body: ${await response.text()}`);
+            return null;
+        }
 
-        return await response.buffer(); 
+        return await response.buffer(); 
 
-    } catch (e) {
-        console.error('Error al llamar a la API de generación de imagen:', e);
-        return null;
-    }
+    } catch (e) {
+        console.error('Error al llamar a la API de generación de imagen:', e);
+        return null;
+    }
 }
 
 
 /**
- * Esta función maneja los eventos de unión y salida de un grupo.
- */
+ * Esta función maneja los eventos de unión y salida de un grupo.
+ */
 export async function before(m, { conn, groupMetadata, participants }) {
-    // Nota: Se ha eliminado 'isBotAdmin' de los parámetros.
+    // Nota: Se ha eliminado 'isBotAdmin' de los parámetros.
 
-    // 1. Validaciones iniciales
-    if (!m.isGroup || !m.messageStubType) return;
+    // 1. Validaciones iniciales
+    if (!m.isGroup || !m.messageStubType) return;
 
-    // **CORRECCIÓN CLAVE:** Asegurar que los parámetros del stub existen
-    const stubParams = m.messageStubParameters;
-    if (!Array.isArray(stubParams) || stubParams.length === 0) return;
+    // **CORRECCIÓN CLAVE:** Asegurar que los parámetros del stub existen
+    const stubParams = m.messageStubParameters;
+    if (!Array.isArray(stubParams) || stubParams.length === 0) return;
 
-    const chatId = m.chat;
-    // Usamos el operador || para asegurar que siempre haya un objeto de chat
-    const chatConfig = global.db.data.chats[chatId] || {};
-    const groupName = groupMetadata?.subject || 'este grupo';
-    const memberCount = participants?.length || 0;
+    const chatId = m.chat;
+    // Usamos el operador || para asegurar que siempre haya un objeto de chat
+    const chatConfig = global.db.data.chats[chatId] || {};
+    const groupName = groupMetadata?.subject || 'este grupo';
+    const memberCount = participants?.length || 0;
 
-    // Salir si la función de bienvenida no está habilitada.
-    if (!chatConfig.welcome) return;
+    // Salir si la función de bienvenida no está habilitada.
+    if (!chatConfig.welcome) return;
 
-    // Obtener los datos del usuario afectado
-    let who = stubParams[0]; // Extraer el JID del primer parámetro
-    let taguser = `@${who.split('@')[0]}`;
-    const ppUrl = await conn.profilePictureUrl(who, 'image').catch(() => DEFAULT_AVATAR_URL); 
+    // Obtener los datos del usuario afectado
+    let who = stubParams[0]; // Extraer el JID del primer parámetro
+    let taguser = `@${who.split('@')[0]}`;
+    const ppUrl = await conn.profilePictureUrl(who, 'image').catch(() => DEFAULT_AVATAR_URL); 
 
-    // Función auxiliar para formatear el mensaje de texto
-    const formatMessage = (message, userTag) => {
-        return message
-            .replace(/@user/g, userTag)
-            .replace(/@group/g, groupName)
-            .replace(/@count/g, memberCount);
-    };
+    // Función auxiliar para formatear el mensaje de texto
+    const formatMessage = (message, userTag) => {
+        return message
+            .replace(/@user/g, userTag)
+            .replace(/@group/g, groupName)
+            .replace(/@count/g, memberCount);
+    };
 
-    // ---------------------------------------------
-    // --- Lógica de Bienvenida (GROUP_PARTICIPANT_ADD / INVITE) ---
-    // ---------------------------------------------
-    // Se ha eliminado la verificación '&& isBotAdmin'
-    if (m.messageStubType === WAMessageStubType.GROUP_PARTICIPANT_ADD || m.messageStubType === WAMessageStubType.GROUP_PARTICIPANT_INVITE) {
+    // ---------------------------------------------
+    // --- Lógica de Bienvenida (GROUP_PARTICIPANT_ADD / INVITE) ---
+    // ---------------------------------------------
+    // Se ha eliminado la verificación '&& isBotAdmin'
+    if (m.messageStubType === WAMessageStubType.GROUP_PARTICIPANT_ADD || m.messageStubType === WAMessageStubType.GROUP_PARTICIPANT_INVITE) {
 
-        const mediaBuffer = await generateImageFromAPI('welcome', taguser, groupName, memberCount, ppUrl);
+        const mediaBuffer = await generateImageFromAPI('welcome', taguser, groupName, memberCount, ppUrl);
 
-        // Usamos chatConfig.customWelcome si existe, si no, el default.
-        const welcomeMessage = chatConfig.customWelcome || `
+        // Usamos chatConfig.customWelcome si existe, si no, el default.
+        const welcomeMessage = chatConfig.customWelcome || `
 ʚ🍖ɞ *¡Yoshaaa! Bienvenido al barco, nakama!*
 🏴‍☠️ ¡Yo soy *Monkey D. Luffy*, y seré el Rey de los Piratas!
 📍 Has llegado a *@group*, un lugar para grandes aventuras. Ahora somos *@count* nakamas.
 ✨ Usa \`#menu\` para ver los comandos del bot.
 *¡Prepárate para zarpar, que esto apenas comienza!* 👒
-        `;
+        `;
 
-        const messageOptions = { 
-            caption: formatMessage(welcomeMessage, taguser), 
-            mentions: [who] 
-        };
+        const messageOptions = { 
+            caption: formatMessage(welcomeMessage, taguser), 
+            mentions: [who] 
+        };
 
-        if (mediaBuffer) {
-            await conn.sendMessage(m.chat, { image: mediaBuffer, ...messageOptions });
-        } else {
-            // Envía solo texto si la imagen falla.
-            await conn.sendMessage(m.chat, { text: messageOptions.caption, mentions: messageOptions.mentions });
-            console.warn(`[WARNING] Fallo la generación de imagen para ${taguser} usando la API. Enviando solo texto.`);
-        }
-    }
+        if (mediaBuffer) {
+            await conn.sendMessage(m.chat, { image: mediaBuffer, ...messageOptions });
+        } else {
+            // Envía solo texto si la imagen falla.
+            await conn.sendMessage(m.chat, { text: messageOptions.caption, mentions: messageOptions.mentions });
+            console.warn(`[WARNING] Fallo la generación de imagen para ${taguser} usando la API. Enviando solo texto.`);
+        }
+    }
 
-    // ----------------------------------------------------------------------
-    // --- Lógica de Despedida (LEAVE / REMOVE) ---
-    // ----------------------------------------------------------------------
-    if (m.messageStubType === WAMessageStubType.GROUP_PARTICIPANT_LEAVE || m.messageStubType === WAMessageStubType.GROUP_PARTICIPANT_REMOVE) {
+    // ----------------------------------------------------------------------
+    // --- Lógica de Despedida (LEAVE / REMOVE) ---
+    // ----------------------------------------------------------------------
+    if (m.messageStubType === WAMessageStubType.GROUP_PARTICIPANT_LEAVE || m.messageStubType === WAMessageStubType.GROUP_PARTICIPANT_REMOVE) {
 
-        // Ignorar si el bot es quien se fue/fue removido
-        if (who === conn.user.jid) return;
+        // Ignorar si el bot es quien se fue/fue removido
+        if (who === conn.user.jid) return;
 
-        // Se ha eliminado la verificación '!isBotAdmin'
-        
-        const mediaBuffer = await generateImageFromAPI('goodbye', taguser, groupName, memberCount, ppUrl);
+        // Se ha eliminado la verificación '!isBotAdmin'
+        
+        const mediaBuffer = await generateImageFromAPI('goodbye', taguser, groupName, memberCount, ppUrl);
 
-        const byeMessage = chatConfig.customBye || `
+        const byeMessage = chatConfig.customBye || `
 😢 *Ohh… otro nakama se fue del barco.*
 ✋ ¡Adiós, @user! Siempre serás parte de esta tripulación.
 ⚓ ¡Sigue navegando tu propia ruta, algún día nos reencontraremos en Grand Line!
 - *Monkey D. Luffy* 👒
-        `;
+        `;
 
-        const messageOptions = { 
-            caption: formatMessage(byeMessage, taguser), 
-            mentions: [who] 
-        };
+        const messageOptions = { 
+            caption: formatMessage(byeMessage, taguser), 
+            mentions: [who] 
+        };
 
-        if (mediaBuffer) {
-            await conn.sendMessage(m.chat, { image: mediaBuffer, ...messageOptions });
-        } else {
-            await conn.sendMessage(m.chat, { text: messageOptions.caption, mentions: messageOptions.mentions });
-            console.warn(`[WARNING] Fallo la generación de imagen para ${taguser} usando la API. Enviando solo texto.`);
-        }
-    }
+        if (mediaBuffer) {
+            await conn.sendMessage(m.chat, { image: mediaBuffer, ...messageOptions });
+        } else {
+            await conn.sendMessage(m.chat, { text: messageOptions.caption, mentions: messageOptions.mentions });
+            console.warn(`[WARNING] Fallo la generación de imagen para ${taguser} usando la API. Enviando solo texto.`);
+        }
+    }
 }
