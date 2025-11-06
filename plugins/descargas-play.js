@@ -1,3 +1,5 @@
+// Requisitos: yt-search, node-fetch, axios
+// npm i yt-search node-fetch axios
 import fetch from 'node-fetch'
 import yts from 'yt-search'
 import axios from 'axios'
@@ -7,178 +9,166 @@ import path from 'path'
 const SIZE_LIMIT_MB = 100
 const MAX_DURATION_SEC = 8 * 60 // 8 minutos
 
-const handler = async (m, { conn, args, usedPrefix, command }) => {
+const handler = async (m, { conn, args = [], usedPrefix }) => {
   try {
-    const name = await conn.getName(m.sender)
-    args = (args || []).filter(v => v?.trim())
+    const name = await conn.getName?.(m.sender) || m.pushName || 'usuario'
+    args = (args || []).filter(Boolean)
 
-    // contexto para replies (se puede ajustar)
-    const contextInfo = {
-      mentionedJid: [m.sender],
-      isForwarded: true,
-      forwardingScore: 999,
-      externalAdReply: {
-        title: 'Buscando en YouTube...',
-        body: `Petición de ${name}`,
-        mediaType: 1
-      }
-    }
-
-    // si no hay argumentos -> advertencia
-    if (!args[0]) {
-      return conn.reply(m.chat, `❗️ Uso: ${usedPrefix}play <texto o URL>\nEjemplo: ${usedPrefix}play Despacito`, m, { contextInfo })
-    }
-
-    // detectar si usuario puso modo al inicio: "audio" o "video"
-    const isMode = ["audio", "video"].includes(args[0].toLowerCase())
-    const modeArg = isMode ? args[0].toLowerCase() : null
-    const queryOrUrl = isMode ? args.slice(1).join(' ') : args.join(' ')
-    const isInputUrl = /^(https?:\/\/)?(www\.)?(m\.)?(youtube\.com|youtu\.be)\/.+$/i.test(queryOrUrl)
-
-    // helper reacción (reloj)
+    // helper: reaccionar (si la plataforma lo soporta)
     const react = async (emoji = '⏳') => {
       try { await m.react?.(emoji) } catch (e) { /* ignore */ }
     }
 
-    // si especificó modo y además dio URL -> intentamos descarga directa
-    if (isMode && queryOrUrl) {
+    // helper: formatea segundos
+    const formatSeconds = sec => {
+      sec = Number(sec || 0)
+      const h = Math.floor(sec / 3600)
+      const m2 = Math.floor((sec % 3600) / 60)
+      const s = sec % 60
+      const pad = v => String(v).padStart(2, '0')
+      return h > 0 ? `${pad(h)}:${pad(m2)}:${pad(s)}` : `${pad(m2)}:${pad(s)}`
+    }
+
+    const sanitizeFileName = name => (name || 'file').replace(/[\/\\?%*:|"<>]/g, '').trim().slice(0, 64)
+
+    // si no hay args -> advertencia
+    if (!args[0]) {
+      return conn.reply?.(m.chat, `❗️ Uso: ${usedPrefix}play <texto o URL>\nEjemplo: ${usedPrefix}play Despacito`, m)
+    }
+
+    // detectar si el primer arg es modo (audio/video)
+    const first = args[0].toLowerCase()
+    const isMode = first === 'audio' || first === 'video'
+    const mode = isMode ? first : null
+    const queryOrUrl = isMode ? args.slice(1).join(' ') : args.join(' ')
+    const isInputUrl = /^(https?:\/\/)?(www\.)?(m\.)?(youtube\.com|youtu\.be)\/.+$/i.test(queryOrUrl)
+
+    // ---------- Si el usuario pidió modo + URL: procesar descarga ----------
+    if (mode && queryOrUrl) {
       await react('⏳')
-      const mode = modeArg // 'audio' o 'video'
       const url = queryOrUrl.trim()
 
       if (!/^(https?:\/\/)?(www\.)?(m\.)?(youtube\.com|youtu\.be)\/.+$/i.test(url)) {
-        return conn.reply(m.chat, '❌ URL de YouTube inválida. Debe ser un enlace de YouTube.', m, { contextInfo })
+        return conn.reply?.(m.chat, '❌ URL de YouTube inválida. Debe ser un enlace de YouTube.', m)
       }
 
-      // obtener info del video con yt-search para verificar duración y título
-      let videoInfo = null
+      // obtener info para validar duración y título
+      let video = null
       try {
-        if (/youtu\.be/.test(url) || /youtube\.com/.test(url)) {
-          // intentar extraer id
-          try {
-            const u = new URL(url.startsWith('http') ? url : `https://${url}`)
-            const v = u.searchParams.get('v') || u.pathname.split('/').pop()
-            const sr = await yts({ videoId: v })
-            videoInfo = sr.videos?.[0] || null
-          } catch {
-            const sr = await yts(url)
-            videoInfo = sr.videos?.[0] || null
-          }
-        } else {
+        const u = new URL(url.startsWith('http') ? url : `https://${url}`)
+        const vid = u.searchParams.get('v') || u.pathname.split('/').pop()
+        const sr = await yts({ videoId: vid })
+        video = sr.videos?.[0] || null
+      } catch {
+        try {
           const sr = await yts(url)
-          videoInfo = sr.videos?.[0] || null
-        }
-      } catch (e) {
-        console.error('Error obteniendo información del video:', e)
+          video = sr.videos?.[0] || null
+        } catch (e) { console.error(e) }
       }
 
-      if (!videoInfo) {
-        return conn.reply(m.chat, '❌ No pude obtener información del video. Revisa la URL.', m, { contextInfo })
+      if (!video) {
+        return conn.reply?.(m.chat, '❌ No pude obtener información del video. Revisa la URL.', m)
       }
 
-      const lengthSec = Number(videoInfo.seconds || 0)
+      const lengthSec = Number(video.seconds || 0)
       if (lengthSec > MAX_DURATION_SEC) {
-        return conn.reply(m.chat, '⚠️ El video supera los 8 minutos. No puedo enviar archivos de más de 8 minutos.', m, { contextInfo })
+        return conn.reply?.(m.chat, '⚠️ El video supera los 8 minutos. No puedo enviar archivos de más de 8 minutos.', m)
       }
 
-      // Llamar a la API de ruby-core para obtener mp3/mp4
-      const apiEndpoint = mode === 'audio'
+      // construir endpoint ruby-core (mp3 / mp4)
+      const apiUrl = mode === 'audio'
         ? `https://ruby-core.vercel.app/api/download/youtube/mp3?url=${encodeURIComponent(url)}`
         : `https://ruby-core.vercel.app/api/download/youtube/mp4?url=${encodeURIComponent(url)}`
 
       try {
-        const res = await fetch(apiEndpoint)
+        const res = await fetch(apiUrl)
         if (!res.ok) {
-          // intentar leer body para diagnóstico
-          let t = ''
-          try { t = await res.text() } catch {}
-          throw new Error(`API error ${res.status} ${res.statusText} ${t}`)
+          // intentar leer texto para debug
+          const txt = await res.text().catch(() => '')
+          throw new Error(`API error ${res.status} ${res.statusText} ${txt}`)
         }
 
-        const contentType = res.headers.get('content-type') || ''
-        // si la API devolvió JSON (posible error o link), parsear
-        if (contentType.includes('application/json')) {
+        const ct = (res.headers.get('content-type') || '').toLowerCase()
+
+        // Si la API devuelve JSON con link de descarga
+        if (ct.includes('application/json') || ct.includes('text/json')) {
           const json = await res.json().catch(() => null)
-          // si nos dan un enlace de descarga en json.download or json.url -> usarlo
-          const downloadUrl = json?.download || json?.url || json?.result?.url
-          if (downloadUrl) {
-            // obtener HEAD para conocer tamaño
-            try {
-              const head = await axios.head(downloadUrl, { timeout: 15000 })
-              const cl = head.headers['content-length']
-              const sizeMb = cl ? Number(cl) / (1024 * 1024) : null
-              if (sizeMb && sizeMb > SIZE_LIMIT_MB) {
-                // enviar como documento remoto
-                await conn.sendMessage(m.chat, {
-                  document: { url: downloadUrl },
-                  fileName: `${sanitizeFileName(videoInfo.title || 'file')}.${mode === 'audio' ? 'mp3' : 'mp4'}`,
-                  mimetype: mode === 'audio' ? 'audio/mpeg' : 'video/mp4',
-                  caption: `⚠️ Archivo grande (${sizeMb ? sizeMb.toFixed(2) + ' MB' : 'desconocido'}). Enviado como documento.\nTítulo: ${videoInfo.title}`
-                }, { quoted: m })
-                await react('📄')
-                return
+          const downloadUrl = json?.download || json?.url || json?.result?.url || json?.link
+          if (!downloadUrl) throw new Error('No se obtuvo download link en JSON')
+          // obtener HEAD para tamaño
+          try {
+            const head = await axios.head(downloadUrl, { timeout: 15000 })
+            const cl = head.headers['content-length']
+            const sizeMb = cl ? Number(cl) / (1024 * 1024) : null
+            if (sizeMb && sizeMb > SIZE_LIMIT_MB) {
+              // enviar como documento remoto
+              await conn.sendMessage(m.chat, {
+                document: { url: downloadUrl },
+                fileName: `${sanitizeFileName(video.title)}.${mode === 'audio' ? 'mp3' : 'mp4'}`,
+                mimetype: mode === 'audio' ? 'audio/mpeg' : 'video/mp4',
+                caption: `⚠️ Archivo grande (${sizeMb ? sizeMb.toFixed(2) + ' MB' : 'desconocido'}). Enviado como documento.\nTítulo: ${video.title}`
+              }, { quoted: m })
+              await react('📄')
+              return
+            } else {
+              // descargar y enviar
+              const dl = await fetch(downloadUrl)
+              const buf = Buffer.from(await dl.arrayBuffer())
+              if (mode === 'audio') {
+                await conn.sendMessage(m.chat, { audio: buf, mimetype: 'audio/mpeg', fileName: `${sanitizeFileName(video.title)}.mp3` }, { quoted: m })
+                await react('🎧')
               } else {
-                // descargar y enviar
-                const dlRes = await fetch(downloadUrl)
-                const buf = Buffer.from(await dlRes.arrayBuffer())
-                if (mode === 'audio') {
-                  await conn.sendMessage(m.chat, { audio: buf, mimetype: 'audio/mpeg', fileName: `${sanitizeFileName(videoInfo.title)}.mp3` }, { quoted: m })
-                  await react('🎧')
-                } else {
-                  await conn.sendMessage(m.chat, { video: buf, mimetype: 'video/mp4', caption: `🎬 ${videoInfo.title}` }, { quoted: m })
-                  await react('📽️')
-                }
-                return
+                await conn.sendMessage(m.chat, { video: buf, mimetype: 'video/mp4', caption: `🎬 ${video.title}` }, { quoted: m })
+                await react('📽️')
               }
-            } catch (e) {
-              console.error('Error usando downloadUrl del JSON:', e)
-              // seguir al siguiente intento
+              return
             }
+          } catch (e) {
+            console.error('Error HEAD/downloadUrl:', e)
+            // seguir a intento de enviar el body directo (a continuación)
           }
-          return conn.reply(m.chat, '❌ La API devolvió una respuesta inesperada.', m, { contextInfo })
         }
 
-        // Si la respuesta es audio/video directamente
+        // Si la API devolvió directamente el binario (audio/video)
         const buffer = Buffer.from(await res.arrayBuffer())
-        // intentar obtener content-length también
         const clHeader = res.headers.get('content-length')
         const sizeMb = clHeader ? Number(clHeader) / (1024 * 1024) : (buffer.length / (1024 * 1024))
 
         if (sizeMb > SIZE_LIMIT_MB) {
-          // es muy grande -> enviar como documento externo si posible (no tenemos url): lo podemos guardar local y enviar como document buffer
-          const tmpPath = path.join(process.cwd(), 'tmp')
-          if (!fs.existsSync(tmpPath)) fs.mkdirSync(tmpPath, { recursive: true })
-          const tmpFile = path.join(tmpPath, `${Date.now()}.${mode === 'audio' ? 'mp3' : 'mp4'}`)
+          // guardar temporalmente y enviar como documento
+          const tmpDir = path.join(process.cwd(), 'tmp')
+          if (!fs.existsSync(tmpDir)) fs.mkdirSync(tmpDir, { recursive: true })
+          const tmpFile = path.join(tmpDir, `${Date.now()}.${mode === 'audio' ? 'mp3' : 'mp4'}`)
           fs.writeFileSync(tmpFile, buffer)
-          const fileStream = fs.createReadStream(tmpFile)
+          const stream = fs.createReadStream(tmpFile)
           await conn.sendMessage(m.chat, {
-            document: fileStream,
-            fileName: `${sanitizeFileName(videoInfo.title)}.${mode === 'audio' ? 'mp3' : 'mp4'}`,
+            document: stream,
+            fileName: `${sanitizeFileName(video.title)}.${mode === 'audio' ? 'mp3' : 'mp4'}`,
             mimetype: mode === 'audio' ? 'audio/mpeg' : 'video/mp4',
-            caption: `⚠️ Archivo grande (${sizeMb.toFixed(2)} MB). Enviado como documento.\nTítulo: ${videoInfo.title}`
+            caption: `⚠️ Archivo grande (${sizeMb.toFixed(2)} MB). Enviado como documento.\nTítulo: ${video.title}`
           }, { quoted: m })
           await react('📄')
           try { fs.unlinkSync(tmpFile) } catch {}
         } else {
           if (mode === 'audio') {
-            await conn.sendMessage(m.chat, { audio: buffer, mimetype: 'audio/mpeg', fileName: `${sanitizeFileName(videoInfo.title)}.mp3` }, { quoted: m })
+            await conn.sendMessage(m.chat, { audio: buffer, mimetype: 'audio/mpeg', fileName: `${sanitizeFileName(video.title)}.mp3` }, { quoted: m })
             await react('🎧')
           } else {
-            await conn.sendMessage(m.chat, { video: buffer, mimetype: 'video/mp4', caption: `🎬 ${videoInfo.title}` }, { quoted: m })
+            await conn.sendMessage(m.chat, { video: buffer, mimetype: 'video/mp4', caption: `🎬 ${video.title}` }, { quoted: m })
             await react('📽️')
           }
         }
         return
       } catch (err) {
         console.error('Error descargando desde ruby-core:', err)
-        return conn.reply(m.chat, '❌ Ocurrió un error al obtener el archivo desde la API de descarga.', m, { contextInfo })
+        return conn.reply?.(m.chat, '❌ Ocurrió un error al obtener el archivo desde la API de descarga.', m)
       }
     }
 
-    // --- Modo búsqueda: mostrar thumbnail con botones ---
-    await react('⏳') // reaccionar mientras busca
+    // ---------- Modo búsqueda normal: #play <texto o url> ----------
+    await react('⏳')
 
-    // buscar video (si es URL, obtener video por id)
+    // obtener video por URL o búsqueda
     let video = null
     if (isInputUrl) {
       try {
@@ -186,46 +176,34 @@ const handler = async (m, { conn, args, usedPrefix, command }) => {
         const vid = u.searchParams.get('v') || u.pathname.split('/').pop()
         const sr = await yts({ videoId: vid })
         video = sr.videos?.[0] || null
-      } catch (e) {
+      } catch {
         try {
           const sr = await yts(queryOrUrl)
           video = sr.videos?.[0] || null
-        } catch (err) {
-          console.error('Error buscando por URL:', err)
-        }
+        } catch (e) { console.error(e) }
       }
     } else {
       try {
         const sr = await yts(queryOrUrl)
         video = sr.videos?.[0] || null
-      } catch (e) {
-        console.error('Error buscando en yt-search:', e)
-      }
+      } catch (e) { console.error(e) }
     }
 
     if (!video) {
-      return conn.reply(m.chat, `❌ No encontré resultados para: "${queryOrUrl}"`, m, { contextInfo })
+      return conn.reply?.(m.chat, `❌ No encontré resultados para: "${queryOrUrl}"`, m)
     }
 
-    // verificar duración y preparar thumbnail
     const durationSec = Number(video.seconds || 0)
     const durationText = video.timestamp || formatSeconds(durationSec)
+    // thumbnail válido
     let thumbnail = video.thumbnail || null
     try {
       if (thumbnail) {
-        const head = await axios.head(thumbnail, { timeout: 10000 })
-        if (!head.headers['content-type']?.startsWith('image')) thumbnail = null
+        const head = await axios.head(thumbnail, { timeout: 10000 }).catch(() => null)
+        if (!head?.headers['content-type']?.startsWith('image')) thumbnail = null
       }
-    } catch {
-      thumbnail = null
-    }
+    } catch { thumbnail = null }
     if (!thumbnail) thumbnail = 'https://i.imgur.com/JP52fdP.jpg'
-
-    // construir botones (botones envían comando con modo + url)
-    const buttons = [
-      { buttonId: `${usedPrefix}play audio ${video.url}`, buttonText: { displayText: '🎵 Audio' }, type: 1 },
-      { buttonId: `${usedPrefix}play video ${video.url}`, buttonText: { displayText: '📹 Video' }, type: 1 }
-    ]
 
     const caption = `
 Título: ${video.title}
@@ -237,33 +215,23 @@ Enlace: ${video.url}
 > Selecciona una opción para enviar:
 `.trim()
 
+    const buttons = [
+      { buttonId: `${usedPrefix}play audio ${video.url}`, buttonText: { displayText: '🎵 Audio' }, type: 1 },
+      { buttonId: `${usedPrefix}play video ${video.url}`, buttonText: { displayText: '📹 Video' }, type: 1 }
+    ]
+
     await conn.sendMessage(m.chat, {
       image: { url: thumbnail },
       caption,
       footer: 'Selecciona: Audio o Video',
       buttons,
-      headerType: 4,
-      contextInfo
+      headerType: 4
     }, { quoted: m })
 
   } catch (err) {
     console.error('Error en handler play:', err)
-    try { await conn.reply(m.chat, '❌ Ocurrió un error interno. Intenta de nuevo más tarde.', m) } catch {}
+    try { await conn.reply?.(m.chat, '❌ Ocurrió un error interno. Intenta de nuevo más tarde.', m) } catch {}
   }
-}
-
-// utilidades
-function formatSeconds(sec = 0) {
-  sec = Number(sec) || 0
-  const h = Math.floor(sec / 3600)
-  const m = Math.floor((sec % 3600) / 60)
-  const s = sec % 60
-  const pad = v => String(v).padStart(2, '0')
-  return h > 0 ? `${pad(h)}:${pad(m)}:${pad(s)}` : `${pad(m)}:${pad(s)}`
-}
-
-function sanitizeFileName(name = '') {
-  return (name || 'file').replace(/[\/\\?%*:|"<>]/g, '').trim().slice(0, 64)
 }
 
 handler.help = ['play <texto o URL>']
