@@ -22,57 +22,62 @@ let handler = async function (m, { conn, text }) {
   if (age < 5) throw '*¡Oye, eres muy joven para esto!* (Edad mínima 5)'
 
   // --- Zona Horaria para el Registro ---
-  // Usamos la hora actual para el mensaje.
   let date = moment.tz('America/Caracas').format('DD/MM/YYYY')
   let time = moment.tz('America/Caracas').format('HH:mm:ss')
-  
-  // --- Guardar en DB (Valores originales) ---
+
+  // --- VALORES DE RECOMPENSA (Ajustados al formato de la captura) ---
+  const REWARD_ESTRELLAS = 15
+  const REWARD_MONEY = 5
+  const REWARD_EXP = 245
+  const REWARD_TOKENS = 12
+
+  // --- Guardar en DB ---
   user.name = name.trim()
   user.age = age
   user.regTime = + new Date
   user.registered = true
-  global.db.data.users[m.sender].money += 600
-  global.db.data.users[m.sender].estrellas += 10
-  global.db.data.users[m.sender].exp += 245
-  global.db.data.users[m.sender].joincount += 5
+  global.db.data.users[m.sender].money += REWARD_MONEY
+  global.db.data.users[m.sender].estrellas += REWARD_ESTRELLAS
+  global.db.data.users[m.sender].exp += REWARD_EXP
+  // Asumo que Joincount no se usa en este formato, pero si Joincount = Tokens:
+  // global.db.data.users[m.sender].joincount += REWARD_TOKENS
 
   let sn = createHash('md5').update(m.sender).digest('hex').slice(0, 6)
-  m.react('🏴‍☠️')
+  m.react('✅')
 
-  // --- MENSAJE DE REGISTRO ESTILO LUFFY (Pequeño y Llamativo) ---
+  // --- MENSAJE DE REGISTRO CON EL FORMATO EXACTO DE LA CAPTURA ---
   let regbot = `
-🎉 ¡REGISTRO COMPLETO! 🎉
+*『 ✅ REGISTRADO(A) ✅ 』*
 
-> ⛵️ ¡Bienvenido a la tripulación! 
-> ¡Ahora eres un Pirata!
+👤 *R E G I S T R O* 👤
 
----------------------------------
-🏴‍☠️ *DATOS DE PIRATA*
-> • 👤 Nombre: ${name}
-> • 🎂 Edad: ${age} años
-> • 🗓️ Fecha: ${date}
-> • ⏰ Hora: ${time}
+┍*「👤」 Nombre: ${name}*
+┕*「🌟」 Edad: ${age} años*
 
-💰 *RECOMPENSAS INICIALES*
-> • 💸 600 Money
-> • ⭐ 10 Estrellas
-> • 🪙 245 Experiencia
-> • 🗺️ 5 Joincount
----------------------------------
-✨ Usa *.menu* y ¡Empecemos la aventura! ¡Wahh!
+🎁 *R E C O M P E N S A S :*
+*• ${REWARD_ESTRELLAS} Estrellas ⭐*
+*• ${REWARD_MONEY} Monedas 🪙*
+*• ${REWARD_EXP} Exp 🪙*
+*• ${REWARD_TOKENS} Tokens 💰*
+
+👑 _*Monkey D Luffy*_ 👑
+                                *IA ⌚ ${time}*
+
+🏴‍☠️ *Monkey D Luffy*
 `
-  // URL de la imagen de Luffy adjunta
-  const imagenRegistroLuffy = 'https://files.catbox.moe/owqz49.jpg' 
+
+  // URL de la imagen de Luffy adjunta (MANTENIDA)
+  const imagenRegistroLuffy = 'https://files.catbox.moe/owqz49.jpg' 
 
   await conn.sendMessage(m.chat, {
     text: regbot,
     contextInfo: {
       externalAdReply: {
-        title: '✅ ¡PIRATA REGISTRADO! VAMOS AL ONE PIECE!',
-        body: '¡Gracias por unirte a Monkey-D-Luffy-MD-bot!',
-        // Usamos la URL de Luffy que coincide con tu imagen
-        thumbnailUrl: imagenRegistroLuffy, 
-        sourceUrl: 'https://github.com/nene504273/Monkey-D-luffy-Bot-MD',
+        title: 'Monkey D Luffy Bot', // <-- CAMBIO DE TEXTO
+        body: 'Registro exitoso por Monkey D Luffy', // <-- CAMBIO DE TEXTO
+        // Usamos la URL de Luffy que coincide con tu imagen (NO MODIFICADA)
+        thumbnailUrl: imagenRegistroLuffy, 
+        sourceUrl: 'https://github.com/nene504273/Monkey-D-luffy-Bot-MD', // Se mantiene la URL de origen
         mediaType: 1,
         renderLargerThumbnail: true
       }
