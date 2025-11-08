@@ -106,7 +106,7 @@ export async function before(m, { conn, groupMetadata, participants }) {
 
         const mediaBuffer = await generateImageFromAPI('welcome', taguser, groupName, memberCount, ppUrl);
 
-        // *** TEXTO DE BIENVENIDA ESTILO LUFFY (SIN FLORES, CON BANDERA) ***
+        // *** TEXTO DE BIENVENIDA ESTILO LUFFY (PLANTILLA) ***
         const welcomeTemplate = `
 ╭───·˚ 🏴‍☠️ 𝐖𝐄𝐋𝐂𝐎𝐌𝐄 𝐍𝐀𝐊𝐀𝐌𝐀 👒 ·˚───╮
 
@@ -118,13 +118,11 @@ export async function before(m, { conn, groupMetadata, participants }) {
 
 ╰──·˚ 🍖 ¡A la aventura! 🏴‍☠️ ˚·──╯`;
         
-        // *** INFORMACIÓN DEL GRUPO (MENSAJE ADICIONAL) ***
+        // *** INFORMACIÓN DEL GRUPO (DESCRIPCIÓN ELIMINADA) ***
         const groupInfoTemplate = `
 📋 *INFORMACIÓN DEL GRUPO:*
 ├─ 🗓️ Creado: \${fechaCreacion}
-├─ 👥 Miembros: \${groupSize} navegantes
-├─ 📝 Descripción:
-\${desc}`;
+├─ 👥 Miembros: \${groupSize} navegantes`; // *** LÍNEA DE DESCRIPCIÓN ELIMINADA ***
 
         // Formatear ambos mensajes
         const formattedWelcome = formatMessage(chatConfig.customWelcome || welcomeTemplate, taguser);
@@ -156,7 +154,7 @@ export async function before(m, { conn, groupMetadata, participants }) {
 
         const mediaBuffer = await generateImageFromAPI('goodbye', taguser, groupName, memberCount, ppUrl);
 
-        // *** TEXTO DE DESPEDIDA ESTILO LUFFY (SIN FLORES, CON BANDERA) ***
+        // *** TEXTO DE DESPEDIDA ESTILO LUFFY (PLANTILLA) ***
         const byeTemplate = `
 ╭───·˚ 🚢 𝐆𝐎𝐎𝐃 𝐁𝐘𝐄 𝐍𝐀𝐊𝐀𝐌𝐀 😭 ·˚───╮
 
