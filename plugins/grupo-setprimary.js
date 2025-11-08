@@ -1,34 +1,34 @@
-/* Código creado por Félix ofc 
-Guthub: https://github.com/FELIX-OFC
---> Si te vas a robar el código y no dejaras créditos entonces pagame v:
-*/
+let handler = async (m, { conn, text }) => {
+  if (!m.isGroup) throw 'Este comando solo puede usarse en grupos.'
 
-import ws from 'ws'
+  if (!text) throw 'Debes escribir el número del bot que deseas establecer como principal.'
 
-const handler = async (m, { conn }) => {
-const subBots = [...new Set([...global.conns.filter((conn) => conn.user && conn.ws.socket && conn.ws.socket.readyState !== ws.CLOSED).map((conn) => conn.user.jid)])]
-if (global.conn?.user?.jid && !subBots.includes(global.conn.user.jid)) {
-subBots.push(global.conn.user.jid)
+  let botJid = text.replace(/[^0-9]/g, '') + '@s.whatsapp.net'
+
+  if (!global.db.data.chats[m.chat]) global.db.data.chats[m.chat] = {}
+
+  if (global.db.data.chats[m.chat].primaryBot === botJid) {
+    return conn.reply(m.chat, `✧ @${botJid.split`@`[0]} ya es el bot primario de este grupo.`, m, { mentions: [botJid] });
+  }
+
+  global.db.data.chats[m.chat].primaryBot = botJid
+
+  let response = `✐ ¡Listo! Se ha establecido a *@${botJid.split('@')[0]}* como el único bot que responderá en este grupo.
+
+> A partir de ahora, todos los comandos serán ejecutados por él.
+
+> *Nota:* Si quieres que todos los bots vuelvan a responder, un administrador puede usar el comando \`resetbot\` (sin prefijo).`;
+
+    await conn.sendMessage(m.chat, { 
+        text: response, 
+        mentions: [botJid] 
+    }, { quoted: m });
 }
-const chat = global.db.data.chats[m.chat]
-const mentionedJid = await m.mentionedJid
-const who = mentionedJid[0] ? mentionedJid[0] : m.quoted ? await m.quoted.sender : false
-if (!who) return conn.reply(m.chat, `*☆ Mensiona a uno de los Bots para hacerlo bot primario.*`, m)
-if (!subBots.includes(who)) return conn.reply(m.chat, `*☆ Esta persona no es un bot vinculado a Monkey d luffy.*`, m)
-if (chat.primaryBot === who) {
-return conn.reply(m.chat, `*☆ Está persona ya era bot primario.*`, m, { mentions: [who] });
-}
-try {
-chat.primaryBot = who
-conn.reply(m.chat, ` 🏴‍☠️ Se a puesto a @${who.split`@`[0]} como principal.\n> -> Ahora todos los comandos serán ejecutados solo por el.`, m, { mentions: [who] })
-} catch (e) {
-conn.reply(m.chat, `☆ Error al poner ese bot como principa.`, m)
-}}
 
-handler.help = ['setprimary']
-handler.tags = ['grupo']
+handler.help = ['setprimary <número>']
+handler.tags = ['owner', 'group']
 handler.command = ['setprimary']
-handler.group = true
 handler.admin = true
+handler.group = true
 
 export default handler
