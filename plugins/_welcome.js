@@ -108,7 +108,7 @@ export async function before(m, { conn, groupMetadata, participants }) {
 
         // *** TEXTO DE BIENVENIDA ESTILO LUFFY (PLANTILLA CON CALAVERA) ***
         const welcomeTemplate = `
-╭───·˚ 🏴‍☠️ 𝐖𝐄𝐋𝐂𝐎𝐌𝐄 𝐍𝐀𝐊𝐀𝐌𝐀 👒 ·˚───╮
+╭───·˚🏴‍☠️𝐖𝐄𝐋𝐂𝐎𝐌𝐄 𝐍𝐀𝐊𝐀𝐌𝐀👒·˚───╮
 
   💀 ¡YOSHA! ¡Hola, \${username}  
   Te damos la bienvenida al barco: *\${groupMetadata.subject}*
@@ -156,7 +156,7 @@ export async function before(m, { conn, groupMetadata, participants }) {
 
         // *** TEXTO DE DESPEDIDA ESTILO LUFFY (PLANTILLA CON CALAVERA) ***
         const byeTemplate = `
-╭───·˚ 🚢 𝐆𝐎𝐎𝐃 𝐁𝐘𝐄 𝐍𝐀𝐊𝐀𝐌𝐀 😭 ·˚───╮
+╭───·˚🚢𝐆𝐎𝐎𝐃 𝐁𝐘𝐄 𝐍𝐀𝐊𝐀𝐌𝐀😭·˚───╮
 
   💀 – ¡Adiós, \${username}!
   Abandonó el barco: *\${groupMetadata.subject}*
