@@ -49,16 +49,30 @@ if (await manejarRespuestasStickers(this, m)) return;
 
     if (global.db.data == null)
         await global.loadDatabase()       
+    
+    let sender;
     try {
         m = smsg(this, m) || m
         if (!m)
             return
+
+        sender = m.isGroup ? (m.key.participant ? m.key.participant : m.sender) : m.key.remoteJid;
+
+        const groupMetadata_lid = m.isGroup ? { ...(this.chats[m.chat]?.metadata || await this.groupMetadata(m.chat).catch(_ => null) || {}), ...(((this.chats[m.chat]?.metadata || await this.groupMetadata(m.chat).catch(_ => null) || {}).participants) && { participants: ((this.chats[m.chat]?.metadata || await this.groupMetadata(m.chat).catch(_ => null) || {}).participants || []).map(p => ({ ...p, id: p.jid, jid: p.jid, lid: p.lid })) }) } : {}
+        const participants_lid = ((m.isGroup ? groupMetadata_lid.participants : []) || []).map(participant => ({ id: participant.jid, jid: participant.jid, lid: participant.lid, admin: participant.admin }))
+        if (m.isGroup && sender.endsWith('@lid')) {
+            const participantInfo = participants_lid.find(p => p.lid === sender);
+            if (participantInfo && participantInfo.jid) {
+                sender = participantInfo.jid; 
+            }
+        }
+
         m.exp = 0
         m.coin = false
         try {
-            let user = global.db.data.users[m.sender]
+            let user = global.db.data.users[sender]
             if (typeof user !== 'object')
-                global.db.data.users[m.sender] = {}
+                global.db.data.users[sender] = {}
             if (user) {
                 if (!isNumber(user.exp)) user.exp = 0
                 if (!isNumber(user.coin)) user.coin = 10
@@ -98,7 +112,7 @@ if (await manejarRespuestasStickers(this, m)) return;
                 if (!isNumber(user.bank)) user.bank = 0
                 if (!isNumber(user.warn)) user.warn = 0
             } else
-                global.db.data.users[m.sender] = {
+                global.db.data.users[sender] = {
                     exp: 0, coin: 10, joincount: 1, diamond: 3, lastadventure: 0, health: 100, lastclaim: 0, lastcofre: 0, lastdiamantes: 0, lastcode: 0, lastduel: 0, lastpago: 0, lastmining: 0, lastcodereg: 0, muto: false, registered: false, genre: '', birth: '', marry: '', description: '', packstickers: null, name: m.name, age: -1, regTime: -1, afk: -1, afkReason: '', banned: false, useDocument: false, bank: 0, level: 0, role: 'Nuv', premium: false, premiumTime: 0                 
                 }
             let chat = global.db.data.chats[m.chat]
@@ -157,22 +171,21 @@ if (await manejarRespuestasStickers(this, m)) return;
         if (opts['swonly'] && m.chat !== 'status@broadcast') return
         if (typeof m.text !== 'string') m.text = ''
 
-        let _user = global.db.data?.users?.[m.sender]
+        const _user = global.db.data.users[sender]
+        const groupMetadata = m.isGroup ? { ...(this.chats[m.chat]?.metadata || await this.groupMetadata(m.chat).catch(_ => null) || {}), ...(((this.chats[m.chat]?.metadata || await this.groupMetadata(m.chat).catch(_ => null) || {}).participants) && { participants: ((this.chats[m.chat]?.metadata || await this.groupMetadata(m.chat).catch(_ => null) || {}).participants || []).map(p => ({ ...p, id: p.jid, jid: p.jid, lid: p.lid })) }) } : {}
+        const participants = ((m.isGroup ? groupMetadata.participants : []) || []).map(participant => ({ id: participant.jid, jid: participant.jid, lid: participant.lid, admin: participant.admin }))
+        
+        const user = (m.isGroup ? participants.find((u) => this.decodeJid(u.jid) === sender) : {}) || {}
+        const bot = (m.isGroup ? participants.find((u) => this.decodeJid(u.jid) == this.user.jid) : {}) || {}
+        
+        const isRAdmin = user?.admin == "superadmin" || false
+        const isAdmin = isRAdmin || user?.admin == "admin" || false
+        const isBotAdmin = bot?.admin || false
 
-        const groupMetadata = (m.isGroup ? ((conn.chats[m.chat] || {}).metadata || await this.groupMetadata(m.chat).catch(_ => null)) : {}) || {}
-        const participants = (m.isGroup ? groupMetadata.participants : []) || []
-
-        const senderNum = normalizeJid(m.sender)
-        const botNums = [this.user.jid, this.user.lid].map(j => normalizeJid(cleanJid(j)))
-        const user = m.isGroup ? participants.find(u => normalizeJid(u.id) === senderNum) : {}
-        const bot = m.isGroup ? participants.find(u => botNums.includes(normalizeJid(u.id))) : {}
-
-        const isRAdmin = user?.admin === 'superadmin' || false
-        const isAdmin = isRAdmin || user?.admin === 'admin' || false
-        const isBotAdmin = !!bot?.admin
-
-        const isROwner = [conn.decodeJid(global.conn.user.id), ...global.owner.map(([number]) => number)].map(v => v.replace(/[^0-9]/g, '')).includes(senderNum)
+        const senderNum = sender.split('@')[0];
+        const isROwner = [conn.decodeJid(global.conn.user.id), ...global.owner.map(([number]) => number)].map(v => v.replace(/[^0-9]/g, '')).includes(senderNum);
         const isOwner = isROwner || m.fromMe
+
         const isMods = isOwner || global.mods.map(v => v.replace(/[^0-9]/g, '')).includes(senderNum)
         const isPrems = isROwner || global.prems.map(v => v.replace(/[^0-9]/g, '')).includes(senderNum) || _user.premium == true
 
@@ -236,9 +249,9 @@ if (await manejarRespuestasStickers(this, m)) return;
                 if (!isAccept) continue
 
                 m.plugin = name
-                if (m.chat in global.db.data.chats || m.sender in global.db.data.users) {
+                if (m.chat in global.db.data.chats || sender in global.db.data.users) {
                     let chat = global.db.data.chats[m.chat]
-                    let user = global.db.data.users[m.sender]
+                    let user = global.db.data.users[sender]
                     if (!['grupo-unbanchat.js'].includes(name) && chat && chat.isBanned && !isROwner) return
                     if (name != 'grupo-unbanchat.js' && name != 'owner-exec.js' && name != 'owner-exec2.js' && name != 'grupo-delete.js' && chat?.isBanned && !isROwner) return 
                     if (user.antispam > 2) return
@@ -249,13 +262,13 @@ if (await manejarRespuestasStickers(this, m)) return;
                     }
 
                     if (user.antispam2 && isROwner) return
-                    let time = global.db.data.users[m.sender].spam + 3000
-                    if (new Date - global.db.data.users[m.sender].spam < 3000) return console.log(`[ SPAM ]`) 
-                    global.db.data.users[m.sender].spam = new Date * 1
+                    let time = global.db.data.users[sender].spam + 3000
+                    if (new Date - global.db.data.users[sender].spam < 3000) return console.log(`[ SPAM ]`)
+                    global.db.data.users[sender].spam = new Date * 1
 
-                    if (m.chat in global.db.data.chats || m.sender in global.db.data.users) {
+                    if (m.chat in global.db.data.chats || sender in global.db.data.users) {
                         let chat = global.db.data.chats[m.chat]
-                        let user = global.db.data.users[m.sender]
+                        let user = global.db.data.users[sender]
                         let setting = global.db.data.settings[this.user.jid]
                         if (name != 'grupo-unbanchat.js' && chat?.isBanned) return 
                         if (name != 'owner-unbanuser.js' && user?.banned) return
@@ -271,6 +284,7 @@ if (await manejarRespuestasStickers(this, m)) return;
                 if (plugin.mods && !isMods) { fail('mods', m, this); continue }
                 if (plugin.premium && !isPrems) { fail('premium', m, this); continue }
                 if (plugin.admin && !isAdmin) { fail('admin', m, this); continue }
+                if (plugin.botAdmin && !isBotAdmin) { fail('botAdmin', m, this); continue }
                 if (plugin.private && m.isGroup) { fail('private', m, this); continue }
                 if (plugin.group && !m.isGroup) { fail('group', m, this); continue }
                 if (plugin.register == true && _user.registered == false) { fail('unreg', m, this); continue }
@@ -280,7 +294,7 @@ if (await manejarRespuestasStickers(this, m)) return;
                 if (xp > 200) m.reply('chirrido -_-')
                 else m.exp += xp
 
-                if (!isPrems && plugin.coin && global.db.data.users[m.sender].coin < plugin.coin * 1) {
+                if (!isPrems && plugin.coin && global.db.data.users[sender].coin < plugin.coin * 1) {
                     conn.reply(m.chat, `❮✦❯ Se agotaron tus ${moneda}`, m)
                     continue
                 }
@@ -324,13 +338,13 @@ if (await manejarRespuestasStickers(this, m)) return;
         }
         let user, stats = global.db.data.stats
         if (m) { 
-            let utente = global.db.data.users[m.sender]
-            if (utente.muto == true) {
+            let utente = global.db.data.users[sender]
+            if (utente && utente.muto == true) {
                 let bang = m.key.id
                 let cancellazzione = m.key.participant
                 await conn.sendMessage(m.chat, { delete: { remoteJid: m.chat, fromMe: false, id: bang, participant: cancellazzione }})
             }
-            if (m.sender && (user = global.db.data.users[m.sender])) {
+            if (sender && (user = global.db.data.users[sender])) {
                 user.exp += m.exp
                 user.coin -= m.coin * 1
             }
@@ -365,7 +379,6 @@ if (await manejarRespuestasStickers(this, m)) return;
         let settingsREAD = global.db.data.settings[this.user.jid] || {}  
         if (opts['autoread']) await this.readMessages([m.key])
 
-        // Bloque de reacciones corregido
         const reactionRegex = /(ción|dad|aje|oso|izar|mente|pero|tion|age|ous|ate|and|but|ify|ai|yuki|a|s)/gi;
         if (db.data.chats[m.chat]?.reaction && m.text.match(reactionRegex)) {
             const emot = pickRandom(["🍟", "😃", "😄", "😁", "😆", "🍓", "😅", "😂", "🤣", "🥲", "☺️", "😊", "😇", "🙂", "🙃", "😉", "😌", "😍", "🥰", "😘", "😗", "😙", "🌺", "🌸", "😚", "😋", "😛", "😝", "😜", "🤪", "🤨", "🌟", "🤓", "😎", "🥸", "🤩", "🥳", "😏", "💫", "😞", "😔", "😟", "😕", "🙁", "☹️", "😣", "😖", "😫", "😩", "🥺", "😢", "😭", "😤", "😠", "😡", "🤬", "🤯", "😳", "🥵", "🥶", "😶‍🌫️", "😱", "😨", "😰", "😥", "😓", "🤗", "🤔", "🫣", "🤭", "🤖", "🍭", "🤫", "🫠", "🤥", "😶", "📇", "😐", "💧", "😑", "🫨", "😬", "🙄", "😯", "😦", "😧", "😮", "😲", "🥱", "😴", "🤤", "😪", "😮‍💨", "😵", "😵‍💫", "🤐", "🥴", "🤢", "🤮", "🤧", "😷", "🤒", "🤕", "🤑", "🤠", "😈", "👿", "👺", "🧿", "🌩", "👻", "😺", "😸", "😹", "😻", "😼", "😽", "🙀", "😿", "😾", "🫶", "👍", "✌️", "🙏", "🫵", "🤏", "🤌", "☝️", "🖕", "🙏", "🫵", "🫂", "🐱", "🤹‍♀️", "🤹‍♂️", "🗿", "✨", "⚡", "🔥", "🌈", "🩷", "❤️", "🧡", "💛", "💚", "🩵", "💙", "💜", "🖤", "🩶", "🤍", "🤎", "💔", "❤️‍🔥", "❤️‍🩹", "❣️", "💕", "💞", "💓", "💗", "💖", "💘", "💝", "🚩", "👊", "⚡️", "💋", "🫰", "💅", "👑", "🐣", "🐤", "🐈"]);
