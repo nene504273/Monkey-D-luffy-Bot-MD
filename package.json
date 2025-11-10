@@ -31,7 +31,7 @@
 },
 "license": "MIT-License",
 "dependencies": {
-"@whiskeysockets/baileys": "github:nevi-dev/Baileys",
+"@whiskeysockets/baileys": "github:GataNina-Li/Baileys",
 "@adiwajshing/keyed-db": "^0.2.4",
 "@bochilteam/scraper": "^4.2.4",
 "@bochilteam/scraper-sosmed": "^1.0.5",
