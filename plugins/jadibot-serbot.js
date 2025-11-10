@@ -68,13 +68,18 @@ let { pathblackJadiBot, m, conn, args, usedPrefix, command } = options
 if (command === 'code') {
 command = 'qr'; 
 args.unshift('code')}
-const mcode = args[0] && /(--code|code)/.test(args[0].trim()) ? true : args[1] && /(--code|code)/.test(args[1].trim()) ? true : false
+// Detección más simple de mcode
+const mcode = args.some(arg => arg.trim().toLowerCase() === 'code' || arg.trim().toLowerCase() === '--code')
 let txtCode, codeBot, txtQR
+
 if (mcode) {
-args[0] = args[0].replace(/^--code$|^code$/, "").trim()
-if (args[1]) args[1] = args[1].replace(/^--code$|^code$/, "").trim()
-if (args[0] == "") args[0] = undefined
+    const codeIndex = args.findIndex(arg => arg.trim().toLowerCase() === 'code' || arg.trim().toLowerCase() === '--code');
+    if (codeIndex !== -1) {
+        // Eliminar 'code' o '--code' de args si existe
+        args.splice(codeIndex, 1);
+    }
 }
+
 const pathCreds = path.join(pathblackJadiBot, "creds.json")
 const jid = m.sender // JID del usuario que solicitó la conexión
 
@@ -82,10 +87,11 @@ if (!fs.existsSync(pathblackJadiBot)){
 fs.mkdirSync(pathblackJadiBot, { recursive: true })}
 try {
 // Si se proporciona un argumento (código Base64), intenta escribir las credenciales
-args[0] && args[0] != undefined ? fs.writeFileSync(pathCreds, JSON.stringify(JSON.parse(Buffer.from(args[0], "base64").toString("utf-8")), null, '\t')) : ""
+const base64Arg = args.find(arg => arg && arg.length > 50 && !arg.includes(usedPrefix)); // Heurística para Base64
+base64Arg ? fs.writeFileSync(pathCreds, JSON.stringify(JSON.parse(Buffer.from(base64Arg, "base64").toString("utf-8")), null, '\t')) : ""
 } catch (e) {
 // console.error(e) // Opcional: para debug
-conn.reply(m.chat, `${emoji} Use correctamente el comando » ${usedPrefix + command} code`, m) // Asume 'emoji' está definido
+conn.reply(m.chat, `${emoji} Error al procesar credenciales Base64. Use correctamente el comando » ${usedPrefix + command} code`, m) // Asume 'emoji' está definido
 return
 }
 
@@ -99,13 +105,15 @@ const msgRetryCache = new NodeCache()
 const { state, saveState, saveCreds } = await useMultiFileAuthState(pathblackJadiBot)
 
 const connectionOptions = {
-logger: pino({ level: "fatal" }),
+// 🚨 CAMBIO A DEBUG: Esto generará mucha más información en la consola. 
+// Vuelve a 'fatal' después de diagnosticar el problema.
+logger: pino({ level: "debug" }), 
 printQRInTerminal: false,
 auth: { creds: state.creds, keys: makeCacheableSignalKeyStore(state.keys, pino({level: 'silent'})) },
 msgRetry,
 msgRetryCache,
-// Nombre del navegador para generar el código de emparejamiento (Makima o Luffy)
-browser: mcode ? ['Ubuntu', 'Chrome', '110.0.5585.95'] : ['Luffy (Sub Bot)', 'Chrome','2.0.0'],
+// Ajuste del Browser Header para Emparejamiento por Código
+browser: mcode ? ['Luffy Companion', 'Chrome', '2.0.0'] : ['Luffy (Sub Bot)', 'Chrome','2.0.0'],
 version: version,
 generateHighQualityLinkPreview: true
 };
@@ -180,10 +188,9 @@ if (qr && mcode) {
     // 1. Extraer solo el número (sin @s.whatsapp.net)
     const phoneNumber = m.sender.split`@`[0];
     // 2. Usar el nombre de 'Luffy' para el código personalizado (Browser Name)
-    let customCode = await sock.requestPairingCode(phoneNumber, 'Luffy') // <-- Pasamos 'Luffy' como nombre
+    let customCode = await sock.requestPairingCode(phoneNumber, 'Luffy')
 
     // 3. El código Baileys ahora genera directamente el formato de 8 dígitos (ej: LUFYCODE)
-    // Si quieres el formato con guiones (X-X-X-X), descomenta la siguiente línea, si no, lo dejamos sin guiones como en la corrección previa
     // customCode = customCode.match(/.{1,4}/g)?.join("-")
     
     txtCode = await conn.sendMessage(m.chat, {text : rtx2}, { quoted: m })
@@ -258,7 +265,7 @@ if (connection == `open`) {
     if (!connectionSuccessSent.get(jid)) { // Usa el JID del usuario que inició el comando
         console.log(chalk.bold.cyanBright(`\n❒⸺⸺⸺⸺【• SUB-BOT •】⸺⸺⸺⸺❒\n│\n│ 🟢 ${userName} (+${path.basename(pathblackJadiBot)}) conectado exitosamente.\n│\n❒⸺⸺⸺【• CONECTADO •】⸺⸺⸺❒`))
         sock.isInit = true
-        
+        
         // Solo agregar a la lista si no está ya (evitar duplicados al reconectar)
         if (!global.conns.includes(sock)) {
             global.conns.push(sock)
