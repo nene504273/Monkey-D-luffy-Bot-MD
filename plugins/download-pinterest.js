@@ -1,9 +1,7 @@
-//image search on Pinterest ♡♡
-//Ruby Core Api 💛
 import axios from 'axios'
 
-let handler = async (m, { conn, text, usedPrefix, command }) => {
-if (!text) return m.reply(`Por favor, ingresa un término para buscar en Pinterest.\n\n*Ejemplo:*\n${usedPrefix + command} Gatos`)
+let handler = async (m, { conn, text, usedPrefix }) => {
+if (!text) return m.reply(`💀 ⍴᥆r 𝖿ᥲ᥎᥆r, іᥒgrᥱsᥲ ᥣ᥆ 𝗊ᥙᥱ ძᥱsᥱᥲs ᑲᥙsᥴᥲr ⍴᥆r ⍴іᥒ𝗍ᥱrᥱs𝗍 🏴‍☠️`)
 
 try {
 await m.react('🕒')
@@ -12,26 +10,27 @@ const res = await axios.get(`https://ruby-core.vercel.app/api/search/pinterest?q
 const data = res.data
 
 if (!data.status || !data.results || data.results.length === 0) {
-await m.react('❌')
-return conn.reply(m.chat, `No se encontraron resultados para "${text}".`, m, rcanal)
+return conn.reply(m.chat, `❀ ✧ No se encontraron resultados para «${text}» ❧ ❀`, m)
 }
 
-const resultsToSend = data.results.slice(0, 10)
+const medias = data.results.slice(0, 10).map(img => ({
+type: 'image',
+data: { url: img.image_large_url, title: img.title }
+}))
 
-for (let i = 0; i < resultsToSend.length; i++) {
-const result = resultsToSend[i]
+for (let i = 0; i < medias.length; i++) {
 await conn.sendMessage(m.chat, {
-image: { url: result.image_large_url },
+image: { url: medias[i].data.url },
 caption: i === 0
-? `*Encontré estas imágenes de *"${text}"*`
-: `${result.title || 'Sin título'}`,
+? `💀 ᑲᥙ́s𝗊ᥙᥱძᥲ ᥊ ⍴іᥒ𝗍ᥱrᥱs𝗍\n\n✧ 📌 𝗍і𝗍ᥙᥣ᥆ » «${text}»\n✐ 💎 rᥱsᥙᥣ𝗍ᥲძ᥆s » ${medias.length} іmᥲ́gᥱᥒᥱs ᥱᥒᥴ᥆ᥒ𝗍rᥲძᥲs`
+: `✧ ${medias[i].data.title || 'Sin título'}`
 }, { quoted: m })
 }
 
 await m.react('✔️')
 } catch (e) {
 await m.react('✖️')
-conn.reply(m.chat, `Ocurrió un error al procesar la solicitud. Por favor, inténtalo de nuevo.\n\n*Error:* ${e}`, m, rcanal)
+conn.reply(m.chat, `⚠︎ 🍖 Se ha producido un error 🍖\n> Usa *${usedPrefix}report* para informarlo.\n\n${e}`, m)
 }
 }
 
