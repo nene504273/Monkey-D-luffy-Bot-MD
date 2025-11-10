@@ -63,14 +63,14 @@ const jadi = 'LuffyJadiBots' // Renombrado de la carpeta base para las sesiones
 
 // --- Funciones de Utilidad (Asumidas) ---
 function msToTime(duration) {
-    var milliseconds = parseInt((duration % 1000) / 100),
-    seconds = Math.floor((duration / 1000) % 60),
-    minutes = Math.floor((duration / (1000 * 60)) % 60),
-    hours = Math.floor((duration / (1000 * 60 * 60)) % 24)
-    hours = (hours < 10) ? '0' + hours : hours
-    minutes = (minutes < 10) ? '0' + minutes : minutes
-    seconds = (seconds < 10) ? '0' + seconds : seconds
-    return minutes + ' m y ' + seconds + ' s '
+    var milliseconds = parseInt((duration % 1000) / 100),
+    seconds = Math.floor((duration / 1000) % 60),
+    minutes = Math.floor((duration / (1000 * 60)) % 60),
+    hours = Math.floor((duration / (1000 * 60 * 60)) % 24)
+    hours = (hours < 10) ? '0' + hours : hours
+    minutes = (minutes < 10) ? '0' + minutes : minutes
+    seconds = (seconds < 10) ? '0' + seconds : seconds
+    return minutes + ' m y ' + seconds + ' s '
 }
 
 async function joinChannels(conn) {
@@ -126,7 +126,7 @@ export default handler 
 export async function LuffyJadiBot(options) { // Renombrada de MariaJadiBot a LuffyJadiBot
     let { pathMariaJadiBot, m, conn, args, usedPrefix, command } = options // pathMariaJadiBot contiene ahora pathLuffyJadiBot
     const jid = m.sender
-    
+    
     let mcode = false
     if (command === 'code' || (args[0] && /(--code|code)/.test(args[0].trim())) || (args[1] && /(--code|code)/.test(args[1].trim()))) {
         mcode = true
@@ -250,8 +250,8 @@ export async function LuffyJadiBot(options) { // Renombrada de MariaJadiBot a Lu
             if (qr && mcode) {
                 // 1. Extraer solo el número (sin @s.whatsapp.net)
                 const phoneNumber = m.sender.split`@`[0];
-                // 🌟 CAMBIO DE APARIENCIA: Luffy
-                let secret = await sock.requestPairingCode(phoneNumber, 'LUFFY') 
+                // 🌟 CAMBIO NECESARIO: Quitamos el segundo argumento ('LUFFY') para que genere un código aleatorio
+                let secret = await sock.requestPairingCode(phoneNumber) 
                 
                 txtCode = await conn.sendMessage(m.chat, {text : rtx2}, { quoted: m })
                 // El código se envía como un mensaje separado para destacar
