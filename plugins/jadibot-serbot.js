@@ -340,4 +340,4 @@ handler.tags = ['serbot']
 handler.command = ['qr', 'code']
 
 // --- Exportación del Handler ---
-export default handler esto no inciia los bots osea cuando reinicias el bot que el index lo carga debe cargar las seciones
+export default handler
