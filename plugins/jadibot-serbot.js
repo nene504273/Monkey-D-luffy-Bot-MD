@@ -79,7 +79,7 @@ handler.tags = ['serbot']
 handler.command = ['qr', 'code']
 export default handler
 
-export async function MariaJadiBot(options) {
+export async function LuffyJadiBot(options) {
 let { pathLuffyJadiBot, m, conn, args, usedPrefix, command } = options // Renombrado de pathMariaJadiBot a pathLuffyJadiBot en la desestructuración
 if (command === 'code') {
 command = 'qr';
