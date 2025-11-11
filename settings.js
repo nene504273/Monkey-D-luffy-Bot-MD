@@ -42,7 +42,7 @@ global.languaje = 'Español'
 global.vs = '2.2.0'
 global.nameqr = 'monkey-D-luffy-MD'
 global.namebot = '☠️ ＭＯＮＫＥＹ Ｄ ＬＵＦＦＹ - ＭＤ 🏴‍☠️'
-global.Rubysessions = 'LuffySessions'
+global.Luffysessions = 'LuffySessions'
 global.jadi = 'LuffyJadiBots' 
 global.RubyJadibts = true
 
