@@ -46,7 +46,7 @@ process.env['NODE_TLS_REJECT_UNAUTHORIZED'] = '1'
 
 
 console.log(chalk.red(`
-       .     .       .  .   . .   .   . .    +  .
+       .     .       .  .   . .   .   . .    +  .
 ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣀⠀⣀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
 ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣀⡤⠶⠚⠉⢉⣩⠽⠟⠛⠛⠛⠃⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
 ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣠⠞⠉⠀⢀⣠⠞⠉⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
@@ -83,24 +83,24 @@ console.log(chalk.red(`
 ⢰⠇⠀⠀⠀⠀⠀⠀⠀⢸⠀⡏⣿⠀⠀⠀⠀⢣⢇⠀⠑⣄⠀⠀⠸⡄⠀⠀⠘⡄⠀⠀⠸⡀⢸⠁⠀⡾⢰⡏⢳⡀
 `))
 
-cfonts.say('Ruby Hoshino Bot', {
-  font: 'chrome',
-  align: 'center',
-  gradient: ['#ff4fcb', '#ff77ff'],
-  transition: true,
-  env: 'node'
+cfonts.say('Luffy Hoshino Bot', { // Cambiado de Ruby Hoshino Bot
+  font: 'chrome',
+  align: 'center',
+  gradient: ['#ff4fcb', '#ff77ff'],
+  transition: true,
+  env: 'node'
 })
 
 // Créditos
 cfonts.say('Developed By: Dioneibi-rip', {
-  font: 'console',
-  align: 'center',
-  colors: ['blueBright']
+  font: 'console',
+  align: 'center',
+  colors: ['blueBright']
 })
 
 console.log(chalk.magentaBright('═════════════════════════════════════════════════════════════════════'))
-console.log(chalk.whiteBright('            🚀 Bienvenido al núcleo de la Bot Ruby Hoshino 🚀'))
-console.log(chalk.whiteBright('     Prepara tu sesión... Ruby no puede esperar para servirte querido usuario ✨'))
+console.log(chalk.whiteBright('            🚀 Bienvenido al núcleo de la Bot Luffy Hoshino 🚀')) // Cambiado de Ruby Hoshino
+console.log(chalk.whiteBright('     Prepara tu sesión... Luffy no puede esperar para servirte querido usuario ✨')) // Cambiado de Ruby
 console.log(chalk.magentaBright('═════════════════════════════════════════════════════════════════════\n'))
 
 protoType()
@@ -126,7 +126,7 @@ global.prefix = new RegExp('^[#/!.]')
 
 global.db = new Low(/https?:\/\//.test(opts['db'] || '') ? new cloudDBAdapter(opts['db']) : new JSONFile('./src/database/database.json'))
 
-global.DATABASE = global.db 
+global.DATABASE = global.db 
 global.loadDatabase = async function loadDatabase() {
 if (global.db.READ) {
 return new Promise((resolve) => setInterval(async function() {
@@ -152,7 +152,7 @@ global.db.chain = chain(global.db.data)
 }
 loadDatabase()
 
-const {state, saveState, saveCreds} = await useMultiFileAuthState(global.Rubysessions)
+const {state, saveState, saveCreds} = await useMultiFileAuthState(global.LuffySessions) // Cambiado de global.Rubysessions
 const msgRetryCounterMap = (MessageRetryMap) => { };
 const msgRetryCounterCache = new NodeCache()
 const {version} = await fetchLatestBaileysVersion();
@@ -171,29 +171,29 @@ let opcion
 if (methodCodeQR) {
 opcion = '1'
 }
-if (!methodCodeQR && !methodCode && !fs.existsSync(`./${Rubysessions}/creds.json`)) {
+if (!methodCodeQR && !methodCode && !fs.existsSync(`./${LuffySessions}/creds.json`)) { // Cambiado de Rubysessions
 do {
 opcion = await question(colores('⌨ Seleccione una opción:\n') + opcionQR('1. Con código QR\n') + opcionTexto('2. Con código de texto de 8 dígitos\n--> '))
 
 if (!/^[1-2]$/.test(opcion)) {
 console.log(chalk.bold.redBright(`✦ No se permiten numeros que no sean 1 o 2, tampoco letras o símbolos especiales.`))
-}} while (opcion !== '1' && opcion !== '2' || fs.existsSync(`./${Rubysessions}/creds.json`))
-} 
+}} while (opcion !== '1' && opcion !== '2' || fs.existsSync(`./${LuffySessions}/creds.json`)) // Cambiado de Rubysessions
+} 
 
-console.info = () => {} 
-console.debug = () => {} 
+console.info = () => {} 
+console.debug = () => {} 
 
 const connectionOptions = {
 logger: pino({ level: 'silent' }),
 printQRInTerminal: opcion == '1' ? true : methodCodeQR ? true : false,
-mobile: MethodMobile, 
+mobile: MethodMobile, 
 browser: opcion == '1' ? [`${nameqr}`, 'Edge', '20.0.04'] : methodCodeQR ? [`${nameqr}`, 'Edge', '20.0.04'] : ['Ubuntu', 'Edge', '110.0.1587.56'],
 auth: {
 creds: state.creds,
 keys: makeCacheableSignalKeyStore(state.keys, Pino({ level: "fatal" }).child({ level: "fatal" })),
 },
-markOnlineOnConnect: true, 
-generateHighQualityLinkPreview: true, 
+markOnlineOnConnect: true, 
+generateHighQualityLinkPreview: true, 
 getMessage: async (clave) => {
 let jid = jidNormalizedUser(clave.remoteJid)
 let msg = await store.loadMessage(jid, clave.id)
@@ -207,7 +207,7 @@ version,
 
 global.conn = makeWASocket(connectionOptions);
 
-if (!fs.existsSync(`./${Rubysessions}/creds.json`)) {
+if (!fs.existsSync(`./${LuffySessions}/creds.json`)) { // Cambiado de Rubysessions
 if (opcion === '2' || methodCode) {
 opcion = '2'
 if (!conn.authState.creds.registered) {
@@ -216,7 +216,7 @@ if (!!phoneNumber) {
 addNumber = phoneNumber.replace(/[^0-9]/g, '')
 } else {
 do {
-phoneNumber = await question(chalk.bgBlack(chalk.bold.greenBright(`✦ Por favor, Ingrese el número de WhatsApp.\n${chalk.bold.yellowBright(`✏  Ejemplo: 57321×××××××`)}\n${chalk.bold.magentaBright('---> ')}`)))
+phoneNumber = await question(chalk.bgBlack(chalk.bold.greenBright(`✦ Por favor, Ingrese el número de WhatsApp.\n${chalk.bold.yellowBright(`✏  Ejemplo: 57321×××××××`)}\n${chalk.bold.magentaBright('---> ')}`)))
 phoneNumber = phoneNumber.replace(/\D/g,'')
 if (!phoneNumber.startsWith('+')) {
 phoneNumber = `+${phoneNumber}`
@@ -234,7 +234,7 @@ console.log(chalk.bold.white(chalk.bgMagenta(`✧ CÓDIGO DE VINCULACIÓN ✧`))
 
 conn.isInit = false;
 conn.well = false;
-//conn.logger.info(`✦  H E C H O\n`)
+//conn.logger.info(`✦  H E C H O\n`)
 
 if (!opts['test']) {
 if (global.db) setInterval(async () => {
@@ -260,13 +260,13 @@ if (opcion == '1' || methodCodeQR) {
 console.log(chalk.bold.yellow(`\n❐ ESCANEA EL CÓDIGO QR EXPIRA EN 45 SEGUNDOS`))}
 }
 if (connection == 'open') {
-console.log(chalk.bold.green('\n❀ Ruby-Bot Conectada con éxito ❀'))
+console.log(chalk.bold.green('\n❀ Luffy-Bot Conectada con éxito ❀')) // Cambiado de Ruby-Bot
 }
 
 let reason = new Boom(lastDisconnect?.error)?.output?.statusCode
 if (connection === 'close') {
 if (reason === DisconnectReason.badSession) {
-console.log(chalk.bold.cyanBright(`\n⚠︎ SIN CONEXIÓN, BORRE LA CARPETA ${global.Rubysessions} Y ESCANEA EL CÓDIGO QR ⚠︎`))
+console.log(chalk.bold.cyanBright(`\n⚠︎ SIN CONEXIÓN, BORRE LA CARPETA ${global.LuffySessions} Y ESCANEA EL CÓDIGO QR ⚠︎`)) // Cambiado de Rubysessions
 } else if (reason === DisconnectReason.connectionClosed) {
 console.log(chalk.bold.magentaBright(`\n╭┄┄┄┄┄┄┄┄┄┄┄┄┄┄ • • • ┄┄┄┄┄┄┄┄┄┄┄┄┄┄ ☹\n┆ ⚠︎ CONEXION CERRADA, RECONECTANDO....\n╰┄┄┄┄┄┄┄┄┄┄┄┄┄┄ • • • ┄┄┄┄┄┄┄┄┄┄┄┄┄┄ ☹`))
 await global.reloadHandler(true).catch(console.error)
@@ -276,7 +276,7 @@ await global.reloadHandler(true).catch(console.error)
 } else if (reason === DisconnectReason.connectionReplaced) {
 console.log(chalk.bold.yellowBright(`\n╭┄┄┄┄┄┄┄┄┄┄┄┄┄┄ • • • ┄┄┄┄┄┄┄┄┄┄┄┄┄┄ ✗\n┆ ⚠︎ CONEXIÓN REEMPLAZADA, SE HA ABIERTO OTRA NUEVA SESION, POR FAVOR, CIERRA LA SESIÓN ACTUAL PRIMERO.\n╰┄┄┄┄┄┄┄┄┄┄┄┄┄┄ • • • ┄┄┄┄┄┄┄┄┄┄┄┄┄┄ ✗`))
 } else if (reason === DisconnectReason.loggedOut) {
-console.log(chalk.bold.redBright(`\n⚠︎ SIN CONEXIÓN, BORRE LA CARPETA ${global.Rubysessions} Y ESCANEA EL CÓDIGO QR ⚠︎`))
+console.log(chalk.bold.redBright(`\n⚠︎ SIN CONEXIÓN, BORRE LA CARPETA ${global.LuffySessions} Y ESCANEA EL CÓDIGO QR ⚠︎`)) // Cambiado de Rubysessions
 await global.reloadHandler(true).catch(console.error)
 } else if (reason === DisconnectReason.restartRequired) {
 console.log(chalk.bold.cyanBright(`\n╭┄┄┄┄┄┄┄┄┄┄┄┄┄┄ • • • ┄┄┄┄┄┄┄┄┄┄┄┄┄┄ ✓\n┆ ✧ CONECTANDO AL SERVIDOR...\n╰┄┄┄┄┄┄┄┄┄┄┄┄┄┄ • • • ┄┄┄┄┄┄┄┄┄┄┄┄┄┄ ✓`))
@@ -317,11 +317,11 @@ conn.ev.off('creds.update', conn.credsUpdate)
 conn.handler = handler.handler.bind(global.conn)
 
 global.dispatchCommandFromButton = async (fakeMessage) => {
-  try {
-    await handler.handler.call(conn, { messages: [fakeMessage] })
-  } catch (err) {
-    console.error("❌ Error al ejecutar comando desde botón:", err)
-  }
+  try {
+    await handler.handler.call(conn, { messages: [fakeMessage] })
+  } catch (err) {
+    console.error("❌ Error al ejecutar comando desde botón:", err)
+  }
 }
 conn.connectionUpdate = connectionUpdate.bind(global.conn)
 conn.credsUpdate = saveCreds.bind(global.conn, true)
@@ -346,12 +346,12 @@ return true
 
 global.rutaJadiBot = join(__dirname, './LuffyJadiBots')
 
-if (global.LuffyJadibts) {
+if (global.LuffyJadibts) { // Cambiado de RubyJadibts (asumiendo que se refiere a los subbots de Luffy)
 if (!existsSync(global.rutaJadiBot)) {
-mkdirSync(global.rutaJadiBot, { recursive: true }) 
+mkdirSync(global.rutaJadiBot, { recursive: true }) 
 console.log(chalk.bold.cyan(`La carpeta: LuffyJadibots se creó correctamente.`))
 } else {
-console.log(chalk.bold.cyan(`La carpeta: LuffyJadibots ya está creada.`)) 
+console.log(chalk.bold.cyan(`La carpeta: LuffyJadibots ya está creada.`)) 
 }
 
 const readRutaJadiBot = readdirSync(rutaJadiBot)
@@ -361,7 +361,7 @@ for (const gjbts of readRutaJadiBot) {
 const botPath = join(rutaJadiBot, gjbts)
 const readBotPath = readdirSync(botPath)
 if (readBotPath.includes(creds)) {
-RubyJadiBot({pathLuffyJadiBot: botPath, m: null, conn, args: '', usedPrefix: '/', command: 'serbot'})
+LuffyJadiBot({pathLuffyJadiBot: botPath, m: null, conn, args: '', usedPrefix: '/', command: 'serbot'}) // Cambiado de RubyJadiBot
 }
 }
 }
@@ -442,17 +442,17 @@ const filePath = join(tmpDir, file)
 unlinkSync(filePath)})
 }
 
-function purgeLuffySession() {
+function purgeLuffySession() { // Cambiado de purgeRubySession
 let prekey = []
-let directorio = readdirSync(`./LuffySessions`)
+let directorio = readdirSync(`./LuffySessions`) // Cambiado de RubySessions
 let filesFolderPreKeys = directorio.filter(file => {
 return file.startsWith('pre-key-')
 })
 prekey = [...prekey, ...filesFolderPreKeys]
 filesFolderPreKeys.forEach(files => {
-unlinkSync(`./LuffySessions/${files}`)
+unlinkSync(`./LuffySessions/${files}`) // Cambiado de RubySessions
 })
-} 
+} 
 
 function purgeLuffySessionSB() {
 try {
@@ -460,7 +460,7 @@ const listaDirectorios = readdirSync(`./LuffyJadiBots/`);
 let SBprekey = [];
 listaDirectorios.forEach(directorio => {
 if (statSync(`./${jadi}/${directorio}`).isDirectory()) {
-const DSBPreKeys = readdirSync(`./LuffyJadiBots}/${directorio}`).filter(fileInDir => {
+const DSBPreKeys = readdirSync(`./LuffyJadiBots/${directorio}`).filter(fileInDir => {
 return fileInDir.startsWith('pre-key-')
 })
 SBprekey = [...SBprekey, ...DSBPreKeys];
@@ -478,7 +478,7 @@ console.log(chalk.bold.red(`\n╭» ❍ ${jadi} ❍\n│→ OCURRIÓ UN ERROR\n�
 }}
 
 function purgeOldFiles() {
-const directories = [`./${Luffysessions}/`, `./LuffyJadiBots/`]
+const directories = [`./${LuffySessions}/`, `./LuffyJadiBots/`] // Cambiado de Luffysessions
 directories.forEach(dir => {
 readdirSync(dir, (err, files) => {
 if (err) throw err
@@ -506,23 +506,23 @@ originalConsoleMethod.apply(console, arguments)
 setInterval(async () => {
 if (stopped === 'close' || !conn || !conn.user) return
 await clearTmp()
-console.log(chalk.bold.cyanBright(`\n╭» ❍ MULTIMEDIA ❍\n│→ ARCHIVOS DE LA CARPETA TMP ELIMINADAS\n╰― ― ― ― ― ― ― ― ― ― ― ― ― ― ― ― ― ― ― ⌫ ♻`))}, 1000 * 60 * 4) // 4 min 
+console.log(chalk.bold.cyanBright(`\n╭» ❍ MULTIMEDIA ❍\n│→ ARCHIVOS DE LA CARPETA TMP ELIMINADAS\n╰― ― ― ― ― ― ― ― ― ― ― ― ― ― ― ― ― ― ― ⌫ ♻`))}, 1000 * 60 * 4) // 4 min 
 
 setInterval(async () => {
 if (stopped === 'close' || !conn || !conn.user) return
-await purgeRubySession()
-console.log(chalk.bold.cyanBright(`\n╭» ❍ ${global.Rubysessions} ❍\n│→ SESIONES NO ESENCIALES ELIMINADAS\n╰― ― ― ― ― ― ― ― ― ― ― ― ― ― ― ― ― ― ― ⌫ ♻`))}, 1000 * 60 * 10) // 10 min
+await purgeLuffySession() // Cambiado de purgeRubySession
+console.log(chalk.bold.cyanBright(`\n╭» ❍ ${global.LuffySessions} ❍\n│→ SESIONES NO ESENCIALES ELIMINADAS\n╰― ― ― ― ― ― ― ― ― ― ― ― ― ― ― ― ― ― ― ⌫ ♻`))}, 1000 * 60 * 10) // 10 min
 
 setInterval(async () => {
 if (stopped === 'close' || !conn || !conn.user) return
-await purgeRubySessionSB()}, 1000 * 60 * 10)  
+await purgeLuffySessionSB()}, 1000 * 60 * 10)  
 
 setInterval(async () => {
 if (stopped === 'close' || !conn || !conn.user) return
 console.log(await purgeOldFiles());
 console.log(chalk.bold.cyanBright(`\n╭» ❍ ARCHIVOS ❍\n│→ ARCHIVOS RESIDUALES ELIMINADAS\n╰― ― ― ― ― ― ― ― ― ― ― ― ― ― ― ― ― ― ― ⌫ ♻`))}, 1000 * 60 * 10)
 
-_quickTest().then(() => conn.logger.info(chalk.bold(`✦  H E C H O\n`.trim()))).catch(console.error)
+_quickTest().then(() => conn.logger.info(chalk.bold(`✦  H E C H O\n`.trim()))).catch(console.error)
 
 async function isValidPhoneNumber(number) {
 try {
