@@ -71,7 +71,7 @@ LuffyJBOptions.args = args
 LuffyJBOptions.usedPrefix = usedPrefix
 LuffyJBOptions.command = command
 LuffyJBOptions.fromCommand = true
-MariaJadiBot(LuffyJBOptions) // Se mantiene el nombre de la función exportada para evitar problemas, pero se usa el objeto correcto.
+LuffyJadiBot(LuffyJBOptions) // Llamada a la función corregida
 global.db.data.users[m.sender].Subs = new Date * 1
 }
 handler.help = ['qr', 'code']
@@ -79,7 +79,7 @@ handler.tags = ['serbot']
 handler.command = ['qr', 'code']
 export default handler
 
-export async function LuffyJadiBot(options) {
+export async function LuffyJadiBot(options) { // <-- FUNCIÓN EXPORTADA CORREGIDA A LUFFY
 let { pathLuffyJadiBot, m, conn, args, usedPrefix, command } = options // Renombrado de pathMariaJadiBot a pathLuffyJadiBot en la desestructuración
 if (command === 'code') {
 command = 'qr';
@@ -116,7 +116,7 @@ printQRInTerminal: false,
 auth: { creds: state.creds, keys: makeCacheableSignalKeyStore(state.keys, pino({level: 'silent'})) },
 msgRetry,
 msgRetryCache,
-browser: mcode ? ['Ubuntu', 'Chrome', '110.0.5585.95'] : ['Luffy Bot (Sub Bot)', 'Chrome','2.0.0'], // Cambiado de Maria Kujou a Luffy Bot
+browser: mcode ? ['Ubuntu', 'Chrome', '110.0.5585.95'] : ['Luffy Bot (Sub Bot)', 'Chrome','2.0.0'], // Cambiado a Luffy Bot
 version: version,
 generateHighQualityLinkPreview: true
 };
@@ -129,14 +129,14 @@ msgRetry,
 msgRetryCache,
 version: [2, 3000, 1015901307],
 syncFullHistory: true,
-browser: mcode ? ['Ubuntu', 'Chrome', '110.0.5585.95'] : ['Luffy Bot (Sub Bot)', 'Chrome','2.0.0'], // Cambiado de Maria Kojuo a Luffy Bot
+browser: mcode ? ['Ubuntu', 'Chrome', '110.0.5585.95'] : ['Luffy Bot (Sub Bot)', 'Chrome','2.0.0'], // Cambiado a Luffy Bot
 defaultQueryTimeoutMs: undefined,
 getMessage: async (key) => {
 if (store) {
 //const msg = store.loadMessage(key.remoteJid, key.id)
 //return msg.message && undefined
 } return {
-conversation: 'Luffy Bot MD', // Cambiado de Maria Kojuo Bot MD a Luffy Bot MD
+conversation: 'Luffy Bot MD', // Cambiado a Luffy Bot MD
 }}}*/
 
 let sock = makeWASocket(connectionOptions)
@@ -194,7 +194,7 @@ console.log(chalk.bold.magentaBright(`\n╭┄┄┄┄┄┄┄┄┄┄┄┄�
 await creloadHandler(true).catch(console.error)
 }
 if (reason === 408) {
-console.log(chalk.bold.magentaBright(`\n╭┄┄┄┄┄┄┄┄┄┄┄┄┄┄ • • • ┄┄┄┄┄┄┄┄┄┄┄┄┄┄⟡\n┆ La conexión (+${path.basename(pathLuffyJadiBot)}) se perdió o expiró. Razón: ${reason}. Intentando reconectar...\n╰┄┄┄┄┄┄┄┄┄┄┄┄┄┄ • • • ┄┄┄┄┄┄┄┄┄┄┄┄┄┄⟡`)) // Usa pathLuffyJadiBot (corregido de pathMAriaJadiBot)
+console.log(chalk.bold.magentaBright(`\n╭┄┄┄┄┄┄┄┄┄┄┄┄┄┄ • • • ┄┄┄┄┄┄┄┄┄┄┄┄┄┄⟡\n┆ La conexión (+${path.basename(pathLuffyJadiBot)}) se perdió o expiró. Razón: ${reason}. Intentando reconectar...\n╰┄┄┄┄┄┄┄┄┄┄┄┄┄┄ • • • ┄┄┄┄┄┄┄┄┄┄┄┄┄┄⟡`)) // Usa pathLuffyJadiBot 
 await creloadHandler(true).catch(console.error)
 }
 if (reason === 440) {
