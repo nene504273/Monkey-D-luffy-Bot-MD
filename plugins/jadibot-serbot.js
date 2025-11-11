@@ -1,7 +1,3 @@
-/*CODIGO CREADO POR FÉLIX MANUEL 
-NO QUITES LOS CREDITOS
-*/
-
 const { useMultiFileAuthState, DisconnectReason, makeCacheableSignalKeyStore, fetchLatestBaileysVersion} = (await import("@whiskeysockets/baileys"));
 import qrcode from "qrcode"
 import NodeCache from "node-cache"
