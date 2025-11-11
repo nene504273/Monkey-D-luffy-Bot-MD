@@ -11,20 +11,23 @@ import { makeWASocket } from '../lib/simple.js' // Assuming simple.js is a local
 
 const { CONNECTING } = ws
 
-// --- Global Configuration ---
+// --- Path Setup ---
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
-// Variables necesarias para la ejecución y mensajes
-const emoji2 = '🛑' 
-// Define la base para las sesiones. Usa 'global.jadi' si existe, sino usa un path por defecto.
-const BASE_SESSION_DIR = global.jadi ? `./${global.jadi}/` : './sessions/subbots/' 
+// --- Configuration & Initialization ---
+const emoji2 = '🛑' // Añadido un valor por defecto para 'emoji2'
+const emoji = '❌' // Añadido un valor por defecto para 'emoji'
+const wm = 'Luffy Bot' // Añadido un valor por defecto para 'wm'
+const BASE_SESSION_DIR = global.jadi ? `./${global.jadi}/` : './sessions/subbots/' // Usando global.jadi o un valor por defecto
+const blackJBOptions = {}
 
 if (!(global.conns instanceof Array)) global.conns = []
 
-// --- Localization (Spanish text messages) ---
-let rtx = "*︰꯭𞋭🏴‍☠️ CONEXIÓN SUBBOT*\n\n━⧽ MODO CÓDIGO QR\n\n✰ 𝖯𝖺𝗌𝗈𝗌 𝖽𝖾 𝗏𝗂𝗇𝖼𝗎𝗅𝖺𝖼𝗂𝗈́𝗇:\n\n• En la Pc o tu otro teléfono escanea este qr.\n\n➪ Toca en dispositivos vinculados.\n\n➪ Selecciona Vincular con el número de teléfono.\n\n➪ Escanea el código QR.\n\n★ 𝗡𝗼𝘁𝗮: Este código expira después de los 45 segundos."
-let rtx2 = "*︰꯭𞋭🏴‍☠️ CONEXIÓN SUBBOT*\n\n━⧽ MODO CÓDIGO\n\n✰ 𝖯𝖺𝗌𝗈𝗌 𝖽𝖾 𝗏𝗂𝗇𝖼𝗎𝗅𝖺𝖼𝗂𝗈́𝗇:\n\n➪ Ve a la esquina superior derecha.\n\n➪ Toca en dispositivos vinculados.\n\n➪ Selecciona Vincular con el número de teléfono.\n\n➪ Pega el siguiente código que te enviaremos.\n\n★ 𝗡𝗼𝘁𝖺: 𝖤𝗌𝗍𝖾 𝖼𝗈𝖽𝗂𝗀𝗈 𝗌𝗈𝗅𝗈 𝖿𝗎𝗇𝖼𝗂𝗈𝗇𝖺 𝖾𝗇 𝖾𝗅 𝗇𝗎́𝗆𝖾𝗋𝗈 𝗊𝗎𝖾 𝗅𝗈 𝗌𝗈𝗅𝗂𝖼𝗂𝗍𝗈́."
+// --- Localization (Mensajes de conexión) ---
+let rtx = "*︰꯭𞋭🏴‍☠️ CONEXIÓN SUBBOT*\n\n━⧽ MODO CODIGO QR\n\n✰ 𝖯𝖺𝗌𝗈𝗌 𝖽𝖾 𝗏𝗂𝗇𝖼𝗎𝗅𝖺𝖼𝗂𝗈́𝗇:\n\n• En la Pc o tu otro teléfono escanea este qr.\n\n➪ Toca en dispositivos vinculados.\n\n➪ Selecciona Vincular con el número de teléfono.\n\n➪ Escanea el código QR.\n\n★ 𝗡𝗼𝘁a: Este código expira después de los 45 segundos."
+let rtx2 = "*︰꯭𞋭🏴‍☠️ CONEXIÓN SUBBOT*\n\n━⧽ MODO CODIGO\n\n✰ 𝖯𝖺𝗌𝗈𝗌 𝖽𝖾 𝗏𝗂𝗇𝖼𝗎𝗅𝖺𝖼𝗂𝗈́𝗇:\n\n➪ Ve a la esquina superior derecha.\n\n➪ Toca en dispositivos vinculados.\n\n➪ Selecciona Vincular con el número de teléfono.\n\n➪ Pega el siguiente código que te enviaremos.\n\n★ 𝗡𝗼𝘁𝖺: 𝖤𝗌𝗍𝖾 𝖼𝗈𝖽𝗂𝗀𝗈 𝗌𝗈𝗅𝗈 𝖿𝗎𝗇𝖼𝗂𝗈𝗇𝖺 𝖾𝗇 𝖾𝗅 𝗇𝗎́𝗆𝖾𝗋𝗈 𝗊𝗎𝖾 𝗅𝗈 𝗌𝗈𝗅𝗂𝖼𝗂𝗍𝗈́."
+
 
 // --- Utility Functions ---
 
@@ -40,11 +43,11 @@ function msToTime(duration) {
     return minutes + ' m y ' + seconds + ' s '
 }
 
-// --- Command Handler (Default Export) ---
+// --- Command Handler (Exportación por defecto) ---
 
 let handler = async (m, { conn, args, usedPrefix, command, isOwner }) => {
-    // 1. Cooldown Check
-    let cooldownTime = 120000 // 2 minutes
+    // 1. Cooldown Check (2 minutes)
+    let cooldownTime = 120000 
     let userSubsTime = global.db.data.users[m.sender].Subs || 0
     let timeRemaining = (userSubsTime + cooldownTime) - new Date()
     
@@ -81,7 +84,7 @@ let handler = async (m, { conn, args, usedPrefix, command, isOwner }) => {
         fromCommand: true
     }
 
-    await luffyJadiBot(options) // Calling the core function
+    await luffyJadiBot(options)
 
     // 5. Update Cooldown
     global.db.data.users[m.sender].Subs = new Date * 1
@@ -92,39 +95,58 @@ handler.tags = ['serbot']
 handler.command = ['qr', 'code']
 export default handler 
 
-// --- Core JadiBot Function (Exported as luffyJadiBot) ---
+// --- Core JadiBot Function (Exported como luffyJadiBot) ---
 
 export async function luffyJadiBot(options) {
     let { pathJadiBot, m, conn, args, usedPrefix, command } = options
     
-    // Check for pairing code argument
-    const isCodeMode = args.some(arg => arg.trim() === '--code' || arg.trim() === 'code')
+    // Tu lógica original para forzar el modo código si se llama con '!code'
+    if (command === 'code') {
+        command = 'qr'; 
+        args.unshift('code')
+    }
     
-    // Clean args for base64 creds if present
-    const cleanArgs = args.filter(arg => arg.trim() !== '--code' && arg.trim() !== 'code')
+    const isCodeMode = args.some(arg => arg.trim() === '--code' || arg.trim() === 'code')
     
     let txtCode, codeBot, txtQR
 
+    if (isCodeMode) {
+        // Lógica original para limpiar los argumentos después de detectar 'code'
+        args[0] = args[0].replace(/^--code$|^code$/, "").trim()
+        if (args[1]) args[1] = args[1].replace(/^--code$|^code$/, "").trim()
+        
+        // Esto estaba presente en tu código, si args[0] queda vacío, lo vuelve 'undefined'
+        if (args[0] == "") args[0] = undefined 
+    }
+
+    // Usamos el path renombrado
     const pathCreds = path.join(pathJadiBot, "creds.json")
 
     // 1. Handle base64 credentials if provided
-    if (cleanArgs.length > 0) {
-        try {
-            const credsData = Buffer.from(cleanArgs[0], "base64").toString("utf-8")
-            JSON.parse(credsData) 
-            fs.writeFileSync(pathCreds, credsData)
-        } catch (error) {
-            const emoji = '❌' 
-            conn.reply(m.chat, `${emoji} Uso incorrecto o credenciales Base64 no válidas. Use correctamente el comando » ${usedPrefix + command} (código base64)`, m)
-            return
+    if (!fs.existsSync(pathJadiBot)){
+        fs.mkdirSync(pathJadiBot, { recursive: true })
+    }
+
+    try {
+        // Si hay un argumento válido (no el token 'code' limpio, si es que lo hay)
+        if (args[0] && args[0] !== undefined) {
+             const credsData = Buffer.from(args[0], "base64").toString("utf-8")
+             JSON.parse(credsData) 
+             fs.writeFileSync(pathCreds, credsData, null, '\t')
         }
+    } catch (error) {
+        conn.reply(m.chat, `${emoji} Uso incorrecto o credenciales Base64 no válidas. Use correctamente el comando » ${usedPrefix + command} code`, m)
+        return
     }
 
     // 2. Initialize Baileys Connection
+
+    // *** ELIMINADO: Bloque 'exec' con comandos shell. Esta es la corrección de seguridad. ***
+
     let { version } = await fetchLatestBaileysVersion()
     
     const msgRetryCache = new NodeCache()
-    // saveState no se usa en useMultiFileAuthState, se debe usar saveCreds
+    // Ya no se necesita 'saveState' aquí, solo 'saveCreds'
     const { state, saveCreds } = await useMultiFileAuthState(pathJadiBot) 
 
     const connectionOptions = {
@@ -157,15 +179,13 @@ export async function luffyJadiBot(options) {
                 txtQR = await conn.sendMessage(m.chat, { 
                     image: await qrcode.toBuffer(qr, { scale: 8 }), 
                     caption: rtx.trim()
-                }, { quoted: m })
+                }, { quoted: m})
             } else {
                 return 
             }
 
             if (txtQR && txtQR.key) {
-                setTimeout(() => { 
-                    conn.sendMessage(m.sender, { delete: txtQR.key }).catch(e => console.error("Error deleting QR:", e))
-                }, 45000) 
+                setTimeout(() => { conn.sendMessage(m.sender, { delete: txtQR.key }).catch(() => {})}, 45000) 
             }
             return
         } 
@@ -177,58 +197,73 @@ export async function luffyJadiBot(options) {
             
             txtCode = await conn.sendMessage(m.chat, {text : rtx2}, { quoted: m })
             codeBot = await m.reply(secret)
-            
+
             if (txtCode && txtCode.key) {
-                setTimeout(() => { 
-                    conn.sendMessage(m.sender, { delete: txtCode.key }).catch(e => console.error("Error deleting code msg:", e))
-                }, 45000)
+                setTimeout(() => { conn.sendMessage(m.sender, { delete: txtCode.key }).catch(() => {})}, 45000)
             }
             if (codeBot && codeBot.key) {
-                setTimeout(() => { 
-                    conn.sendMessage(m.sender, { delete: codeBot.key }).catch(e => console.error("Error deleting code:", e))
-                }, 45000)
+                setTimeout(() => { conn.sendMessage(m.sender, { delete: codeBot.key }).catch(() => {})}, 45000)
             }
         }
 
-        // Handle Disconnection
+        // --- Manejo de Desconexión ---
         const reason = lastDisconnect?.error?.output?.statusCode || lastDisconnect?.error?.output?.payload?.statusCode
 
         if (connection === 'close') {
             const userJid = `${path.basename(pathJadiBot)}@s.whatsapp.net`
             const logMsg = (msg) => console.log(chalk.bold.magentaBright(`\n[SUB-BOT +${path.basename(pathJadiBot)}] ${msg}\n`))
 
-            if ([DisconnectReason.loggedOut, DisconnectReason.badSession, 401, 405].includes(reason)) {
-                logMsg(`Sesión cerrada. Credenciales no válidas o dispositivo desconectado. Borrando sesión...`)
-                fs.rmdirSync(pathJadiBot, { recursive: true })
-                m?.chat ? await conn.sendMessage(userJid, {text : '*SESIÓN CERRADA*\n\n> *INTENTE NUEVAMENTE VOLVER A SER SUB-BOT*' }, { quoted: m || null }).catch(() => {})
-            } 
-            else if (reason === DisconnectReason.connectionReplaced || reason === 440) {
-                logMsg(`La conexión fue reemplazada por otra sesión activa. Intentando reconectar...`)
-                m?.chat ? await conn.sendMessage(userJid, {text : '*HEMOS DETECTADO UNA NUEVA SESIÓN, BORRE LA NUEVA SESIÓN PARA CONTINUAR*\n\n> *SI HAY ALGÚN PROBLEMA VUELVA A CONECTARSE*' }, { quoted: m || null }).catch(() => {})
-                await creloadHandler(true).catch(console.error)
-            } 
-            else if ([DisconnectReason.connectionLost, DisconnectReason.connectionTimeout, 408, 500, 515, 428].includes(reason)) {
-                 logMsg(`Conexión perdida, expirada o error interno. Intentando reconectar (Razón: ${reason})...`)
+            // 428: Conexión cerrada inesperadamente
+            if (reason === DisconnectReason.connectionClose || reason === 428) {
+                logMsg(`La conexión fue cerrada inesperadamente. Intentando reconectar...`)
                 await creloadHandler(true).catch(console.error)
             }
+            // 408: Conexión perdida o expirada
+            else if (reason === DisconnectReason.connectionTimeout || reason === 408) {
+                logMsg(`La conexión se perdió o expiró. Razón: ${reason}. Intentando reconectar...`)
+                await creloadHandler(true).catch(console.error)
+            }
+            // 440: Conexión reemplazada
+            else if (reason === DisconnectReason.connectionReplaced || reason === 440) {
+                logMsg(`La conexión fue reemplazada por otra sesión activa.`)
+                m?.chat ? await conn.sendMessage(userJid, {text : '*HEMOS DETECTADO UNA NUEVA SESIÓN, BORRE LA NUEVA SESIÓN PARA CONTINUAR*\n\n> *SI HAY ALGÚN PROBLEMA VUELVA A CONECTARSE*' }, { quoted: m || null }).catch(() => {})
+            }
+            // 401/405: Credenciales no válidas/Sesión cerrada
+            else if (reason === DisconnectReason.loggedOut || reason === 401 || reason === 405) {
+                logMsg(`La sesión fue cerrada. Credenciales no válidas o dispositivo desconectado manualmente.`)
+                m?.chat ? await conn.sendMessage(userJid, {text : '*SESIÓN PENDIENTE*\n\n> *INTENTÉ NUEVAMENTE VOLVER A SER SUB-BOT*' }, { quoted: m || null }).catch(() => {})
+                fs.rmdirSync(pathJadiBot, { recursive: true })
+            }
+            // 500: Conexión perdida (Error del servidor)
+            else if (reason === 500) {
+                logMsg(`Conexión perdida en la sesión. Borrando datos...`)
+                m?.chat ? await conn.sendMessage(userJid, {text : '*CONEXIÓN PÉRDIDA*\n\n> *INTENTÉ MANUALMENTE VOLVER A SER SUB-BOT*' }, { quoted: m || null }).catch(() => {})
+                return creloadHandler(true).catch(console.error)
+            }
+            // 515: Reinicio automático
+            else if (reason === 515) {
+                logMsg(`Reinicio automático para la sesión.`)
+                await creloadHandler(true).catch(console.error)
+            }
+            // 403: Cuenta en soporte o bloqueada
             else if (reason === 403) {
-                logMsg(`Sesión cerrada o cuenta en soporte para la sesión. Borrando datos...`)
+                logMsg(`Sesión cerrada o cuenta en soporte. Borrando sesión...`)
                 fs.rmdirSync(pathJadiBot, { recursive: true })
             }
             
-            // Remove the disconnected socket from global.conns
+            // Eliminar de global.conns
             let i = global.conns.indexOf(sock)              
             if (i >= 0) {
                 delete global.conns[i]
                 global.conns.splice(i, 1)
             }
-        }
+        } // Fin de connection === 'close'
 
-        // Handle Connection Open
-        if (global.db.data == null && typeof loadDatabase === 'function') loadDatabase() // Check loadDatabase existence
+        // --- Manejo de Conexión Abierta ---
+        if (global.db.data == null && typeof loadDatabase === 'function') loadDatabase()
         if (connection == `open`) {
             if (!global.db.data?.users && typeof loadDatabase === 'function') loadDatabase()
-            
+
             const userName = sock.authState.creds.me.name || 'Anónimo'
             
             console.log(chalk.bold.cyanBright(`\n❒⸺⸺⸺⸺【• SUB-BOT •】⸺⸺⸺⸺❒\n│\n│ 🟢 ${userName} (+${path.basename(pathJadiBot)}) conectado exitosamente.\n│\n❒⸺⸺⸺【• CONECTADO •】⸺⸺⸺❒`))
@@ -242,32 +277,27 @@ export async function luffyJadiBot(options) {
                 
             m?.chat ? await conn.sendMessage(m.chat, {text: initialMessage, mentions: [m.sender]}, { quoted: m }) : ''
         }
-    } // End of connectionUpdate function
+    } // Fin de connectionUpdate function
 
-    // 4. Auto-disconnect for inactive/broken connections
+    // 4. Limpieza de conexiones inactivas
     setInterval(async () => {
-        if (sock.ws.socket?.readyState !== CONNECTING && sock.ws.socket?.readyState !== ws.OPEN) {
-            try { 
-                sock.ws.close() 
-            } catch (e) { }
+        if (!sock.user || (sock.ws.socket?.readyState !== CONNECTING && sock.ws.socket?.readyState !== ws.OPEN)) {
+            try { sock.ws.close() } catch (e) { }
 
             sock.ev.removeAllListeners()
             let i = global.conns.indexOf(sock)              
             if (i >= 0) {
                 delete global.conns[i]
                 global.conns.splice(i, 1)
-                console.log(chalk.bold.redBright(`[SUB-BOT +${path.basename(pathJadiBot)}] Sesión eliminada por inactividad/cierre.`))
             }
         }
     }, 60000)
-
 
     // 5. Reload Handler Function
     let handlerModule = await import('../handler.js') 
     
     let creloadHandler = async function (restatConn) {
         try {
-            // Recargar el handler.js
             const Handler = await import(`../handler.js?update=${Date.now()}`).catch(console.error)
             if (Object.keys(Handler || {}).length) handlerModule = Handler
         } catch (e) {
@@ -288,6 +318,7 @@ export async function luffyJadiBot(options) {
             sock.ev.off('creds.update', sock.credsUpdate)
         }
 
+        // Bindea los nuevos handlers
         sock.handler = handlerModule.handler.bind(sock)
         sock.connectionUpdate = connectionUpdate.bind(sock)
         sock.credsUpdate = saveCreds.bind(sock) 
@@ -301,10 +332,4 @@ export async function luffyJadiBot(options) {
     }
 
     creloadHandler(false)
-} // End of luffyJadiBot function
-
-// Retaining the original utility functions
-const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
-function sleep(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
-}
+} // Fin de luffyJadiBot
