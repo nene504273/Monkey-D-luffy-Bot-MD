@@ -57,7 +57,7 @@ global.db.data.users[m.sender].Subs = new Date * 1
 handler.help = ['qr', 'code']
 handler.tags = ['serbot']
 handler.command = ['qr', 'code']
-export default handler 
+// export default handler 
 
 export async function blackJadiBot(options) {
 let { pathblackJadiBot, m, conn, args, usedPrefix, command } = options
@@ -280,3 +280,7 @@ minutes = (minutes < 10) ? '0' + minutes : minutes
 seconds = (seconds < 10) ? '0' + seconds : seconds
 return minutes + ' m y ' + seconds + ' s '
 }
+
+
+// MODIFIED EXPORT: Exporta el handler como luffy_jadibot
+export { handler as luffy_jadibot }
