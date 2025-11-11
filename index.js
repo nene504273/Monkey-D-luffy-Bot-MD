@@ -344,14 +344,14 @@ return true
 
 //Arranque nativo para subbots by - ReyEndymion >> https://github.com/ReyEndymion
 
-global.rutaJadiBot = join(__dirname, './RubyJadiBots')
+global.rutaJadiBot = join(__dirname, './LuffyJadiBots')
 
-if (global.RubyJadibts) {
+if (global.LuffyJadibts) {
 if (!existsSync(global.rutaJadiBot)) {
 mkdirSync(global.rutaJadiBot, { recursive: true }) 
-console.log(chalk.bold.cyan(`La carpeta: ${jadi} se creó correctamente.`))
+console.log(chalk.bold.cyan(`La carpeta: LuffyJadibots se creó correctamente.`))
 } else {
-console.log(chalk.bold.cyan(`La carpeta: ${jadi} ya está creada.`)) 
+console.log(chalk.bold.cyan(`La carpeta: LuffyJadibots ya está creada.`)) 
 }
 
 const readRutaJadiBot = readdirSync(rutaJadiBot)
@@ -361,7 +361,7 @@ for (const gjbts of readRutaJadiBot) {
 const botPath = join(rutaJadiBot, gjbts)
 const readBotPath = readdirSync(botPath)
 if (readBotPath.includes(creds)) {
-RubyJadiBot({pathRubyJadiBot: botPath, m: null, conn, args: '', usedPrefix: '/', command: 'serbot'})
+RubyJadiBot({pathLuffyJadiBot: botPath, m: null, conn, args: '', usedPrefix: '/', command: 'serbot'})
 }
 }
 }
@@ -442,31 +442,31 @@ const filePath = join(tmpDir, file)
 unlinkSync(filePath)})
 }
 
-function purgeRubySession() {
+function purgeLuffySession() {
 let prekey = []
-let directorio = readdirSync(`./${Rubysessions}`)
+let directorio = readdirSync(`./LuffySessions`)
 let filesFolderPreKeys = directorio.filter(file => {
 return file.startsWith('pre-key-')
 })
 prekey = [...prekey, ...filesFolderPreKeys]
 filesFolderPreKeys.forEach(files => {
-unlinkSync(`./${Rubysessions}/${files}`)
+unlinkSync(`./LuffySessions/${files}`)
 })
 } 
 
-function purgeRubySessionSB() {
+function purgeLuffySessionSB() {
 try {
-const listaDirectorios = readdirSync(`./${jadi}/`);
+const listaDirectorios = readdirSync(`./LuffyJadiBots/`);
 let SBprekey = [];
 listaDirectorios.forEach(directorio => {
 if (statSync(`./${jadi}/${directorio}`).isDirectory()) {
-const DSBPreKeys = readdirSync(`./${jadi}/${directorio}`).filter(fileInDir => {
+const DSBPreKeys = readdirSync(`./LuffyJadiBots}/${directorio}`).filter(fileInDir => {
 return fileInDir.startsWith('pre-key-')
 })
 SBprekey = [...SBprekey, ...DSBPreKeys];
 DSBPreKeys.forEach(fileInDir => {
 if (fileInDir !== 'creds.json') {
-unlinkSync(`./${jadi}/${directorio}/${fileInDir}`)
+unlinkSync(`./LuffyJadiBots/${directorio}/${fileInDir}`)
 }})
 }})
 if (SBprekey.length === 0) {
@@ -478,7 +478,7 @@ console.log(chalk.bold.red(`\n╭» ❍ ${jadi} ❍\n│→ OCURRIÓ UN ERROR\n�
 }}
 
 function purgeOldFiles() {
-const directories = [`./${Rubysessions}/`, `./${jadi}/`]
+const directories = [`./${Luffysessions}/`, `./LuffyJadiBots/`]
 directories.forEach(dir => {
 readdirSync(dir, (err, files) => {
 if (err) throw err
