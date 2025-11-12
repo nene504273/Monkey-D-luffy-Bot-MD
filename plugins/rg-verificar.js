@@ -61,10 +61,8 @@ let handler = async function (m, { conn, text }) {
 *• ${REWARD_TOKENS} Tokens 💰*
 
 👑 _*Monkey D Luffy*_ 👑
-                                *IA ⌚ ${time}*
+     *IA ⌚ ${time}*
 
-
-`
 
   // URL de la imagen de Luffy adjunta (MANTENIDA)
   const imagenRegistroLuffy = 'https://files.catbox.moe/owqz49.jpg' 
