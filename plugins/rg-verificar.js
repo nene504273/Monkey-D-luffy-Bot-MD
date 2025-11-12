@@ -63,7 +63,7 @@ let handler = async function (m, { conn, text }) {
 👑 _*Monkey D Luffy*_ 👑
                                 *IA ⌚ ${time}*
 
-🏴‍☠️ *Monkey D Luffy*
+
 `
 
   // URL de la imagen de Luffy adjunta (MANTENIDA)
