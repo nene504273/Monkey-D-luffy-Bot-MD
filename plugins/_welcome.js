@@ -82,6 +82,8 @@ export async function before(m, { conn, groupMetadata, participants }) {
     // Obtener los datos del usuario afectado
     let who = stubParams[0]; // Extraer el JID del primer parámetro
     let taguser = `@${who.split('@')[0]}`;
+    // Nuevo: Extraer el número de teléfono del usuario
+    let phoneNumber = who.split('@')[0]; 
     const ppUrl = await conn.profilePictureUrl(who, 'image').catch(() => DEFAULT_AVATAR_URL); 
 
     // Función auxiliar para formatear el mensaje de texto
@@ -89,7 +91,8 @@ export async function before(m, { conn, groupMetadata, participants }) {
         return message
             .replace(/@user/g, userTag)
             .replace(/@group/g, groupName)
-            .replace(/@count/g, memberCount);
+            .replace(/@count/g, memberCount)
+            .replace(/@number/g, phoneNumber); // Nuevo placeholder para el número
     };
 
     // ---------------------------------------------
@@ -100,13 +103,18 @@ export async function before(m, { conn, groupMetadata, participants }) {
 
         const mediaBuffer = await generateImageFromAPI('welcome', taguser, groupName, memberCount, ppUrl);
 
-        // Usamos chatConfig.customWelcome si existe, si no, el default.
+        // Mensaje de Bienvenida ACORTADO y ESTILIZADO
         const welcomeMessage = chatConfig.customWelcome || `
-ʚ🍖ɞ *¡Yoshaaa! Bienvenido al barco, nakama!*
-🏴‍☠️ ¡Yo soy *Monkey D. Luffy*, y seré el Rey de los Piratas!
-📍 Has llegado a *@group*, un lugar para grandes aventuras. Ahora somos *@count* nakamas.
-✨ Usa \`#menu\` para ver los comandos del bot.
-*¡Prepárate para zarpar, que esto apenas comienza!* 👒
+.·:*¨༺ 🍖 𝕎𝕖𝕝𝕔𝕠𝕞𝕖 ༻¨*:·.
+  ⚓ *B I E N V E N I D O S* ⚓
+.·:*¨༺ ⋆⋅☆⋅⋆ ༻¨*:·.
+    *¡Yoshaaa, nakama!* 👒
+    📍 *@group*
+    👤 *User:* @user
+    📞 *Number:* +@number
+    ✨ ¡Ahora somos *@count* en el barco!
+    *¡Usa #menu para zarpar!*
+.·:*¨༺ ⋆⋅☆⋅⋆ ༻¨*:·.
         `;
 
         const messageOptions = { 
@@ -135,11 +143,17 @@ export async function before(m, { conn, groupMetadata, participants }) {
         
         const mediaBuffer = await generateImageFromAPI('goodbye', taguser, groupName, memberCount, ppUrl);
 
+        // Mensaje de Despedida ESTILIZADO
         const byeMessage = chatConfig.customBye || `
-😢 *Ohh… otro nakama se fue del barco.*
-✋ ¡Adiós, @user! Siempre serás parte de esta tripulación.
-⚓ ¡Sigue navegando tu propia ruta, algún día nos reencontraremos en Grand Line!
-- *Monkey D. Luffy* 👒
+.·:*¨༺ ⚓️ 𝐆𝐨𝐨𝐝𝐛𝐲𝐞 ༻¨*:·.
+  😢 *O h h...* 🥀
+.·:*¨༺ ⋆⋅☆⋅⋆ ༻¨*:·.
+    *¡Adiós, nakama!* 🏴‍☠️
+    👤 *User:* @user
+    📞 *Number:* +@number
+    ✨ Quedan *@count* en el barco.
+    *¡Nos vemos en Grand Line!* 🌊
+.·:*¨༺ ⋆⋅☆⋅⋆ ༻¨*:·.
         `;
 
         const messageOptions = { 
