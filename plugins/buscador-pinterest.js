@@ -6,7 +6,7 @@ if (!text) return m.reply(`🍖 ⍴᥆r 𝖿ᥲ᥎᥆r, іᥒgrᥱsᥲ ᥣ᥆ �
 try {
 await m.react('🕒')
 
-const res = await axios.get(`https://ruby-core.vercel.app/api/search/pinterest?q=${encodeURIComponent(text)}`)
+const res = await axios.get(`https://api.dorratz.com/v2/pinterest?q=${encodeURIComponent(text)`)
 const data = res.data
 
 if (!data.status || !data.results || data.results.length === 0) {
