@@ -6,29 +6,12 @@ const NEVI_API_URL = 'http://neviapi.ddns.net:5000';
 const NEVI_API_KEY = 'ellen'; 
 // ----------------------------------------------------
 
+// La función 'generateWAMessage' se importa desde el paquete principal, 
+// no es necesario desestructurar 'generateWAMessageContent' y 'proto' si no se usan directamente aquí.
 const { generateWAMessageFromContent, generateWAMessage, delay } = baileys;
 
-// 🎯 FUNCIÓN PARA MEJORAR LA URL DE PINTEREST (NUEVA FUNCIÓN)
-const cleanPinterestUrl = (url) => {
-    if (!url || typeof url !== 'string' || !url.includes('pinimg.com')) {
-        return url;
-    }
-    // Patrón regex para buscar /tamañox/ o /tamaño/ (ej: /236x/ o /736x/ o /564x/)
-    // Reemplaza el segmento de tamaño por '/originals/'
-    const pattern = /\/([0-9]+x|[0-9]+)\//g; 
-    
-    // Si el URL ya contiene 'originals', se devuelve directamente para evitar problemas.
-    if (url.includes('/originals/')) {
-        return url;
-    }
-    
-    // Reemplaza el segmento de tamaño por 'originals/' para forzar la máxima calidad.
-    const cleanedUrl = url.replace(pattern, '/originals/');
-    return cleanedUrl;
-};
-// --------------------------------------------------------
-
 // --- FUNCIONES AUXILIARES (Necesarias para el Álbum) ---
+// Ahora acepta 'conn' como primer argumento
 async function sendAlbumMessage(conn, jid, medias, options = {}) {
   if (typeof jid !== "string") throw new TypeError(`⚠️ El JID debe ser un texto válido.`);
   if (medias.length < 2) throw new RangeError("⚠️ Se requieren al menos dos imágenes para crear un álbum.");
@@ -41,7 +24,7 @@ async function sendAlbumMessage(conn, jid, medias, options = {}) {
   }
 
   const caption = options.text || options.caption || "";
-  const albumDelay = !isNaN(options.delay) ? options.delay : 500;
+  const albumDelay = !isNaN(options.delay) ? options.delay : 500; // Renombrado a albumDelay para evitar conflicto con importacion de Baileys
 
   // Creación del mensaje padre del álbum (contenedor)
   const album = generateWAMessageFromContent(
@@ -137,21 +120,17 @@ let handler = async (m, { conn, text }) => {
     const medias = [];
 
     for (let i = 0; i < max; i++) {
-        // OBTENEMOS EL URL ORIGINAL Y LO OPTIMIZAMOS
-        const rawUrl = results[i].image_large_url || results[i].image_medium_url || results[i].image_small_url;
-        const finalUrl = cleanPinterestUrl(rawUrl); // <-- ¡Aplicamos la optimización de calidad!
-        
       medias.push({
         type: 'image',
         data: {
-          url: finalUrl
+          url: results[i].image_large_url || results[i].image_medium_url || results[i].image_small_url
         }
       });
     }
 
-    // Enviamos el álbum con las URL optimizadas
+    // 🚨 CAMBIO APLICADO AQUÍ: Pasando 'conn' como primer argumento
     await sendAlbumMessage(conn, m.chat, medias, {
-      caption: `☠️ *luffy Sempai* te trae los resultados:\n\n📌 *Búsqueda:* ${text}\n🖼️ *Resultados:* ${max}\n👤 *Creador:* ${dev}\n\n[Datos obtenidos vía NEVI API]\n✨ *Calidad Optimzada*`,
+      caption: `☠️ *luffy Sempai* te trae los resultados:\n\n📌 *Búsqueda:* ${text}\n🖼️ *Resultados:* ${max}\n👤 *Creador:* ${dev}\n\n[Datos obtenidos vía NEVI API]`,
       quoted: m
     });
 
