@@ -6,7 +6,8 @@ if (!text) return m.reply(`💀 ⍴᥆r 𝖿ᥲ᥎᥆r, іᥒgrᥱsᥲ ᥣ᥆ �
 try {
 await m.react('🕒')
 
-const res = await axios.get(`https://ruby-core.vercel.app/api/search/pinterest?q=${encodeURIComponent(text)}`)
+// URL de la API actualizada a 'http://neviapi.ddns.net:5000/download'
+const res = await axios.get(`http://neviapi.ddns.net:5000/download?q=${encodeURIComponent(text)}`)
 const data = res.data
 
 if (!data.status || !data.results || data.results.length === 0) {
