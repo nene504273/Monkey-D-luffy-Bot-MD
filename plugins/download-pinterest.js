@@ -1,45 +1,88 @@
-import axios from 'axios'
-import baileys, { delay, jidNormalized, WAMessageStubType } from '@whiskeysockets/baileys'
-import cheerio from 'cheerio'
+import fetch from 'node-fetch'
+import baileys from '@whiskeysockets/baileys'
 
-let handler = async (m, { conn, text, args, usedPrefix }) => {
-    if (!text) return m.reply(`❀ Por favor, ingresa lo que deseas buscar por Pinterest.`)
-    try {
-        await m.react('🕒')
-        if (text.includes("https://")) {
-            // ... (Tu código actual para descarga de un solo pin por URL) ...
-            let i = await dl(args[0])
-            let isVideo = i.download.includes(".mp4")
-            await conn.sendMessage(m.chat, { [isVideo ? "video" : "image"]: { url: i.download }, caption: i.title }, { quoted: m })
-        } else {
-            const results = await pins(text)
-            if (!results.length) {
-                return conn.reply(m.chat, `ꕥ No se encontraron resultados para "${text}".`, m)
-            }
-            
-            // 1. Obtener las URLs de las primeras 10 imágenes
-            const urls = results.slice(0, 10).map(img => img.image_large_url).filter(url => url);
+async function sendAlbumMessage(jid, medias, options = {}) {
+  if (typeof jid !== "string") throw new TypeError(`jid must be string, received: ${jid}`)
+  if (medias.length < 2) throw new RangeError("Se necesitan al menos 2 imágenes para un álbum")
 
-            // 2. Enviar un mensaje con el resumen de la búsqueda
-            let caption = `❀ Pinterest - Search ❀\n\n✧ Búsqueda » "${text}"\n✐ Resultados » ${urls.length}`
-            await conn.reply(m.chat, caption, m);
-            
-            // 3. Iterar sobre las URLs y enviar cada imagen individualmente
-            for (let i = 0; i < urls.length; i++) {
-                // Pequeña pausa opcional entre envíos para evitar spam o errores
-                await delay(1000); 
-                
-                await conn.sendMessage(m.chat, { 
-                    image: { url: urls[i] }, 
-                    caption: `[${i + 1}/${urls.length}] Resultado de la búsqueda.` 
-                }, { quoted: m });
-            }
+  const caption = options.text || options.caption || ""
+  const delay = !isNaN(options.delay) ? options.delay : 500
+  delete options.text
+  delete options.caption
+  delete options.delay
 
-        }
-        await m.react('✔️')
-    } catch (e) {
-        await m.react('✖️')
-        conn.reply(m.chat, `⚠︎ Se ha producido un problema.\n> Usa *${usedPrefix}report* para informarlo.\n\n` + e, m)
+  const album = baileys.generateWAMessageFromContent(
+    jid,
+    { messageContextInfo: {}, albumMessage: { expectedImageCount: medias.length } },
+    {}
+  )
+
+  await conn.relayMessage(album.key.remoteJid, album.message, { messageId: album.key.id })
+
+  for (let i = 0; i < medias.length; i++) {
+    const { type, data } = medias[i]
+    const img = await baileys.generateWAMessage(
+      album.key.remoteJid,
+      { [type]: data, ...(i === 0 ? { caption } : {}) },
+      { upload: conn.waUploadToServer }
+    )
+    img.message.messageContextInfo = {
+      messageAssociation: { associationType: 1, parentMessageKey: album.key },
     }
+    await conn.relayMessage(img.key.remoteJid, img.message, { messageId: img.key.id })
+    await baileys.delay(delay)
+  }
+
+  return album
 }
-// ... (El resto de tu código handler, dl y pins) ...
+
+const pinterest = async (m, { conn, text, usedPrefix, command }) => {
+  if (!text) return conn.reply(m.chat, `🌸 𝙐𝙨𝙤: *${usedPrefix + command}* <término de búsqueda>\n📌 Ejemplo: *${usedPrefix + command} anime girl*`, m, rcanal)
+
+  await m.react('🕐')
+  conn.reply(m.chat, '*🔎 Buscando imágenes en Pinterest...*', m, {
+    contextInfo: {
+      externalAdReply: {
+        mediaUrl: null,
+        mediaType: 1,
+        showAdAttribution: true,
+        title: packname,
+        body: wm,
+        previewType: 0,
+        thumbnail: icons,
+        sourceUrl: channel
+      }
+    }
+  })
+
+  try {
+    const res = await fetch(`https://api.vreden.my.id/api/pinterest?query=${encodeURIComponent(text)}`)
+    const json = await res.json()
+
+    if (!json?.result || json.result.length < 2)
+      return conn.reply(m.chat, '✖️ No se encontraron suficientes imágenes para un álbum.', m)
+
+    const images = json.result.slice(0, 10).map(url => ({
+      type: "image",
+      data: { url }
+    }))
+
+    const caption = `*Resultados de tu búsqueda:* ${text}`
+    await sendAlbumMessage(m.chat, images, { caption, quoted: m })
+
+    await m.react('✅')
+  } catch (error) {
+    console.error(error)
+    await m.react('✖️')
+    conn.reply(m.chat, 'Ocurrió un error al obtener tus imágenes de Pinterest.', m)
+  }
+}
+
+handler.help = ['pinterest <query>']
+handler.tags = ['buscador', 'descargas']
+handler.coin = 1;
+handler.register = true
+handler.command = ['pinterest', 'pin'];
+handler.register = true
+
+export default pinterest
