@@ -111,7 +111,6 @@ export async function before(m, { conn, groupMetadata, participants }) {
     *¡Yoshaaa, nakama!* 👒
     📍 *@group*
     👤 *User:* @user
-    📞 *Number:* +@number
     ✨ ¡Ahora somos *@count* en el barco!
     *¡Usa #menu para zarpar!*
 .·:*¨༺ ⋆⋅☆⋅⋆ ༻¨*:·.
@@ -150,7 +149,6 @@ export async function before(m, { conn, groupMetadata, participants }) {
 .·:*¨༺ ⋆⋅☆⋅⋆ ༻¨*:·.
     *¡Adiós, nakama!* 🏴‍☠️
     👤 *User:* @user
-    📞 *Number:* +@number
     ✨ Quedan *@count* en el barco.
     *¡Nos vemos en Grand Line!* 🌊
 .·:*¨༺ ⋆⋅☆⋅⋆ ༻¨*:·.
