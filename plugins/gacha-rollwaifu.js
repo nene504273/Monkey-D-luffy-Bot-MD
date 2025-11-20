@@ -1,96 +1,143 @@
-import { promises as fs } from 'fs'
+import { promises as fs } from 'fs';
 
-const charactersFilePath = './src/database/characters.json'
-const haremFilePath = './src/database/harem.json'
-
-const cooldowns = {}
+const charactersFilePath = './lib/characters.json';
+let charactersCache = null;
+let lastCacheLoad = 0;
+const CACHE_TTL = 5 * 60 * 1000;
 
 async function loadCharacters() {
-    try {
-        const data = await fs.readFile(charactersFilePath, 'utf-8')
-        return JSON.parse(data)
-    } catch (error) {
-        throw new Error('❀ No se pudo cargar el archivo characters.json.')
+    const now = Date.now();
+    if (charactersCache && (now - lastCacheLoad) < CACHE_TTL) {
+        return charactersCache;
     }
+    
+    const data = await fs.readFile(charactersFilePath, 'utf-8');
+    charactersCache = JSON.parse(data);
+    lastCacheLoad = now;
+    return charactersCache;
 }
 
-async function saveCharacters(characters) {
-    try {
-        await fs.writeFile(charactersFilePath, JSON.stringify(characters, null, 2), 'utf-8')
-    } catch (error) {
-        throw new Error('❀ No se pudo guardar el archivo characters.json.')
-    }
+function getCharacterById(characterId, charactersData) {
+    return Object.values(charactersData)
+        .flatMap(series => series.characters || [])
+        .find(character => character.id === characterId);
 }
 
-async function loadHarem() {
+let handler = async (m, { conn, usedPrefix, command, quoted }) => {
+    const ctxErr = (global.rcanalx || {});
+    const ctxWarn = (global.rcanalw || {});
+    const ctxOk = (global.rcanalr || {});
+    
+    const claimCooldown = 30 * 60 * 1000;
+    
     try {
-        const data = await fs.readFile(haremFilePath, 'utf-8')
-        return JSON.parse(data)
-    } catch (error) {
-        return []
-    }
-}
-
-async function saveHarem(harem) {
-    try {
-        await fs.writeFile(haremFilePath, JSON.stringify(harem, null, 2), 'utf-8')
-    } catch (error) {
-        throw new Error('❀ No se pudo guardar el archivo harem.json.')
-    }
-}
-
-let handler = async (m, { conn }) => {
-    const userId = m.sender
-    const now = Date.now()
-
-    if (cooldowns[userId] && now < cooldowns[userId]) {
-        const remainingTime = Math.ceil((cooldowns[userId] - now) / 1000)
-        const minutes = Math.floor(remainingTime / 60)
-        const seconds = remainingTime % 60
-        return await conn.reply(m.chat, `( ⸝⸝･̆⤚･̆⸝⸝) ¡𝗗𝗲𝗯𝗲𝘀 𝗲𝘀𝗽𝗲𝗿𝗮𝗿 *${minutes} minutos y ${seconds} segundos* 𝗽𝗮𝗿𝗮 𝘃𝗼𝗹𝘃𝗲𝗿  𝘂𝘀𝗮𝗿 *#rw* 𝗱𝗲 𝗻𝘂𝗲𝘃𝗼.`, m)
-    }
-
-    try {
-        const characters = await loadCharacters()
-        const randomCharacter = characters[Math.floor(Math.random() * characters.length)]
-        const randomImage = randomCharacter.img[Math.floor(Math.random() * randomCharacter.img.length)]
-
-        const harem = await loadHarem()
-        const userEntry = harem.find(entry => entry.characterId === randomCharacter.id)
-        const statusMessage = randomCharacter.user 
-            ? `Reclamado por @${randomCharacter.user.split('@')[0]}` 
-            : 'Libre'
-
-        const message = `╔◡╍┅•.⊹︵ࣾ᷼ ׁ𖥓┅╲۪ ⦙᷼͝🧸᷼͝⦙ ׅ╱ׅ╍𖥓 ︵ࣾ᷼︵ׄׄ᷼⊹┅╍◡╗
-┋  ⣿̶ֻ〪ׅ⃕݊⃧🐚⃚̶̸͝ᤢ֠◌ִ̲ 𝑪𝑯𝑨𝑹𝑨𝑪𝑻𝑬𝑹 𝑹𝑨𝑵𝑫𝑶𝑴 🐸ꨪ̸⃙ׅᮬֺ๋֢᳟  ┋
-╚◠┅┅˙•⊹.⁀𖥓 ׅ╍╲۪ ⦙᷼͝🎠᷼͝⦙ ׅ╱ׅ╍𖥓 ◠˙⁀۪ׄ⊹˙╍┅◠╝
-
-꥓໋╭࣭۬═ֽ̥࣪━᜔๋݈═𑂺ׄ︵ິּ֙᷼⌒݈᳹᪾̯ ⋮꥓ּ࣭ׄ🌹〪ິ᜔ּ໋࣭ׄ⋮⌒ໍּ֣ׄ═ᮣໍ࣭ׄ━𑂺᜔꥓໋┉꥓ׂ᷼━᜔࣭֙━๋݈═̥࣭۬╮
-> ᠙᳞✿̶᮫᮫ְְׅ᳝ׅ᳝᳞᳞࣪᪲࣪֘⣷ׅ᳝࣪ ࣪࣪𖡻ְְׅ᳝ׅׅ࣪࣪֘ᰰ🌵᮫ְׅ᳝࣪᪲⃞̶𝝸𝕝᮫ְ᳝᳝⃨۪۪۪ׅ᳝࣪࣪っְְׅ᳝۪⃨۪۪۪࣪:   𝙉𝘖𝘔𝘉𝘙𝘌: *${randomCharacter.name}*
-> ᠙᳞✿̶᮫᮫ְְׅ᳝ׅ᳝᳞᳞࣪᪲࣪֘⣷ׅ᳝࣪ ࣪࣪𖡻ְְׅ᳝ׅׅ࣪࣪֘ᰰ🍭᮫ְׅ᳝࣪᪲⃞̶𝝸𝕝᮫ְ᳝᳝⃨۪۪۪ׅ᳝࣪࣪っְְׅ᳝۪⃨۪۪۪࣪:  𝙂𝘌𝘕𝘌𝘙𝘖: *${randomCharacter.gender}*
-> ᠙᳞✿̶᮫᮫ְְׅ᳝ׅ᳝᳞᳞࣪᪲࣪֘⣷ׅ᳝࣪ ࣪࣪𖡻ְְׅ᳝ׅׅ࣪࣪֘ᰰ💰᮫ְׅ᳝࣪᪲⃞̶𝝸𝕝᮫ְ᳝᳝⃨۪۪۪ׅ᳝࣪࣪っְְׅ᳝۪⃨۪۪۪࣪:   𝙑𝘈𝘓𝘖𝘙: *${randomCharacter.value}*
-> ᠙᳞✿̶᮫᮫ְְׅ᳝ׅ᳝᳞᳞࣪᪲࣪֘⣷ׅ᳝࣪ ࣪࣪𖡻ְְׅ᳝ׅׅ࣪࣪֘ᰰ🪄᮫ְׅ᳝࣪᪲⃞̶𝝸𝕝᮫ְ᳝᳝⃨۪۪۪ׅ᳝࣪࣪っְְׅ᳝۪⃨۪۪۪࣪:   𝙀𝘚𝘛𝘈𝘋𝘖: ${statusMessage}
-> ᠙᳞✿̶᮫᮫ְְׅ᳝ׅ᳝᳞᳞࣪᪲࣪֘⣷ׅ᳝࣪ ࣪࣪𖡻ְְׅ᳝ׅׅ࣪࣪֘ᰰ📚᮫ְׅ᳝࣪᪲⃞̶𝝸𝕝᮫ְ᳝᳝⃨۪۪۪ׅ᳝࣪࣪っְְׅ᳝۪⃨۪۪۪࣪:   𝙁𝘜𝘌𝘕𝘛𝘌: *${randomCharacter.source}*
-> ᠙᳞✿̶᮫᮫ְְׅ᳝ׅ᳝᳞᳞࣪᪲࣪֘⣷ׅ᳝࣪ ࣪࣪𖡻ְְׅ᳝ׅׅ࣪࣪֘ᰰ🆔᮫ְׅ᳝࣪᪲⃞̶𝝸𝕝᮫ְ᳝᳝⃨۪۪۪ׅ᳝࣪࣪っְְׅ᳝۪⃨۪۪۪࣪:   𝙄𝘿: *${randomCharacter.id}*
-꥓໋╰ׅ۬═ֽ̥࣪━᜔๋݈═𑂺ׄ︵ິּ֙᷼⌒݈᳹᪾̯ ⋮꥓ּ࣭ׄ🐦‍🔥⋮⌒ໍּ֣ׄ═ᮣໍ࣭ׄ━𑂺᜔꥓໋┉꥓ׂ᷼━᜔࣭֙━๋݈═̥࣭۬╯`
-
-        const mentions = userEntry ? [userEntry.userId] : []
-        await conn.sendFile(m.chat, randomImage, `${randomCharacter.name}.jpg`, message, m, { mentions })
-
-        if (!randomCharacter.user) {
-            await saveCharacters(characters)
+        const chatData = global.db?.data?.chats?.[m.chat] || {};
+        if (!chatData.gacha && m.isGroup) {
+            return await conn.reply(m.chat, 'ꕤ Los comandos de *Gacha* están desactivados en este grupo.\n\nUn *administrador* puede activarlos con el comando:\n» *' + usedPrefix + 'gacha on*', m, ctxWarn);
         }
 
-        cooldowns[userId] = now + 15 * 60 * 1000
+        const currentUserData = global.db?.data?.users?.[m.sender] || {};
+        const currentTime = Date.now();
+
+        if (currentUserData.lastClaim && currentTime < currentUserData.lastClaim + claimCooldown) {
+            const remainingSeconds = Math.ceil((currentUserData.lastClaim + claimCooldown - currentTime) / 1000);
+            const minutes = Math.floor(remainingSeconds / 60);
+            const seconds = remainingSeconds % 60;
+            
+            let timeLeft = '';
+            if (minutes > 0) timeLeft += minutes + ' minuto' + (minutes !== 1 ? 's' : '') + ' ';
+            if (seconds > 0 || timeLeft === '') timeLeft += seconds + ' segundo' + (seconds !== 1 ? 's' : '');
+            
+            return await conn.reply(m.chat, 'ꕤ Debes esperar *' + timeLeft.trim() + '* para usar *' + (usedPrefix + command) + '* de nuevo.', m, ctxWarn);
+        }
+
+        const lastRolledCharacter = chatData.lastRolledCharacter;
+        if (!lastRolledCharacter || !lastRolledCharacter.id) {
+            return await conn.reply(m.chat, 'ꕤ No hay ningún personaje disponible para reclamar. Usa *' + usedPrefix + 'roll* primero.', m, ctxErr);
+        }
+
+        const characterId = lastRolledCharacter.id;
+
+        const charactersData = await loadCharacters();
+        const characterData = getCharacterById(characterId, charactersData);
+
+        if (!characterData) {
+            return await conn.reply(m.chat, 'ꕤ Personaje no encontrado en characters.json', m, ctxErr);
+        }
+
+        if (!global.db.data.characters) global.db.data.characters = {};
+        if (!global.db.data.characters[characterId]) {
+            global.db.data.characters[characterId] = {};
+        }
+
+        const dbCharacter = global.db.data.characters[characterId];
+        
+        if (dbCharacter.user && dbCharacter.user !== m.sender) {
+            const getClaimantName = async (userId) => {
+                try {
+                    const userData = global.db?.data?.users?.[userId] || {};
+                    return userData.name?.trim() || 
+                           (await conn.getName(userId)) || 
+                           userId.split('@')[0];
+                } catch {
+                    return userId.split('@')[0];
+                }
+            };
+
+            const claimantName = await getClaimantName(dbCharacter.user);
+            return await conn.reply(m.chat, 'ꕤ El personaje *' + dbCharacter.name + '* ya ha sido reclamado por *' + claimantName + '*', m, ctxWarn);
+        }
+
+        if (dbCharacter.expiresAt && currentTime > dbCharacter.expiresAt) {
+            const expiredTime = Math.ceil((currentTime - dbCharacter.expiresAt) / 1000);
+            return await conn.reply(m.chat, 'ꕤ El personaje ha expirado hace *' + expiredTime + 's*', m, ctxWarn);
+        }
+
+        dbCharacter.user = m.sender;
+        dbCharacter.claimedAt = currentTime;
+        dbCharacter.name = characterData.name;
+        dbCharacter.value = characterData.value || 100;
+        dbCharacter.votes = dbCharacter.votes || 0;
+        dbCharacter.expiresAt = null;
+
+        currentUserData.lastClaim = currentTime;
+
+        if (!Array.isArray(currentUserData.characters)) {
+            currentUserData.characters = [];
+        }
+        if (!currentUserData.characters.includes(characterId)) {
+            currentUserData.characters.push(characterId);
+        }
+
+        const getCurrentUsername = async () => {
+            try {
+                return currentUserData.name?.trim() || 
+                       (await conn.getName(m.sender)) || 
+                       m.sender.split('@')[0];
+            } catch {
+                return m.sender.split('@')[0];
+            }
+        };
+
+        const currentUsername = await getCurrentUsername();
+
+        const claimMessage = chatData.claimMessage ? 
+            chatData.claimMessage
+                .replace(/€user/g, '*' + currentUsername + '*')
+                .replace(/€character/g, '*' + dbCharacter.name + '*') :
+            'ꕤ *' + dbCharacter.name + '* ha sido reclamado por *' + currentUsername + '*';
+
+        await conn.reply(m.chat, claimMessage, m, ctxOk);
 
     } catch (error) {
-        await conn.reply(m.chat, `✘ Error al cargar el personaje: ${error.message}`, m)
+        console.error('Error en handler de claim:', error);
+        await conn.reply(m.chat, '⚠︎ Se ha producido un problema.\n> Usa *' + usedPrefix + 'report* para informarlo.\n\n' + error.message, m, ctxErr);
     }
-}
+};
 
-handler.help = ['ver', 'rw', 'rollwaifu']
-handler.tags = ['gacha']
-handler.command = ['ver', 'rw', 'rollwaifu']
-handler.group = true
+handler.help = ['claim'];
+handler.tags = ['gacha'];
+handler.command = ['claim', 'c', 'reclamar'];
+handler.group = true;
 
-export default handler
+export default handler;
