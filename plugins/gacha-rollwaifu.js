@@ -1,199 +1,92 @@
-// Powered by Arlette Xz
 import { promises as fs } from 'fs';
-import fetch from 'node-fetch';
 
-const FILE_PATH = './lib/characters.json';
-let charactersCache = null;
-let lastCacheLoad = 0;
-const CACHE_TTL = 5 * 60 * 1000;
+const charactersFilePath = './src/database/characters.json';
+const haremFilePath = './src/database/harem.json';
+
+export const cooldowns = {};
 
 async function loadCharacters() {
+    try {
+        const data = await fs.readFile(charactersFilePath, 'utf-8');
+        return JSON.parse(data);
+    } catch (error) {
+        throw new Error('❀ No se pudo cargar el archivo characters.json.');
+    }
+}
+
+async function saveCharacters(characters) {
+    try {
+        await fs.writeFile(charactersFilePath, JSON.stringify(characters, null, 2), 'utf-8');
+    } catch (error) {
+        throw new Error('❀ No se pudo guardar el archivo characters.json.');
+    }
+}
+
+async function loadHarem() {
+    try {
+        const data = await fs.readFile(haremFilePath, 'utf-8');
+        return JSON.parse(data);
+    } catch (error) {
+        return [];
+    }
+}
+
+async function saveHarem(harem) {
+    try {
+        await fs.writeFile(haremFilePath, JSON.stringify(harem, null, 2), 'utf-8');
+    } catch (error) {
+        throw new Error('❀ No se pudo guardar el archivo harem.json.');
+    }
+}
+
+let handler = async (m, { conn }) => {
+    const userId = m.sender;
     const now = Date.now();
-    if (charactersCache && (now - lastCacheLoad) < CACHE_TTL) {
-        return charactersCache;
+
+    if (cooldowns[userId] && now < cooldowns[userId]) {
+        const remainingTime = Math.ceil((cooldowns[userId] - now) / 1000);
+        const minutes = Math.floor(remainingTime / 60);
+        const seconds = remainingTime % 60;
+        return await conn.reply(m.chat, `(💎 ¡𝗗𝗲𝗯𝗲𝘀 𝗲𝘀𝗽𝗲𝗿𝗮𝗿 *${minutes} minutos y ${seconds} segundos* 𝗽𝗮𝗿𝗮 𝘃𝗼𝗹𝘃𝗲𝗿  𝘂𝘀𝗮𝗿 *#rw* 𝗱𝗲 𝗻𝘂𝗲𝘃𝗼.`, m);
     }
-    
+
     try {
-        await fs.access(FILE_PATH);
-    } catch {
-        await fs.writeFile(FILE_PATH, '{}');
-    }
-    const data = await fs.readFile(FILE_PATH, 'utf-8');
-    charactersCache = JSON.parse(data);
-    lastCacheLoad = now;
-    return charactersCache;
-}
+        const characters = await loadCharacters();
+        const randomCharacter = characters[Math.floor(Math.random() * characters.length)];
+        const randomImage = randomCharacter.img[Math.floor(Math.random() * randomCharacter.img.length)];
 
-function flattenCharacters(charactersData) {
-    return Object.values(charactersData).flatMap(series => 
-        Array.isArray(series.characters) ? series.characters : []
-    );
-}
+        const harem = await loadHarem();
+        const userEntry = harem.find(entry => entry.characterId === randomCharacter.id);
+        const statusMessage = randomCharacter.user 
+            ? `Reclamado por @${randomCharacter.user.split('@')[0]}` 
+            : 'Libre';
 
-function getSeriesNameByCharacter(charactersData, characterId) {
-    return Object.entries(charactersData).find(([_, series]) => 
-        Array.isArray(series.characters) && 
-        series.characters.some(char => String(char.id) === String(characterId))
-    )?.[1]?.name || 'Desconocido';
-}
+        const message = `╔◡╍┅•.⊹︵ࣾ᷼ ׁ𖥓┅╲۪ ⦙᷼͝🧸᷼͝⦙ ׅ╱ׅ╍𖥓 ︵ࣾ᷼︵ׄׄ᷼⊹┅╍◡╗
+┋  ⣿̶ֻ〪ׅ⃕݊⃧🐚⃚̶̸͝ᤢ֠◌ִ̲ 𝑪𝑯𝑨𝑹𝑨𝑪𝑻𝑬𝑹 𝑹𝑨𝑵𝑫𝑶𝑴 🐸ꨪ̸⃙ׅᮬֺ๋֢᳟  ┋
+╚◠┅┅˙•⊹.⁀𖥓 ׅ╍╲۪ ⦙᷼͝🎠᷼͝⦙ ׅ╱ׅ╍𖥓 ◠˙⁀۪ׄ⊹˙╍┅◠╝
 
-function formatTag(tag) {
-    return String(tag).toLowerCase().trim().replace(/\s+/g, '_');
-}
+꥓໋╭࣭۬═ֽ̥࣪━᜔๋݈═𑂺ׄ︵ິּ֙᷼⌒݈᳹᪾̯ ⋮꥓ּ࣭ׄ🌹〪ິ᜔ּ໋࣭ׄ⋮⌒ໍּ֣ׄ═ᮣໍ࣭ׄ━𑂺᜔꥓໋┉꥓ׂ᷼━᜔࣭֙━๋݈═̥࣭۬╮
+> ᠙᳞✿̶᮫᮫ְְׅ᳝ׅ᳝᳞᳞࣪᪲࣪֘⣷ׅ᳝࣪ ࣪࣪𖡻ְְׅ᳝ׅׅ࣪࣪֘ᰰ🌵᮫ְׅ᳝࣪᪲⃞̶𝝸𝕝᮫ְ᳝᳝⃨۪۪۪ׅ᳝࣪࣪っְְׅ᳝۪⃨۪۪۪࣪:   𝙉𝘖𝘔𝘉𝘙𝘌: *${randomCharacter.name}*
+> ᠙᳞✿̶᮫᮫ְְׅ᳝ׅ᳝᳞᳞࣪᪲࣪֘⣷ׅ᳝࣪ ࣪࣪𖡻ְְׅ᳝ׅׅ࣪࣪֘ᰰ🍭᮫ְׅ᳝࣪᪲⃞̶𝝸𝕝᮫ְ᳝᳝⃨۪۪۪ׅ᳝࣪࣪っְְׅ᳝۪⃨۪۪۪࣪:  𝙂𝘌𝘕𝘌𝘙𝘖: *${randomCharacter.gender}*
+> ᠙᳞✿̶᮫᮫ְְׅ᳝ׅ᳝᳞᳞࣪᪲࣪֘⣷ׅ᳝࣪ ࣪࣪𖡻ְְׅ᳝ׅׅ࣪࣪֘ᰰ💰᮫ְׅ᳝࣪᪲⃞̶𝝸𝕝᮫ְ᳝᳝⃨۪۪۪ׅ᳝࣪࣪っְְׅ᳝۪⃨۪۪۪࣪:   𝙑𝘈𝘓𝘖𝘙: *${randomCharacter.value}*
+> ᠙᳞✿̶᮫᮫ְְׅ᳝ׅ᳝᳞᳞࣪᪲࣪֘⣷ׅ᳝࣪ ࣪࣪𖡻ְְׅ᳝ׅׅ࣪࣪֘ᰰ🪄᮫ְׅ᳝࣪᪲⃞̶𝝸𝕝᮫ְ᳝᳝⃨۪۪۪ׅ᳝࣪࣪っְְׅ᳝۪⃨۪۪۪࣪:   𝙀𝘚𝘛𝘈𝘋𝘖: ${statusMessage}
+> ᠙᳞✿̶᮫᮫ְְׅ᳝ׅ᳝᳞᳞࣪᪲࣪֘⣷ׅ᳝࣪ ࣪࣪𖡻ְְׅ᳝ׅׅ࣪࣪֘ᰰ📚᮫ְׅ᳝࣪᪲⃞̶𝝸𝕝᮫ְ᳝᳝⃨۪۪۪ׅ᳝࣪࣪っְְׅ᳝۪⃨۪۪۪࣪:   𝙁𝘜𝘌𝘕𝘛𝘌: *${randomCharacter.source}*
+> ᠙᳞✿̶᮫᮫ְְׅ᳝ׅ᳝᳞᳞࣪᪲࣪֘⣷ׅ᳝࣪ ࣪࣪𖡻ְְׅ᳝ׅׅ࣪࣪֘ᰰ🆔᮫ְׅ᳝࣪᪲⃞̶𝝸𝕝᮫ְ᳝᳝⃨۪۪۪ׅ᳝࣪࣪っְְׅ᳝۪⃨۪۪۪࣪:   𝙄𝘿: *${randomCharacter.id}*
+꥓໋╰ׅ۬═ֽ̥࣪━᜔๋݈═𑂺ׄ︵ິּ֙᷼⌒݈᳹᪾̯ ⋮꥓ּ࣭ׄ🐦‍🔥⋮⌒ໍּ֣ׄ═ᮣໍ࣭ׄ━𑂺᜔꥓໋┉꥓ׂ᷼━᜔࣭֙━๋݈═̥࣭۬╯`;
 
-async function buscarImagenDelirius(tag) {
-    const formattedTag = formatTag(tag);
-    const apiUrls = [
-        `https://safebooru.org/index.php?page=dapi&s=post&q=index&json=1&tags=${formattedTag}`,
-        `https://danbooru.donmai.us/posts.json?tags=${formattedTag}`,
-        `${global.APIs?.delirius?.url || 'https://api.delirius.cc'}/search/gelbooru?query=${formattedTag}`
-    ];
-    
-    const fetchPromises = apiUrls.map(async (url) => {
-        try {
-            const controller = new AbortController();
-            const timeout = setTimeout(() => controller.abort(), 5000);
-            
-            const response = await fetch(url, {
-                headers: {
-                    'User-Agent': 'Mozilla/5.0',
-                    'Accept': 'application/json'
-                },
-                signal: controller.signal
-            });
-            
-            clearTimeout(timeout);
-            
-            const contentType = response.headers.get('content-type') || '';
-            if (!response.ok || !contentType.includes('application/json')) return [];
-            
-            const data = await response.json();
-            const posts = Array.isArray(data) ? data : data?.posts || data?.data || [];
-            
-            const images = posts.map(post => 
-                post?.file_url || 
-                post?.large_file_url || 
-                post?.sample_url || 
-                post?.media_asset?.variants?.[0]?.url
-            ).filter(url => typeof url === 'string' && /\.(jpe?g|png|webp)$/i.test(url));
-            
-            return images.length ? images : [];
-        } catch (error) {
-            if (error.name !== 'AbortError') {
-                console.error(`Error fetching from ${url}:`, error);
-            }
-            return [];
-        }
-    });
-    
-    const results = await Promise.allSettled(fetchPromises);
-    for (const result of results) {
-        if (result.status === 'fulfilled' && result.value.length > 0) {
-            return result.value;
-        }
-    }
-    return [];
-}
+        const mentions = statusMessage.startsWith('Reclamado por') ? [randomCharacter.user] : [];
+        await conn.sendFile(m.chat, randomImage, `${randomCharacter.name}.jpg`, message, m, { mentions });
 
-let handler = async (m, { conn, usedPrefix, command }) => {
-    const ctxErr = (global.rcanalx || {});
-    const ctxWarn = (global.rcanalw || {});
-    const ctxOk = (global.rcanalr || {});
-    
-    const cooldownTime = 15 * 60 * 1000;
-    
-    try {
-        const chatData = global.db?.data?.chats?.[m.chat] || {};
-        if (!chatData.gacha && m.isGroup) {
-            return await conn.reply(m.chat, 'ꕥ Los comandos de *Gacha* están desactivados en este grupo.\n\nUn *administrador* puede activarlos con el comando:\n» *' + usedPrefix + 'gacha on*', m, ctxWarn);
-        }
-
-        const userData = global.db?.data?.users?.[m.sender] || {};
-        const currentTime = Date.now();
-        
-        if (userData.lastRoll && currentTime < userData.lastRoll + cooldownTime) {
-            const remainingSeconds = Math.ceil((userData.lastRoll + cooldownTime - currentTime) / 1000);
-            const minutes = Math.floor(remainingSeconds / 60);
-            const seconds = remainingSeconds % 60;
-            
-            let timeLeft = '';
-            if (minutes > 0) timeLeft += minutes + ' minuto' + (minutes !== 1 ? 's' : '') + ' ';
-            if (seconds > 0 || timeLeft === '') timeLeft += seconds + ' segundo' + (seconds !== 1 ? 's' : '');
-            
-            return await conn.reply(m.chat, 'ꕥ Debes esperar *' + timeLeft.trim() + '* para usar *' + (usedPrefix + command) + '* de nuevo.', m, ctxWarn);
-        }
-
-        const charactersData = await loadCharacters();
-        const allCharacters = flattenCharacters(charactersData);
-        
-        if (!allCharacters.length) {
-            return await conn.reply(m.chat, 'ꕥ No hay personajes disponibles en la base de datos.', m, ctxErr);
-        }
-
-        const randomCharacter = allCharacters[Math.floor(Math.random() * allCharacters.length)];
-        const characterId = String(randomCharacter.id);
-        const seriesName = getSeriesNameByCharacter(charactersData, randomCharacter.id);
-        
-        const characterTag = formatTag(randomCharacter.tags?.[0] || '');
-        const images = await buscarImagenDelirius(characterTag);
-        
-        if (!images.length) {
-            return await conn.reply(m.chat, 'ꕥ No se encontró imágenes para el personaje *' + randomCharacter.name + '*.', m, ctxErr);
-        }
-
-        const randomImage = images[Math.floor(Math.random() * images.length)];
-
-        if (!global.db.data.characters) global.db.data.characters = {};
-        if (!global.db.data.characters[characterId]) {
-            global.db.data.characters[characterId] = {};
-        }
-
-        const characterDb = global.db.data.characters[characterId];
-        
-        characterDb.name = String(randomCharacter.name || 'Sin nombre');
-        characterDb.value = Number(randomCharacter.value) || 100;
-        characterDb.votes = 0;
-        characterDb.user = null;
-        characterDb.expiresAt = Date.now() + (3 * 60 * 1000);
-
-        const infoText = `
-── { 𝐏𝐄𝐑𝐒𝐎𝐍𝐀𝐉𝐄 𝐀𝐋𝐄𝐀𝐓𝐎𝐑𝐈𝐎 } ──
-
-❀ Nombre » ${randomCharacter.name}
-⚥ Género » ${randomCharacter.gender || 'Desconocido'}
-✰ Valor » ${randomCharacter.value || 100}
-♡ Estado » Libre
-❖ Fuente » ${seriesName}
-ꕤ ɪᴅ » ${randomCharacter.id}`;
-
-        const sentMessage = await conn.sendFile(
-            m.chat, 
-            randomImage, 
-            characterDb.name + '.jpg', 
-            infoText, 
-            m
-        );
-
-        chatData.lastRolledId = characterId;
-        chatData.lastRolledMsgId = sentMessage?.key?.id || null;
-        chatData.lastRolledCharacter = {
-            id: characterId,
-            name: characterDb.name,
-            media: randomImage,
-            expiresAt: characterDb.expiresAt
-        };
-
-        userData.lastRoll = currentTime;
+        cooldowns[userId] = now + 15 * 60 * 1000; // 15 minutos
 
     } catch (error) {
-        console.error('Error en handler de roll:', error);
-        await conn.reply(m.chat, '⚠︎ Se ha producido un problema.\n> Usa *' + usedPrefix + 'report* para informarlo.\n\n' + error.message, m, ctxErr);
+        await conn.reply(m.chat, `✘ Error al cargar el personaje: ${error.message}`, m);
     }
 };
 
-handler.help = ['roll', 'rw', 'rollwaifu'];
+handler.help = ['rw', 'rollwaifu'];
 handler.tags = ['gacha'];
-handler.command = ['rollwaifu', 'rw', 'roll'];
+handler.command = ['rw', 'rollwaifu'];
 handler.group = true;
 
 export default handler;
