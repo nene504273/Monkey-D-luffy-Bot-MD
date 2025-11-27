@@ -80,29 +80,35 @@ let handler = async (m, { conn: _envio, command, usedPrefix, args, text, isOwner
         ].filter(Boolean).join(', ');
       };
 
-      // Formato simple: Nombre y Número (y tiempo activo como detalle)
+      // Formato con decoraciones de texto
       const listaSubBots = users.map((v, i) => 
-`[${i + 1}] 👤 ${v.user.name || 'Sub-Bot'}
-» Número: wa.me/${v.user.jid.replace(/[^0-9]/g, '')}
-» Online: ${v.uptime ? convertirMsADiasHorasMinutosSegundos(Date.now() - v.uptime) : 'Desconocido'}`
+`\n( •́ ⍘ •̀)\n\n✧°•.【 ${i + 1} 】.•°✧
+*${v.user.name || 'Sub-Bot'}*
+  » ☎️ NÚMERO: wa.me/${v.user.jid.replace(/[^0-9]/g, '')}
+  » ⏱️ ONLINE: ${v.uptime ? convertirMsADiasHorasMinutosSegundos(Date.now() - v.uptime) : 'Desconocido'}
+«────────────────»`
       )
-      .join('\n───────────────\n'); // Separador simple
+      .join('');
 
       const finalMessage = listaSubBots.length === 0
-        ? 'No hay Sub-Bots activos.'
+        ? `\n(๑>◡<๑) 𝐍𝐎𝐓𝐀\n\n૮꒰>﹏<꒱ა No hay Sub-Bots activos en este momento.`
         : listaSubBots;
 
-      // Mensaje final limpio y directo
+      // Mensaje final limpio y directo con decoraciones
       const msg = `
-💬 Lista de Sub-Bots Activos: ${users.length} Sesiones
-────────────────
+*╭───────────────────╮*
+*|*                *|*
+*|*    🌐 𝐋𝐈𝐒𝐓𝐀 𝐃𝐄 𝐁𝐎𝐓𝐒 🌐    *|*
+*|*                *|*
+*╰───────────────────╯*
+
+✨ Sub-Bots Activos: *${users.length} Sesiones* ✨
 ${finalMessage}
 `.trim();
 
       await _envio.sendMessage(m.chat, {
         text: msg,
-        // Se mantiene parseMention solo por si el nombre contiene menciones
-        mentions: _envio.parseMention(msg) 
+        mentions: _envio.parseMention(msg) 
       }, { quoted: m });
       break;
     }
