@@ -14,7 +14,7 @@
 "qr": "node index.js qr",
 "code": "node index.js code",
 "test": "node test.js",
-"test2": "nodemon index.js", 
+"test2": "nodemon index.js",
 "eslint": "eslint .",
 "eslintfix": "eslint --fix ."
 },
@@ -31,7 +31,7 @@
 },
 "license": "MIT-License",
 "dependencies": {
-"@whiskeysockets/baileys": "github:GataNina-Li/Baileys",
+"@whiskeysockets/baileys": "github:this-xyz/baileys",
 "@adiwajshing/keyed-db": "^0.2.4",
 "@bochilteam/scraper": "^4.2.4",
 "@bochilteam/scraper-sosmed": "^1.0.5",
