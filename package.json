@@ -14,11 +14,11 @@
     "qr": "node index.js qr",
     "code": "node index.js code",
     "test": "node test.js",
-    "test2": "nodemon index.js",
+    "test2": "nodemon index.js", 
     "eslint": "eslint .",
     "eslintfix": "eslint --fix ."
   },
-  "homepage": "https://github.com/Dioneibi-rip/Ruby-Hoshino-Bot#readme", 
+  "homepage": "https://github.com/Dioneibi-rip/Ruby-Hoshino-Bot",
   "author": {
     "name": "Dioneibi-rip"
   },
@@ -27,7 +27,7 @@
     "url": "git+https://github.com/Dioneibi-rip/Ruby-Hoshino-Bot.git"
   },
   "bugs": {
-    "url": "https://github.com/Dioneibi-rip/Ruby-Hoshino-Bot/issues" 
+    "url": "https://github.com/Dioneibi-rip/Ruby-Hoshino-Bot/issues"
   },
   "license": "MIT-License",
   "dependencies": {
@@ -83,7 +83,7 @@
     "syntax-error": "^1.4.0",
     "terminal-image": "^2.0.0",
     "url-regex-safe": "^3.0.0",
-    "uuid": "^10.0.0",
+"uuid": "^10.0.0",
     "translate-google-api": "^1.0.4",
     "google-it": "^1.6.4",
     "yt-search": "^2.10.3",
