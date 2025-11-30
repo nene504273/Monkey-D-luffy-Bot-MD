@@ -18,7 +18,7 @@
     "eslint": "eslint .",
     "eslintfix": "eslint --fix ."
   },
-  "homepage": "https:                                            
+  "homepage": "https://github.com/Dioneibi-rip/Ruby-Hoshino-Bot#readme", 
   "author": {
     "name": "Dioneibi-rip"
   },
@@ -27,7 +27,7 @@
     "url": "git+https://github.com/Dioneibi-rip/Ruby-Hoshino-Bot.git"
   },
   "bugs": {
-    "url": "https:                                                  
+    "url": "https://github.com/Dioneibi-rip/Ruby-Hoshino-Bot/issues" 
   },
   "license": "MIT-License",
   "dependencies": {
