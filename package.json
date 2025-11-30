@@ -14,7 +14,7 @@
 "qr": "node index.js qr",
 "code": "node index.js code",
 "test": "node test.js",
-"test2": "nodemon index.js", 
+"test2": "nodemon index.js",
 "eslint": "eslint .",
 "eslintfix": "eslint --fix ."
 },
@@ -95,10 +95,10 @@
 "mime-types": "^2.1.35",
 "api-dylux": "^1.7.2",
 "yargs": "^17.3.1",
-"ws": "^8.0.0
-"
+"ws": "^8.0.0"
 },
 "optionalDependencies": {
 "wa-sticker-formatter": "^4.3.2",
 "moment-timezone": "^0.5.37"
+}
 }
