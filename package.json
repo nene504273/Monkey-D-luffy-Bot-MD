@@ -1,37 +1,37 @@
 {
-"name": "Monkey-D-luffy-MD",
-"version": "2.2.0",
-"description": "WhatsApp Bot Multi Device",
-"main": "index.js",
-"type": "module",
-"directories": {
-"lib": "lib",
-"src": "src",
-"plugins": "plugins"
-},
-"scripts": {
-"start": "node index.js",
-"qr": "node index.js qr",
-"code": "node index.js code",
-"test": "node test.js",
-"test2": "nodemon index.js",
-"eslint": "eslint .",
-"eslintfix": "eslint --fix ."
-},
-"homepage": "https://github.com/Dioneibi-rip/Ruby-Hoshino-Bot",
-"author": {
-"name": "Dioneibi-rip"
-},
-"repository": {
-"type": "git",
-"url": "git+https://github.com/Dioneibi-rip/Ruby-Hoshino-Bot.git"
-},
-"bugs": {
-"url": "https://github.com/Dioneibi-rip/Ruby-Hoshino-Bot/issues"
-},
-"license": "MIT-License",
+  "name": "Monkey-D-Luffy-Bot-MD",
+  "version": "3",
+  "description": "WhatsApp Bot Multi Device",
+  "main": "index.js",
+  "type": "module",
+  "directories": {
+    "lib": "lib",
+    "src": "src",
+    "plugins": "plugins"
+  },
+  "scripts": {
+    "start": "node index.js",
+    "qr": "node index.js qr",
+    "code": "node index.js code",
+    "test": "node test.js",
+    "test2": "nodemon index.js",
+    "eslint": "eslint .",
+    "eslintfix": "eslint --fix ."
+  },
+  "homepage": "https://github.com/nevi-dev/Ellen-Joe-Bot-MD",
+  "author": {
+    "name": "nevi-dev"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nevi-dev/Ellen-Joe-Bot-MD.git"
+  },
+  "bugs": {
+    "url": "https://github.com/nevi-dev/Ellen-Joe-Bot-MD/issues"
+  },
+  "license": "MIT-License",
 "dependencies": {
-"@whiskeysockets/baileys": "github:GataNina-Li/Baileys",
+"@whiskeysockets/baileys": "github:CheirZ/bails",
 "@adiwajshing/keyed-db": "^0.2.4",
 "@bochilteam/scraper": "^4.2.4",
 "@bochilteam/scraper-sosmed": "^1.0.5",
@@ -44,9 +44,9 @@
 "axios": "^1.1.2",
 "acrcloud": "^1.4.0",
 "form-data": "^4.0.0",
+"cfonts": "^3.3.0",
 "boxen": "^7.1.1",
 "chalk": "^5.1.0",
-"cfonts": "^3.3.0",
 "url-file-size": "^1.0.5-1",
 "fluid-spotify.js": "*",
 "cheerio": "npm:cheerio@1.0.0-rc.12",
@@ -95,10 +95,9 @@
 "mime-types": "^2.1.35",
 "api-dylux": "^1.7.2",
 "yargs": "^17.3.1",
-"ws": "^8.0.0"
+"adm-zip": "^0.5.10"
 },
 "optionalDependencies": {
 "wa-sticker-formatter": "^4.3.2",
 "moment-timezone": "^0.5.37"
-}
-}
+}}
