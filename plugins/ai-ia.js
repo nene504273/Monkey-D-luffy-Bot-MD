@@ -1,135 +1,183 @@
-import axios from 'axios'
-import fetch from 'node-fetch' // Asegúrate de tener 'node-fetch' instalado
+/* -------------------------------------------------------*/
+/* [❗]                      [❗]                      [❗] */
+/*                                                       */
+/*       |- [ ⚠ ] - CREDITOS DEL CODIGO - [ ⚠ ] -|      */
+/*     —◉ DESAROLLADO POR OTOSAKA:                       */
+/*     ◉ Otosaka (https://github.com/6otosaka9)          */
+/*     ◉ Número: wa.me/51993966345                       */
+/*                                                       */
+/*     —◉ FT:                                            */
+/*     ◉ BrunoSobrino (https://github.com/BrunoSobrino)  */
+/*                                                       */
+/* [❗]                      [❗]                      [❗] */
+/* -------------------------------------------------------*/
+import axios from 'axios';
+import fs from 'fs';
 
-// ====================================================================
-// --- CONSTANTES Y VARIABLES DEL ENTORNO DEL BOT ---
-// (¡DEBES DEFINIR O ASEGURARTE DE QUE ESTAS CONSTANTES EXISTAN!)
-const botname = 'LuminAI' 
-const etiqueta = 'El Creador'
-const vs = '2.1'
-const emoji = '🤖'
-const emoji2 = '🧠'
-const rwait = '⏳'
-const done = '✅'
-const error = '❌'
-const msm = '[BOT-LOG]' 
-
-// ====================================================================
-
-let handler = async (m, { conn, usedPrefix, command, text }) => {
-    
-    const isQuotedImage = m.quoted && (m.quoted.msg || m.quoted).mimetype && (m.quoted.msg || m.quoted).mimetype.startsWith('image/')
-    const username = `${conn.getName(m.sender)}`
-    
-    // El prompt base AHORA SOLO se usa para darle contexto inicial, NO se envía a la API de Kirito
-    const basePrompt = `Tu nombre es ${botname} y parece haber sido creada por ${etiqueta}. Tu versión actual es ${vs}, Tú usas el idioma Español. Llamarás a las personas por su nombre ${username}, te gusta ser divertida, y te encanta aprender. Lo más importante es que debes ser amigable con la persona con la que estás hablando. ${username}`
-
-    // --- LÓGICA PARA IMAGEN (Mantiene la API original: Luminai.my.id para el análisis) ---
-    if (isQuotedImage) {
-        const q = m.quoted
-        const img = await q.download?.()
-        if (!img) {
-            console.error(`${msm} Error: No image buffer available`)
-            return conn.reply(m.chat, '✘ ChatGpT no pudo descargar la imagen.', m)
-        }
-        
-        const content = `${emoji} ¿Qué se observa en la imagen?`
-        try {
-            // Paso 1: Analizar la imagen con la API original
-            const imageAnalysis = await fetchImageBuffer(content, img) 
-            
-            // Paso 2: Crear la pregunta combinando el prompt de personalidad y el análisis
-            // Esto se hace para que el modelo de Kirito tenga más contexto.
-            const combinedQuery = `${basePrompt}. Descríbeme la imagen (${imageAnalysis.result}) y detalla por qué actúan así. También dime quién eres.`
-            
-            // Paso 3: Obtener la respuesta final de chat con la nueva API (usando la pregunta combinada)
-            const description = await kirito_chatgpt(combinedQuery) 
-            await conn.reply(m.chat, description, m)
-        } catch (e) {
-            console.error(`${msm} Error en el análisis de imagen/chat:`, e)
-            await m.react(error)
-            await conn.reply(m.chat, '✘ ChatGpT no pudo analizar la imagen.', m)
-        }
-    } 
-    // --- LÓGICA PARA TEXTO (Usa la nueva API: api.kirito.my) ---
-    else {
-        if (!text) { 
-            return conn.reply(m.chat, `${emoji} Ingrese una petición para que el ChatGpT lo responda.`, m)
-        }
-        
-        await m.react(rwait)
-        try {
-            const { key } = await conn.sendMessage(m.chat, {text: `${emoji2} ChatGPT está procesando tu petición, espera unos segundos.`}, {quoted: m})
-            
-            // Combinamos la personalidad y la pregunta del usuario en una sola consulta
-            const combinedQuery = `${basePrompt}. Responde lo siguiente: ${text}`
-
-            // LLAMADA A LA FUNCIÓN CHAT CON LA API DE Kirito
-            const response = await kirito_chatgpt(combinedQuery) 
-            
-            await conn.sendMessage(m.chat, {text: response, edit: key})
-            await m.react(done)
-        } catch (e) {
-            console.error(`${msm} Error en la respuesta de texto:`, e)
-            await m.react(error)
-            await conn.reply(m.chat, '✘ ChatGpT no puede responder a esa pregunta.', m)
-        }
+// Lista de APIs alternativas para ChatGPT
+const APIs = [
+    {
+        name: 'Skynex',
+        url: 'https://skynex.boxmine.xyz/docs/ai/myprompt',
+        params: (text, prompt) => `?text=${encodeURIComponent(text)}&prompt=${encodeURIComponent(prompt)}&apikey=BrunoSobrino`,
+        response: (data) => data.answer
+    },
+    {
+        name: 'Widipe',
+        url: 'https://api.widipe.com/openai',
+        params: (text) => `?text=${encodeURIComponent(text)}`,
+        response: (data) => data.result || data.response || data.answer
+    },
+    {
+        name: 'Vihangayt',
+        url: 'https://api.vihangayt.com/tools/chatgpt',
+        params: (text) => `?q=${encodeURIComponent(text)}`,
+        response: (data) => data.data || data.result
+    },
+    {
+        name: 'Lolhuman',
+        url: 'https://api.lolhuman.xyz/api/openai',
+        params: (text) => `?apikey=GataDios&text=${encodeURIComponent(text)}`,
+        response: (data) => data.result
+    },
+    {
+        name: 'Ryzen',
+        url: 'https://api.ryzendesu.vip/api/ai/chatgpt',
+        params: (text) => `?text=${encodeURIComponent(text)}`,
+        response: (data) => data.response || data.result
     }
-}
+];
 
-handler.help = ['ia', 'chatgpt']
-handler.tags = ['ai']
-handler.register = true
-handler.command = ['ia', 'chatgpt', 'luminai']
-handler.group = true
-
-export default handler
-
-// Función de utilidad
-const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
-
-// ====================================================================
-// --- FUNCIONES DE API ---
-
-// 1. Función para la interacción de CHAT (Usando api.kirito.my)
-async function kirito_chatgpt(query) {
+const handler = async (m, {conn, text, usedPrefix, command}) => {
     try {
-        // La URL de la nueva API
-        const url = `https://api.kirito.my/api/chatgpt?q=${encodeURIComponent(query)}&apikey=by_deylin`;
-        
-        const response = await fetch(url)
-        const data = await response.json()
+        const datas = global;
+        const idioma = datas.db.data.users[m.sender].language || global.defaultLenguaje;
 
-        // Asumimos que la respuesta está en 'data.result' o 'data.response'
-        if (data.result) {
-            return data.result
-        } else if (data.response) {
-            return data.response
-        } else {
-            // Si hay un error, Kirito podría devolver un mensaje en 'data.msg' o 'data.message'
-            return data.msg || data.message || `✘ Error: La API de Kirito no devolvió un resultado válido. JSON: ${JSON.stringify(data)}`
+        // Detectar si el bot fue etiquetado
+        const botJid = conn.user.jid;
+        const isTagged = m.mentionedJid && m.mentionedJid.includes(botJid);
+
+        // Si es una etiqueta, extraer el texto después de la mención
+        let inputText = text;
+        if (isTagged && m.text) {
+            // Remover la etiqueta del texto
+            inputText = m.text.replace(/@\d+/g, '').trim();
         }
-        
-    } catch (error) {
-        console.error(`${msm} Error al obtener la respuesta de Kirito:`, error)
-        throw new Error('Error en la conexión con la API de Kirito.')
-    }
-}
 
-// 2. Función para el análisis de IMAGEN (Mantiene la API original: Luminai.my.id)
-async function fetchImageBuffer(content, imageBuffer) {
-    try {
-        const response = await axios.post('https://Luminai.my.id', {
-            content: content,
-            imageBuffer: imageBuffer
-        }, {
-            headers: {
-                'Content-Type': 'application/json'
+        // Leer y parsear el archivo de idioma con mejor manejo de errores
+        let _translate;
+        let tradutor;
+
+        try {
+            _translate = JSON.parse(fs.readFileSync(`./src/languages/${idioma}.json`));
+            // Verificar si existe la ruta completa del traductor
+            tradutor = _translate?.plugins?.herramientas?.chatgpt;
+        } catch (langError) {
+            console.log('Error leyendo archivo de idioma:', langError);
+            // Usar valores por defecto si no se puede leer el archivo
+            tradutor = null;
+        }
+
+        // Definir textos por defecto si no se pueden cargar del archivo de idioma
+        const defaultTexts = {
+            texto1: ['❌ *Ingresa un texto*\n\n📌 Ejemplo: ', '', 'Hola, ¿cómo estás?'],
+            texto3: 'Actúa como ChatGPT, la IA conversacional desarrollada por OpenAI. Responde de manera útil y amigable.',
+            texto4: '❌ Error. Vuelva a intentarlo.'
+        };
+
+        // Usar traductor si existe, sino usar textos por defecto
+        const texts = tradutor || defaultTexts;
+
+        if (usedPrefix == 'a' || usedPrefix == 'A') return;
+
+        // Si no hay texto y no es una etiqueta, mostrar error
+        if (!inputText && !isTagged) {
+            const errorMsg = texts.texto1 
+                ? `${texts.texto1[0]} ${usedPrefix + command} ${texts.texto1[1]} ${usedPrefix + command} ${texts.texto1[2]}`
+                : `❌ *Ingresa un texto*\n\n📌 Ejemplo: ${usedPrefix + command} Hola, ¿cómo estás?\n\n💡 *También puedes etiquetarme:* @Luna-Bot ¿Cómo estás?`;
+            throw errorMsg;
+        }
+
+        // Si es una etiqueta sin texto, usar un saludo por defecto
+        if (isTagged && !inputText) {
+            inputText = "Hola, ¿cómo estás?";
+        }
+
+        conn.sendPresenceUpdate('composing', m.chat);
+
+        const prompt = texts.texto3 || 'Actúa como ChatGPT, la IA conversacional desarrollada por OpenAI. Responde de manera útil y amigable.';
+
+        // Intentar con cada API hasta que una funcione
+        let response = null;
+        let lastError = null;
+
+        for (const api of APIs) {
+            try {
+                console.log(`🔄 Intentando con API: ${api.name}`);
+
+                const url = api.url + api.params(inputText, prompt);
+
+                const result = await axios.get(url, {
+                    timeout: 15000, // 15 segundos por API
+                    headers: {
+                        'User-Agent': 'Mozilla/5.0 (compatible; WhatsApp-Bot/1.0)'
+                    }
+                });
+
+                const data = result.data;
+                const answer = api.response(data);
+
+                if (answer && answer.trim()) {
+                    response = answer.trim();
+                    console.log(`✅ API ${api.name} funcionó correctamente`);
+                    break;
+                } else {
+                    console.log(`⚠️ API ${api.name} no retornó respuesta válida`);
+                }
+
+            } catch (error) {
+                console.log(`❌ API ${api.name} falló:`, error.response?.status || error.code || error.message);
+                lastError = error;
+                continue;
             }
-        })
-        return response.data
+        }
+
+        if (response) {
+            // Limitar la respuesta a 4000 caracteres para evitar mensajes muy largos
+            if (response.length > 4000) {
+                response = response.substring(0, 3950) + '\n\n_[Respuesta truncada]_';
+            }
+
+            // Si fue etiquetado, mencionar al usuario
+            if (isTagged) {
+                m.reply(`🌙 *Luna-Botv6*\n\n${response}`, null, { mentions: [m.sender] });
+            } else {
+                m.reply(`🌙 *Luna-Botv6*\n\n${response}`);
+            }
+        } else {
+            throw new Error('Todas las APIs fallaron');
+        }
+
     } catch (error) {
-        console.error(`${msm} Error al analizar la imagen:`, error)
-        throw error
+        console.error('Error en ChatGPT handler:', error.message || error);
+
+        // Manejo específico de errores
+        if (error.message === 'Todas las APIs fallaron') {
+            m.reply('❌ *Todas las APIs de ChatGPT están temporalmente fuera de servicio.*\n\n⏰ _Intenta nuevamente en unos minutos._');
+        } else if (typeof error === 'string') {
+            // Es un error de validación (como falta de texto)
+            m.reply(error);
+        } else if (error.code === 'ENOTFOUND') {
+            m.reply('❌ *Error de conexión*\n\n📡 _Verifica tu conexión a internet._');
+        } else if (error.code === 'ETIMEDOUT') {
+            m.reply('❌ *Tiempo de espera agotado*\n\n⏰ _La solicitud tardó demasiado. Inténtalo nuevamente._');
+        } else {
+            // Usar mensaje de error del traductor si está disponible
+            const errorMsg = texts?.texto4 || '❌ Error. Vuelva a intentarlo.';
+            m.reply(errorMsg);
+        }
     }
-}
+};
+
+handler.command = /^(openai|chatgpt|ia|robot|openai2|chatgpt2|ia2|robot2|Mystic|MysticBot)$/i;
+export default handler;
