@@ -4,13 +4,13 @@ import fetch from 'node-fetch'
 // ------------------------------------------
 // --- CONFIGURACIÓN DE LA API DE CHATGPT ---
 // ------------------------------------------
-// ¡REEMPLAZA ESTOS VALORES CON LOS REALES!
-const NEVI_API_KEY = 'TU_CLAVE_API_AQUI'; // ❌ CAMBIA ESTO CON TU CLAVE REAL
-const NEVI_CHATGPT_ENDPOINT = 'http://neviapi.ddns.net:5000/chatgpt'; // ⚠️ AJUSTA EL ENDPOINT SI ES DIFERENTE
+// ¡AHORA SE LEE DE LAS VARIABLES DE ENTORNO!
+// DEBES CONFIGURAR NEVI_API_KEY en tu archivo .env o en el entorno de tu servidor
+const NEVI_API_KEY = process.env.NEVI_API_KEY; 
+const NEVI_CHATGPT_ENDPOINT = process.env.NEVI_CHATGPT_ENDPOINT || 'http://neviapi.ddns.net:5000/chatgpt'; 
 // ------------------------------------------
 
 // --- Variables de Ejemplo (Asumo que están definidas globalmente en tu bot) ---
-// Si tu bot no tiene estas variables (global.botname, etc.), debes definirlas o reemplazarlas.
 const getGlobalVar = (name, defaultValue) => global[name] || defaultValue;
 const botname = getGlobalVar('botname', 'ChatGPT Bot');
 const etiqueta = getGlobalVar('etiqueta', 'Mi Creador');
@@ -23,11 +23,11 @@ const error = '❌';
 // -----------------------------------------------------------------------------
 
 let handler = async (m, { conn, usedPrefix, command, text }) => {
-    
+
     const isQuotedImage = m.quoted && (m.quoted.msg || m.quoted).mimetype && (m.quoted.msg || m.quoted).mimetype.startsWith('image/')
     const username = `${conn.getName(m.sender)}`
     const basePrompt = `Tu nombre es ${botname} y parece haber sido creada por ${etiqueta}. Tu versión actual es ${vs}, Tú usas el idioma Español. Llamarás a las personas por su nombre ${username}, te gusta ser divertida, y te encanta aprender. Lo más importante es que debes ser amigable con la persona con la que estás hablando. ${username}`
-    
+
     // --- LÓGICA DE PROCESAMIENTO DE IMAGEN (Aún usa el endpoint original, solo la función 'luminsesi' fue reemplazada) ---
     if (isQuotedImage) {
         const q = m.quoted
@@ -50,11 +50,11 @@ let handler = async (m, { conn, usedPrefix, command, text }) => {
     // --- LÓGICA DE PROCESAMIENTO DE TEXTO (USA NEVI API) ---
     } else {
         if (!text) { return conn.reply(m.chat, `${emoji} Ingrese una petición para que el ChatGpT lo responda.`, m)}
-        
-        // Bloqueo de seguridad para la clave API
-        if (!NEVI_API_KEY || NEVI_API_KEY === 'TU_CLAVE_API_AQUI') {
+
+        // Bloqueo de seguridad para la clave API (la validación ahora solo comprueba si está vacía)
+        if (!NEVI_API_KEY) {
             await m.react(error)
-            return conn.reply(m.chat, '❌ Error de Configuración: La clave de la API de Nevi no ha sido reemplazada. Por favor, edita el código.', m);
+            return conn.reply(m.chat, '❌ Error de Configuración: La clave de la API de Nevi no ha sido cargada del entorno. Por favor, revisa tus variables.', m);
         }
 
         await m.react(rwait)
@@ -89,11 +89,12 @@ async function fetchImageBuffer(content, imageBuffer) {
     try {
         const response = await axios.post('https://Luminai.my.id', {
             content: content,
-            imageBuffer: imageBuffer 
+            imageBuffer: imageBuffer 
         }, {
             headers: {
-                'Content-Type': 'application/json' 
-            }})
+                'Content-Type': 'application/json' 
+            }
+        })
         return response.data
     } catch (error) {
         console.error('Error en fetchImageBuffer:', error)
@@ -115,12 +116,12 @@ async function luminsesi(q, username, logic) {
 
         // Intentamos extraer el resultado. Ajusta si el formato de respuesta de Nevi es diferente.
         const result = response.data.result || response.data.response || response.data.text || JSON.stringify(response.data);
-        
+
         // Si el resultado es una cadena vacía o nula, lanzamos un error para que lo capture el 'catch'
         if (!result) {
             throw new Error("Respuesta vacía o inesperada de la Nevi API.");
         }
-        
+
         return result;
 
     } catch (error) {
