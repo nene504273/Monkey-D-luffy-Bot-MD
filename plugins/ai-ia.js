@@ -50,7 +50,8 @@ let handler = async (m, { conn, usedPrefix, command, text }) => {
             
             await conn.reply(m.chat, description, m)
             
-        } catch {
+        } catch (e) {
+            console.error(e)
             await m.react(error)
             await conn.reply(m.chat, '✘ ChatGpT no pudo analizar la imagen.', m)
         }
@@ -101,10 +102,10 @@ async function fetchImageBuffer(content, imageBuffer) {
     try {
         const response = await axios.post('https://Luminai.my.id', {
             content: content,
-            imageBuffer: imageBuffer    
+            imageBuffer: imageBuffer   
         }, {
             headers: {
-                'Content-Type': 'application/json'    
+                'Content-Type': 'application/json'   
             }
         })
         // Asumiendo que esta API devuelve el resultado en 'result'
@@ -118,7 +119,6 @@ async function fetchImageBuffer(content, imageBuffer) {
 // Función MODIFICADA para interactuar con la IA (API de Bing Chat/anabot.my.id)
 async function luminsesi(q, username, logic) {
     try {
-        // La API de Bing Chat solo necesita el 'prompt' final (que está en 'logic')
         const finalPrompt = logic; 
 
         // API de Bing Chat con la clave gratuita
@@ -126,17 +126,18 @@ async function luminsesi(q, username, logic) {
 
         const response = await axios.get(apiUrl);
 
-        // Intenta extraer el resultado de la respuesta, manejando posibles estructuras.
+        // Intenta extraer el resultado de la respuesta
         if (response.data && response.data.result) {
             return response.data.result;
         } else if (response.data && response.data.response) {
             return response.data.response;
         } else if (response.data && response.data.answer) {
-             return response.data.answer;
+            return response.data.answer;
         } else {
-            // Fallback si la estructura no es la esperada
-            console.warn(`${msm} Estructura de respuesta inesperada, devolviendo JSON completo.`);
-            return `[Respuesta de la IA] ${JSON.stringify(response.data)}`; 
+            // LANZAR ERROR: Si la estructura no es la esperada, lanza un error
+            // que será capturado por el bloque 'catch' principal del handler.
+            console.warn(`${msm} Estructura de respuesta inesperada: No se encontró 'result', 'response', ni 'answer' en la API.`, response.data);
+            throw new Error('Respuesta de la API sin el campo de texto esperado.'); 
         }
 
     } catch (error) {
