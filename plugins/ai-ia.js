@@ -1,28 +1,32 @@
 import axios from 'axios'
-import fetch from 'node-fetch' // Asegúrate de que node-fetch esté instalado (npm install node-fetch)
+import fetch from 'node-fetch' // Asegúrate de tener 'node-fetch' instalado (npm install node-fetch)
 
-// Aquí deberías definir 'botname', 'etiqueta', 'vs', 'msm', 'emoji', 'emoji2', 'rwait', 'done', 'error'
-// Como estos no están definidos en tu fragmento, los omito, pero asumo que existen en tu entorno.
+// ====================================================================
+// --- CONSTANTES Y VARIABLES DEL ENTORNO DEL BOT ---
+// (¡DEBES ASEGURARTE DE QUE ESTAS CONSTANTES ESTÉN DEFINIDAS!)
+
+// Ejemplo de definición de constantes:
+const botname = 'LuminAI' 
+const etiqueta = 'El Creador'
+const vs = '2.1'
+const emoji = '🤖'
+const emoji2 = '🧠'
+const rwait = '⏳'
+const done = '✅'
+const error = '❌'
+const msm = '[BOT-LOG]' 
+
+// ====================================================================
 
 let handler = async (m, { conn, usedPrefix, command, text }) => {
-    // Variables de entorno o predefinidas (Asegúrate de que existan)
-    const botname = 'MiBot' 
-    const etiqueta = 'Creador'
-    const vs = '1.0'
-    const emoji = '🤖'
-    const emoji2 = '🧠'
-    const rwait = '⏳'
-    const done = '✅'
-    const error = '❌'
-    const msm = 'MSM' // Mensaje de sistema
-
+    
     const isQuotedImage = m.quoted && (m.quoted.msg || m.quoted).mimetype && (m.quoted.msg || m.quoted).mimetype.startsWith('image/')
     const username = `${conn.getName(m.sender)}`
     
     // El prompt base para darle personalidad a la IA
     const basePrompt = `Tu nombre es ${botname} y parece haber sido creada por ${etiqueta}. Tu versión actual es ${vs}, Tú usas el idioma Español. Llamarás a las personas por su nombre ${username}, te gusta ser divertida, y te encanta aprender. Lo más importante es que debes ser amigable con la persona con la que estás hablando. ${username}`
 
-    // --- LÓGICA PARA IMAGEN (Mantiene la API original: Luminai.my.id) ---
+    // --- LÓGICA PARA IMAGEN (Mantiene la API original: Luminai.my.id para el análisis) ---
     if (isQuotedImage) {
         const q = m.quoted
         const img = await q.download?.()
@@ -33,17 +37,20 @@ let handler = async (m, { conn, usedPrefix, command, text }) => {
         
         const content = `${emoji} ¿Qué se observa en la imagen?`
         try {
-            const imageAnalysis = await fetchImageBuffer(content, img) // Usa Luminai.my.id
+            // Paso 1: Analizar la imagen con la API original
+            const imageAnalysis = await fetchImageBuffer(content, img) 
+            
+            // Paso 2: Crear el prompt con la descripción del análisis
             const query = `${emoji} Descríbeme la imagen y detalla por qué actúan así. También dime quién eres`
             const prompt = `${basePrompt}. La imagen que se analiza es: ${imageAnalysis.result}`
             
-            // Reutilizamos la nueva función de chat para procesar la descripción
-            const description = await anabot_chatgpt(prompt) // Usa anabot.my.id
+            // Paso 3: Obtener la respuesta final de chat con la nueva API
+            const description = await anabot_chatgpt(prompt) 
             await conn.reply(m.chat, description, m)
         } catch (e) {
-            console.error(e)
+            console.error(`${msm} Error en el análisis de imagen/chat:`, e)
             await m.react(error)
-            await conn.reply(m.chat, '✘ ChatGpT no pudo analizar la imagen. Intentando con la otra API falló.', m)
+            await conn.reply(m.chat, '✘ ChatGpT no pudo analizar la imagen.', m)
         }
     } 
     // --- LÓGICA PARA TEXTO (Usa la nueva API: anabot.my.id) ---
@@ -59,13 +66,13 @@ let handler = async (m, { conn, usedPrefix, command, text }) => {
             const query = text
             const prompt = `${basePrompt}. Responde lo siguiente: ${query}`
             
-            // 💡 LLAMADA A LA NUEVA FUNCIÓN CON LA API DE anabot.my.id
+            // LLAMADA A LA FUNCIÓN CHAT CON LA API DE anabot.my.id
             const response = await anabot_chatgpt(prompt) 
             
             await conn.sendMessage(m.chat, {text: response, edit: key})
             await m.react(done)
         } catch (e) {
-            console.error(e)
+            console.error(`${msm} Error en la respuesta de texto:`, e)
             await m.react(error)
             await conn.reply(m.chat, '✘ ChatGpT no puede responder a esa pregunta.', m)
         }
@@ -83,10 +90,11 @@ export default handler
 // Función de utilidad
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 
-// -----------------------------------------------------
+// ====================================================================
 // --- FUNCIONES DE API ---
 
 // 1. Función para la interacción de CHAT (Usando anabot.my.id)
+// Esta versión es más flexible para manejar diferentes estructuras de JSON.
 async function anabot_chatgpt(prompt) {
     try {
         // La URL de la nueva API, que incluye el prompt y la apikey
@@ -95,22 +103,33 @@ async function anabot_chatgpt(prompt) {
         const response = await fetch(apiUrl)
         const data = await response.json()
 
-        // **IMPORTANTE:** Asumimos que la respuesta de la IA está en 'data.result'
-        if (data.status && data.result) {
+        // 1. Verificar si la API devuelve un mensaje de error explícito
+        if (data.status === false || data.error || data.message === "Error") {
+            return data.message || data.error || 'La API devolvió un error (status: false o error en el mensaje).'
+        }
+        
+        // 2. Intentar encontrar el resultado en campos comunes
+        if (data.result) {
             return data.result
+        } else if (data.response) {
+            return data.response
+        } else if (data.reply) {
+            return data.reply
+        } else if (data.text) {
+            return data.text
         } else {
-            // Si la estructura no es la esperada o hay un mensaje de error
-            return data.msg || data.message || 'Error desconocido de la API de anabot.my.id'
+            // 3. Si no se encuentra ningún campo conocido, devolver mensaje de depuración
+            console.error(`${msm} Respuesta de API inesperada:`, data);
+            return '✘ La respuesta de la API no contiene el campo de resultado esperado (result, response, reply, o text). Revisa la consola para ver el JSON completo.'
         }
         
     } catch (error) {
-        console.error(`Error al obtener la respuesta de anabot.my.id:`, error)
+        console.error(`${msm} Error al obtener la respuesta de anabot.my.id:`, error)
         throw new Error('Error en la conexión con la API de BingChat.')
     }
 }
 
 // 2. Función para el análisis de IMAGEN (Mantiene la API original: Luminai.my.id)
-// Esta función usa AXIOS, no fetch.
 async function fetchImageBuffer(content, imageBuffer) {
     try {
         const response = await axios.post('https://Luminai.my.id', {
@@ -123,7 +142,7 @@ async function fetchImageBuffer(content, imageBuffer) {
         })
         return response.data
     } catch (error) {
-        console.error('Error al analizar la imagen:', error)
+        console.error(`${msm} Error al analizar la imagen:`, error)
         throw error
     }
 }
