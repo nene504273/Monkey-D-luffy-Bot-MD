@@ -1,12 +1,22 @@
 <div align="center">
-  <img src=      "https://files.catbox.moe/8e0clq.mp4" alt="Luffy Gear 5 Banner" width="100%" style="border-radius: 15px; box-shadow: 0px 0px 20px rgba(255, 0, 0, 0.8);">
+  <video controls autoplay loop muted width="100%" style="border-radius: 15px; box-shadow: 0px 0px 20px rgba(255, 0, 0, 0.8);">
+    <source src="https://files.catbox.moe/8e0clq.mp4" type="video/mp4">
+    Tu navegador no soporta la etiqueta de video.
+  </video>
 </div>
 
 <h1 align="center">👒 Monkey D. Luffy Bot - MD ⚡</h1>
 
 <div align="center">
-  <a href="https://git.io/typing-svg">
-    <img src="https://readme-typing-svg.demolab.com?font=Fira+Code&weight=600&size=25&pause=1000&color=F70000&center=true&vCenter=true&width=435&lines=YO+SERE+EL+REY+DE+LOS+PIRATAS;MONKEY+D.+LUFFY+BOT+MD;BIENVENIDO+A+GRAND+LINE;GEAR+5+ACTIVADO+%E2%9A%A1;CREADO+POR+NENE504273" alt="Typing SVG" />
+  <a href="https://git.io/typing-svg">
+    <img
+ src="https://readme-typing-svg.demolab.com?font=Fira+Code&weight=600&size=25&pause=1000&color=F70000&center=true&vCenter=true&width=435&lines=YO+SERE+EL+REY+DE+LOS+PIRATAS;MONKEY+D.+LUFFY+BOT+MD;BIENVENIDO+A+GRAND+LINE;GEAR+5+ACTIVADO+%E2%9A%A1;CREADO+POR+NENE504273" alt="Typing SVG" />
+  </a>
+</div>
+... (El resto del contenido) src="https://readme-typing-svg.demolab.com?font=Fira+Code&weight=600&size=25&pause=1000&color=F70000&center=true&vCenter=true&width=435&lines=YO+SERE+EL+REY+DE+LOS+PIRATAS;MONKEY+D.+LUFFY+BOT+MD;BIENVENIDO+A+GRAND+LINE;GEAR+5+ACTIVADO+%E2%9A%A1;CREADO+POR+NENE504273" alt="Typing SVG" />
+  </a>
+</div>
+... (El resto del contenido) src="https://readme-typing-svg.demolab.com?font=Fira+Code&weight=600&size=25&pause=1000&color=F70000&center=true&vCenter=true&width=435&lines=YO+SERE+EL+REY+DE+LOS+PIRATAS;MONKEY+D.+LUFFY+BOT+MD;BIENVENIDO+A+GRAND+LINE;GEAR+5+ACTIVADO+%E2%9A%A1;CREADO+POR+NENE504273" alt="Typing SVG" />
   </a>
 </div>
 
