@@ -1,49 +1,39 @@
 <div align="center">
-  <video controls autoplay loop muted width="100%" style="border-radius: 15px; box-shadow: 0px 0px 20px rgba(255, 0, 0, 0.8);">
-    <source src="https://files.catbox.moe/8e0clq.mp4" type="video/mp4">
-    Tu navegador no soporta la etiqueta de video.
-  </video>
+  <img src=      "https://files.catbox.moe/8e0clq.mp4" alt="Luffy Gear 5 Banner" width="100%" style="border-radius: 15px; box-shadow: 0px 0px 20px rgba(255, 0, 0, 0.8);">
 </div>
 
 <h1 align="center">👒 Monkey D. Luffy Bot - MD ⚡</h1>
 
 <div align="center">
   <a href="https://git.io/typing-svg">
-    <img
- src="https://readme-typing-svg.demolab.com?font=Fira+Code&weight=600&size=25&pause=1000&color=F70000&center=true&vCenter=true&width=435&lines=YO+SERE+EL+REY+DE+LOS+PIRATAS;MONKEY+D.+LUFFY+BOT+MD;BIENVENIDO+A+GRAND+LINE;GEAR+5+ACTIVADO+%E2%9A%A1;CREADO+POR+NENE504273" alt="Typing SVG" />
+    <img src="https://readme-typing-svg.demolab.com?font=Fira+Code&weight=600&size=25&pause=1000&color=F70000&center=true&vCenter=true&width=435&lines=YO+SERE+EL+REY+DE+LOS+PIRATAS;MONKEY+D.+LUFFY+BOT+MD;BIENVENIDO+A+GRAND+LINE;GEAR+5+ACTIVADO+%E2%9A%A1;CREADO+POR+NENE504273" alt="Typing SVG" />
   </a>
-</div>
-... (El resto del contenido) src="https://readme-typing-svg.demolab.com?font=Fira+Code&weight=600&size=25&pause=1000&color=F70000&center=true&vCenter=true&width=435&lines=YO+SERE+EL+REY+DE+LOS+PIRATAS;MONKEY+D.+LUFFY+BOT+MD;BIENVENIDO+A+GRAND+LINE;GEAR+5+ACTIVADO+%E2%9A%A1;CREADO+POR+NENE504273" alt="Typing SVG" />
-  </a>
-</div>
-... (El resto del contenido) src="https://readme-typing-svg.demolab.com?font=Fira+Code&weight=600&size=25&pause=1000&color=F70000&center=true&vCenter=true&width=435&lines=YO+SERE+EL+REY+DE+LOS+PIRATAS;MONKEY+D.+LUFFY+BOT+MD;BIENVENIDO+A+GRAND+LINE;GEAR+5+ACTIVADO+%E2%9A%A1;CREADO+POR+NENE504273" alt="Typing SVG" />
-  </a>
 </div>
 
 <p align="center">
-  <em>"¡No voy a perder contra nadie, porque voy a ser el Rey de los Piratas!" 🏴‍☠️</em>
+  <em>"¡No voy a perder contra nadie, porque voy a ser el Rey de los Piratas!" 🏴‍☠️</em>
 </p>
 
 <div align="center">
-  
-  <a href="https://github.com/nene504273/Monkey-D-luffy-Bot-MD">
-    <img src="https://img.shields.io/badge/Versión-3.0.0-FF0000?style=for-the-badge&logo=github&logoColor=white" alt="Version">
-  </a>
-  <a href="https://github.com/nene504273/Monkey-D-luffy-Bot-MD/network/members">
-     <img src="https://img.shields.io/github/forks/nene504273/Monkey-D-luffy-Bot-MD?style=for-the-badge&color=FFD700" alt="Forks">
-  </a>
-  <a href="https://github.com/nene504273/Monkey-D-luffy-Bot-MD/stargazers">
-    <img src="https://img.shields.io/github/stars/nene504273/Monkey-D-luffy-Bot-MD?style=for-the-badge&color=blue" alt="Stars">
-  </a>
+  
+  <a href="https://github.com/nene504273/Monkey-D-luffy-Bot-MD">
+    <img src="https://img.shields.io/badge/Versión-3.0.0-FF0000?style=for-the-badge&logo=github&logoColor=white" alt="Version">
+  </a>
+  <a href="https://github.com/nene504273/Monkey-D-luffy-Bot-MD/network/members">
+     <img src="https://img.shields.io/github/forks/nene504273/Monkey-D-luffy-Bot-MD?style=for-the-badge&color=FFD700" alt="Forks">
+  </a>
+  <a href="https://github.com/nene504273/Monkey-D-luffy-Bot-MD/stargazers">
+    <img src="https://img.shields.io/github/stars/nene504273/Monkey-D-luffy-Bot-MD?style=for-the-badge&color=blue" alt="Stars">
+  </a>
 
-  <br><br>
+  <br><br>
 
-  <a href="https://chat.whatsapp.com/GoCTBX17WRV9PqwHGXm43G?mode=wwt">
-    <img src="https://img.shields.io/badge/Unirse%20al%20Grupo-25D366?style=for-the-badge&logo=whatsapp&logoColor=white" alt="Grupo WhatsApp">
-  </a>
-  <a href="https://wa.me/+58 424-4144821?text=Hola+quiero+info+del+bot">
-    <img src="https://img.shields.io/badge/Soporte%20Creador-25D366?style=for-the-badge&logo=whatsapp&logoColor=white" alt="Soporte">
-  </a>
+  <a href="https://chat.whatsapp.com/GoCTBX17WRV9PqwHGXm43G?mode=wwt">
+    <img src="https://img.shields.io/badge/Unirse%20al%20Grupo-25D366?style=for-the-badge&logo=whatsapp&logoColor=white" alt="Grupo WhatsApp">
+  </a>
+  <a href="https://wa.me/+58 424-4144821?text=Hola+quiero+info+del+bot">
+    <img src="https://img.shields.io/badge/Soporte%20Creador-25D366?style=for-the-badge&logo=whatsapp&logoColor=white" alt="Soporte">
+  </a>
 </div>
 
 ---
@@ -79,12 +69,12 @@
 <summary><b>⚡ CLIC PARA VER COMANDOS</b></summary>
 <br>
 
-### 1. Dar permisos a Termux  
+### 1. Dar permisos a Termux  
 ```bash
 termux-setup-storage
 ```
 
-### 2. Actualizar paquetes  
+### 2. Actualizar paquetes  
 ```bash
 apt update
 ```
@@ -93,7 +83,7 @@ apt update
 apt upgrade -y
 ```
 
-### 3. Instalar dependencias  
+### 3. Instalar dependencias  
 ```bash
 pkg install git -y
 ```
@@ -114,7 +104,7 @@ pkg install imagemagick -y
 pkg install yarn -y
 ```
 
-### 4. Clonar repositorio  
+### 4. Clonar repositorio  
 ```bash
 git clone https://github.com/nene504273/Monkey-D-luffy-Bot-MD
 ```
@@ -123,7 +113,7 @@ git clone https://github.com/nene504273/Monkey-D-luffy-Bot-MD
 cd Monkey-D-luffy-Bot-MD
 ```
 
-### 5. Instalar librerías  
+### 5. Instalar librerías  
 ```bash
 yarn install
 ```
@@ -132,7 +122,7 @@ yarn install
 npm install
 ```
 
-### 6. Iniciar el bot  
+### 6. Iniciar el bot  
 ```bash
 npm start
 ```
@@ -264,7 +254,7 @@ npm start
 
 ## ⚠️ NOTA IMPORTANTE
 
-> **USO BAJO TU PROPIO RIESGO**  
+> **USO BAJO TU PROPIO RIESGO**  
 WhatsApp puede suspender números por mal uso, spam o automatización. Úsalo con responsabilidad.
 
 ---
@@ -272,12 +262,12 @@ WhatsApp puede suspender números por mal uso, spam o automatización. Úsalo co
 ## 👑 CREADOR & CRÉDITOS
 
 <div align="center">
-  <img src="https://github.com/nene504273.png" width="130" height="130" style="border-radius:50%; border:4px solid #FF0000;">
-  <h3>🌟 nene504273 🌟</h3>
-  <p>Desarrollador Principal & Capitán</p>
+  <img src="https://github.com/nene504273.png" width="130" height="130" style="border-radius:50%; border:4px solid #FF0000;">
+  <h3>🌟 nene504273 🌟</h3>
+  <p>Desarrollador Principal & Capitán</p>
 </div>
 
 <div align="center">
-  <img src="https://media1.tenor.com/m/K24L1kZ10nEAAAAC/luffy-gear-5-one-piece.gif" width="100%">
-  <h3>¡GRACIAS POR PREFERIRNOS! 🏴‍☠️</h3>
+  <img src="https://media1.tenor.com/m/K24L1kZ10nEAAAAC/luffy-gear-5-one-piece.gif" width="100%">
+  <h3>¡GRACIAS POR PREFERIRNOS! 🏴‍☠️</h3>
 </div>
