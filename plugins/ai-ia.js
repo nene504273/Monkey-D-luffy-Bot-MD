@@ -1,20 +1,21 @@
 // --- CONFIGURACIÓN DE LA API DE CHATGPT ---
-const apiKey = 'stellar-S9K4dSmm'; // Clave proporcionada
+// Define la clave y la URL de la API aquí
+const apiKey = 'stellar-S9K4dSmm'; // Tu clave proporcionada
 const chatGptApiUrl = 'https://rest.alyabotpe.xyz/ai/chatgpt';
 
 // Asegúrate de que las variables 'botname', 'etiqueta', 'vs', 'emoji', 'emoji2', 'rwait', 'done', 'error', 'msm', 'conn', y 'text' estén definidas en el contexto de tu bot.
+// Variables necesarias que asumo están definidas globalmente o en el scope de tu bot
+const botname = 'TuBotAI'; // Ejemplo
+const etiqueta = 'El Creador'; // Ejemplo
+const vs = '1.0'; // Ejemplo
+const emoji = '🤖'; // Ejemplo
+const emoji2 = '🧠'; // Ejemplo
+const rwait = '⏳'; // Ejemplo
+const done = '✅'; // Ejemplo
+const error = '❌'; // Ejemplo
+const msm = 'Error de conexión'; // Ejemplo
 
 const handler = async (m, { conn, text }) => {
-    // Variables necesarias que asumo están definidas globalmente o en el scope de tu bot
-    const botname = 'TuBotAI'; // Ejemplo
-    const etiqueta = 'El Creador'; // Ejemplo
-    const vs = '1.0'; // Ejemplo
-    const emoji = '🤖'; // Ejemplo
-    const emoji2 = '🧠'; // Ejemplo
-    const rwait = '⏳'; // Ejemplo
-    const done = '✅'; // Ejemplo
-    const error = '❌'; // Ejemplo
-    const msm = 'Error de conexión'; // Ejemplo
     
     // Verifica si hay una imagen citada
     const isQuotedImage = m.quoted && (m.quoted.msg || m.quoted).mimetype && (m.quoted.msg || m.quoted).mimetype.startsWith('image/')
@@ -70,7 +71,7 @@ const handler = async (m, { conn, text }) => {
             const query = text
             const prompt = `${basePrompt}. Responde lo siguiente: ${query}` // Crea el prompt completo para la IA
             
-            const response = await luminsesi(query, username, prompt) // Llama a la nueva función luminsesi
+            const response = await luminsesi(query, username, prompt) // Llama a la función luminsesi corregida
             
             // Edita el mensaje de espera con la respuesta
             await conn.sendMessage(m.chat, {text: response, edit: key})
@@ -99,7 +100,6 @@ const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 // Función para enviar una imagen y obtener el análisis (usa la API original)
 async function fetchImageBuffer(content, imageBuffer) {
     try {
-        // Nota: Esta función mantiene la API de Luminai para el análisis de imágenes.
         const response = await axios.post('https://Luminai.my.id', {
             content: content,
             imageBuffer: imageBuffer
@@ -115,7 +115,7 @@ async function fetchImageBuffer(content, imageBuffer) {
     }
 }
 
-// Función para interactuar con la IA usando prompts (USA LA NUEVA API)
+// Función para interactuar con la IA usando prompts (USA LA NUEVA API - CORREGIDA)
 async function luminsesi(q, username, logic) {
     try {
         // Codifica el texto de la consulta completo para usarlo en la URL
@@ -127,16 +127,25 @@ async function luminsesi(q, username, logic) {
         // Realiza la solicitud GET
         const response = await axios.get(apiUrl);
 
-        // Asumo que el campo de respuesta es 'response' en la nueva API.
-        if (response.data && response.data.response) {
-            return response.data.response; 
-        } else {
-            // Manejar caso donde la respuesta no tiene el formato esperado
-            console.error(`Respuesta inesperada de la API: ${JSON.stringify(response.data)}`);
-            return `Lo siento, ${username}, la IA no pudo generar una respuesta válida.`;
+        // --- Lógica de verificación de respuesta ajustada ---
+        const apiResponse = response.data;
+        
+        // Comprobamos si la respuesta está en 'response', 'result' o 'text'
+        if (apiResponse && apiResponse.response) {
+            return apiResponse.response; // Intento 1
+        } else if (apiResponse && apiResponse.result) {
+            return apiResponse.result; // Intento 2
+        } else if (apiResponse && apiResponse.text) {
+            return apiResponse.text; // Intento 3
         }
+
+        // Si la respuesta no coincide con ninguno, reporta el error
+        console.error(`Respuesta inesperada de la API: ${JSON.stringify(apiResponse)}`);
+        return `Lo siento, ${username}, la IA no pudo generar una respuesta válida. (Error de formato de API)`;
+
     } catch (error) {
         console.error(`Error al obtener respuesta de ChatGPT:`, error);
-        throw error 
+        // Devolver un mensaje de error de conexión si falla
+        return `Lo siento, ${username}, hubo un error de conexión con la IA. Por favor, inténtalo de nuevo.`;
     }
 }
