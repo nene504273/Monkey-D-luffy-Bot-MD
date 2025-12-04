@@ -45,4 +45,4 @@ async function chatGpt(query) {
         console.error("Error parsing JSON:", error);
         return 404;
     }
-}
+} 
