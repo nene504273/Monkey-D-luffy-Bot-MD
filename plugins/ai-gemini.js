@@ -1,34 +1,35 @@
 import fetch from 'node-fetch'
 var handler = async (m, { text, usedPrefix, command }) => {
-// El objeto de la API que proporcionaste parece ser un ejemplo de respuesta
-// o una descripción de una URL, no la URL real de un endpoint de Gemini.
-// Asumiendo que la nueva API tiene un endpoint similar para el texto.
-// Se usará https://api-adonix.ultraplus.click/api/gemini?text=${text}
-// ajustando la clave 'message' en la respuesta a 'result' para que sea compatible.
+
+// Usamos '📝' para el emoji de inicio y '❌' para el error
+const msm = '❌' 
+const rwait = '⏳' 
 
 if (!text) return conn.reply(m.chat, `📝 Ingrese una petición para que Gemini lo responda.`, m)
+
 try {
-await m.react('⏳') // Usando un emoji de espera
+await m.react(rwait)
 conn.sendPresenceUpdate('composing', m.chat)
 
-// Reemplazo de la URL de la API anterior por la nueva
-// y asumiendo que el endpoint es /api/gemini?text=
+// 🚨 Nueva API: Se utiliza https://api-adonix.ultraplus.click/api/gemini?text=
+// 🚨 Nota: El endpoint /api/gemini?text= es una asunción.
 var apii = await fetch(`https://api-adonix.ultraplus.click/api/gemini?text=${encodeURIComponent(text)}`)
 var res = await apii.json()
 
-// Comprobación de que la respuesta tenga el formato esperado y un mensaje
-if (res.status && res.message) {
-    // La respuesta usa 'message', se adapta a 'result' para la lógica original
+// Comprobación de que la respuesta tenga el formato esperado y el mensaje.
+// La clave 'message' se usa basándose en el ejemplo de respuesta que proporcionaste.
+if (res.status === true && res.message) {
     await m.reply(res.message)
 } else {
-    // Manejo de un caso donde la respuesta no es la esperada
+    // Si la API responde pero el formato es incorrecto, o status es falso
     await m.react('⚠️')
-    await conn.reply(m.chat, `❗ La respuesta de la API no es válida o está incompleta.`, m)
+    await conn.reply(m.chat, `⚠️ La API de Ultra Plus devolvió un error interno o un formato inesperado.`, m)
 }
 } catch (error) {
-await m.react('❌')
+// Este 'catch' maneja errores de red o si el JSON es inválido (la causa más probable del error en tu imagen)
+await m.react(msm)
 console.error(error)
-await conn.reply(m.chat, `❌ Gemini no puede responder a esa pregunta.`, m)
+await conn.reply(m.chat, `${msm} Gemini no puede responder a esa pregunta. (Error de conexión con la API).`, m)
 }}
 
 handler.command = ['gemini']
