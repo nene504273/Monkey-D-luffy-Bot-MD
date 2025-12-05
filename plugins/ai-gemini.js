@@ -1,50 +1,68 @@
-import fetch from 'node-fetch'
-var handler = async (m, { text, usedPrefix, command }) => {
-// Variables de emojis
-const msm = '❌' 
-const rwait = '⏳' 
-// 🔑 CLAVE DE LA API PROPORCIONADA POR EL USUARIO
-const apiKey = 'nene-Sempai'; 
+import axios from 'axios'
 
-if (!text) return conn.reply(m.chat, `📝 Ingrese una petición para que Gemini lo responda.`, m)
+let handler = async (m, { conn, usedPrefix, command, text }) => {
+  const username = `${conn.getName(m.sender)}`
+  const sender = m.sender
+  const isOwner = sender.includes('584244144821') // Detecta si el número es el del creador ɴ͡ᴇ͜ɴᴇ❀᭄☂️
 
-try {
-    await m.react(rwait)
-    conn.sendPresenceUpdate('composing', m.chat)
+  // Prompt base de Monkey D. Luffy
+  const basePrompt = `
+Eres Monkey D. Luffy, el capitán de los Piratas del Sombrero de Paja de One Piece. Tu personalidad es:
 
-    // 🔗 URL de la API con la clave incluida como parámetro 'apikey'
-    // Se usa la asunción del endpoint: /api/gemini
-    var url = `https://api-adonix.ultraplus.click/api/gemini?text=${encodeURIComponent(text)}&apikey=${apiKey}`;
-    
-    var apii = await fetch(url)
-    var res = await apii.json()
+- **LIBERTAD**: Valorar la libertad por encima de todo
+- **DETERMINACIÓN**: Nada te detiene para alcanzar tus sueños
+- **LEALTAD**: Proteges a tus amigos/nakama con tu vida
+- **SIMPLEZA**: Eres directo y sincero en todo
+- **AMBICIÓN**: Tu sueño es convertirte en el Rey de los Piratas
+- **AMOR POR LA COMIDA**: ¡Siempre tienes hambre, especialmente de carne!
 
-    // 🚨 Esto imprimirá la respuesta completa de la API en la consola de tu bot
-    console.log('Respuesta de la API (con clave):', res); 
+**ESTILO DE RESPUESTA**:
+- Si tu creador ɴ͡ᴇ͜ɴᴇ❀᭄☂️ te habla (+58 424-4144821), muéstrate respetuoso pero mantén tu esencia libre
+- Con otros usuarios, sé entusiasta y directo como siempre
+- Usa frases características: "¡Soy Luffy!", "¡Voy a ser el Rey de los Piratas!", "¡Shishishi!"
+- Habla de comida, aventuras y libertad
+- Incluye emojis relacionados: 🏴‍☠️🍖⚓👒
 
-    // Intentamos extraer la respuesta buscando las claves más comunes:
-    // 'message' (basado en tu ejemplo inicial), 'result' (común), 'response'
-    let responseText = res.message || res.result || res.response;
+**EJEMPLOS**:
+Usuario: "¿Cómo ser más fuerte?"
+Luffy: "¡Shishishi! No se trata solo de fuerza 🏴‍☠️ Tienes que proteger a tus amigos y nunca rendirte. ¡Y comer mucha carne ayuda! 🍖"
 
-    if (responseText) {
-        await m.reply(responseText)
-    } else {
-        // Si la API responde pero el formato es incorrecto (no tiene 'message' ni 'result')
-        await m.react('⚠️')
-        // Intenta mostrar cualquier mensaje de error devuelto por la API
-        let apiError = res.error || res.status_message || (res.status === false ? "API status false" : "Formato de respuesta inesperado.");
-        await conn.reply(m.chat, `⚠️ La API no devolvió una respuesta válida. Mensaje API: ${apiError}`, m)
-    }
-} catch (error) {
-    await m.react(msm)
-    console.error("Error de Fetch o JSON:", error)
-    await conn.reply(m.chat, `${msm} Error de conexión con la API o respuesta JSON inválida.`, m)
-}}
+Usuario: "Estoy aburrido"
+Luffy: "¡Vamos a una aventura! 🏴‍☠️ La vida es demasiado corta para aburrirse. ¡Busca un tesoro o algo divertido! ⚓"
 
-handler.command = ['gemini']
-handler.help = ['gemini']
-handler.tags = ['ai']
-handler.group = true
-handler.rowner = true
+Ahora responde lo siguiente manteniendo tu personaje:`
 
+  if (!text) {
+    return conn.reply(m.chat, `*[ 🏴‍☠️ ] ¡Hey! Dime algo, ¡quiero una aventura!*`, m)
+  }
+
+  await conn.sendPresenceUpdate('composing', m.chat)
+
+  try {
+    const prompt = `${basePrompt} ${text}`
+    const response = await luminsesi(text, username, prompt)
+    await conn.reply(m.chat, response, m)
+  } catch (error) {
+    console.error('*[ ℹ️ ] Error al obtener la respuesta:*', error)
+    await conn.reply(m.chat, '*¡Parece que me atraparon... intenta más tarde!*', m)
+  }
+}
+
+handler.help = ['ia']
+handler.tags = ['tools']
+handler.register = true
+handler.command = ['luffy', 'monkey']
 export default handler
+
+// Función para interactuar con la IA usando prompts
+async function luminsesi(q, username, logic) {
+  try {
+    const response = await axios.get(
+      `https://api-adonix.ultraplus.click/ai/geminiact?apikey=Adofreekey&text=${encodeURIComponent(q)}&role=${encodeURIComponent(logic)}`
+    )
+    return response.data.message
+  } catch (error) {
+    console.error('*[ ℹ️ ] Error al obtener:*', error)
+    throw error
+  }
+}
