@@ -1,7 +1,6 @@
 import fetch from 'node-fetch'
-var handler = async (m, { text, usedPrefix, command }) => {
-
-// Usamos '📝' para el emoji de inicio y '❌' para el error
+var handler = async (m, { text,  usedPrefix, command }) => {
+// Variables de emojis
 const msm = '❌' 
 const rwait = '⏳' 
 
@@ -11,25 +10,22 @@ try {
 await m.react(rwait)
 conn.sendPresenceUpdate('composing', m.chat)
 
-// 🚨 Nueva API: Se utiliza https://api-adonix.ultraplus.click/api/gemini?text=
-// 🚨 Nota: El endpoint /api/gemini?text= es una asunción.
-var apii = await fetch(`https://api-adonix.ultraplus.click/api/gemini?text=${encodeURIComponent(text)}`)
+// 🌟 Revertido a la API original de Starlights Team que utiliza 'result'
+var apii = await fetch(`https://apis-starlights-team.koyeb.app/starlight/gemini?text=${encodeURIComponent(text)}`)
 var res = await apii.json()
 
-// Comprobación de que la respuesta tenga el formato esperado y el mensaje.
-// La clave 'message' se usa basándose en el ejemplo de respuesta que proporcionaste.
-if (res.status === true && res.message) {
-    await m.reply(res.message)
+// La API original usa la clave 'result'
+if (res.result) {
+    await m.reply(res.result)
 } else {
-    // Si la API responde pero el formato es incorrecto, o status es falso
+    // Manejo si la respuesta es válida pero no tiene el resultado
     await m.react('⚠️')
-    await conn.reply(m.chat, `⚠️ La API de Ultra Plus devolvió un error interno o un formato inesperado.`, m)
+    await conn.reply(m.chat, `⚠️ La API no devolvió una respuesta válida.`, m)
 }
 } catch (error) {
-// Este 'catch' maneja errores de red o si el JSON es inválido (la causa más probable del error en tu imagen)
 await m.react(msm)
 console.error(error)
-await conn.reply(m.chat, `${msm} Gemini no puede responder a esa pregunta. (Error de conexión con la API).`, m)
+await conn.reply(m.chat, `${msm} Gemini no puede responder a esa pregunta. (Error de conexión).`, m)
 }}
 
 handler.command = ['gemini']
