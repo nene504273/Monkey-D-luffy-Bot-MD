@@ -10,22 +10,28 @@ try {
 await m.react(rwait)
 conn.sendPresenceUpdate('composing', m.chat)
 
-// 🌟 Revertido a la API original de Starlights Team que utiliza 'result'
+// 🌟 API de Starlights Team (original)
 var apii = await fetch(`https://apis-starlights-team.koyeb.app/starlight/gemini?text=${encodeURIComponent(text)}`)
 var res = await apii.json()
+
+// 🚨 Esto imprimirá la respuesta completa de la API en la consola de tu bot
+// Cuando el bot falle, mira esta salida para ver qué clave tiene la respuesta real.
+console.log('Respuesta de la API:', res); 
 
 // La API original usa la clave 'result'
 if (res.result) {
     await m.reply(res.result)
 } else {
-    // Manejo si la respuesta es válida pero no tiene el resultado
+    // Manejo si la respuesta es válida pero no tiene el resultado esperado
     await m.react('⚠️')
-    await conn.reply(m.chat, `⚠️ La API no devolvió una respuesta válida.`, m)
+    // Imprime en el chat lo que la API pudo haber enviado en otras claves comunes (como 'message' o 'error')
+    let errorMessage = res.error || res.message || "La API no devolvió una respuesta válida.";
+    await conn.reply(m.chat, `⚠️ ${errorMessage}`, m)
 }
 } catch (error) {
 await m.react(msm)
-console.error(error)
-await conn.reply(m.chat, `${msm} Gemini no puede responder a esa pregunta. (Error de conexión).`, m)
+console.error("Error completo:", error)
+await conn.reply(m.chat, `${msm} Error de conexión con la API o respuesta JSON inválida.`, m)
 }}
 
 handler.command = ['gemini']
