@@ -1,37 +1,44 @@
 import fetch from 'node-fetch'
-var handler = async (m, { text,  usedPrefix, command }) => {
+var handler = async (m, { text, usedPrefix, command }) => {
 // Variables de emojis
 const msm = '❌' 
 const rwait = '⏳' 
+// 🔑 CLAVE DE LA API PROPORCIONADA POR EL USUARIO
+const apiKey = 'nene-Sempai'; 
 
 if (!text) return conn.reply(m.chat, `📝 Ingrese una petición para que Gemini lo responda.`, m)
 
 try {
-await m.react(rwait)
-conn.sendPresenceUpdate('composing', m.chat)
+    await m.react(rwait)
+    conn.sendPresenceUpdate('composing', m.chat)
 
-// 🌟 API de Starlights Team (original)
-var apii = await fetch(`https://apis-starlights-team.koyeb.app/starlight/gemini?text=${encodeURIComponent(text)}`)
-var res = await apii.json()
+    // 🔗 URL de la API con la clave incluida como parámetro 'apikey'
+    // Se usa la asunción del endpoint: /api/gemini
+    var url = `https://api-adonix.ultraplus.click/api/gemini?text=${encodeURIComponent(text)}&apikey=${apiKey}`;
+    
+    var apii = await fetch(url)
+    var res = await apii.json()
 
-// 🚨 Esto imprimirá la respuesta completa de la API en la consola de tu bot
-// Cuando el bot falle, mira esta salida para ver qué clave tiene la respuesta real.
-console.log('Respuesta de la API:', res); 
+    // 🚨 Esto imprimirá la respuesta completa de la API en la consola de tu bot
+    console.log('Respuesta de la API (con clave):', res); 
 
-// La API original usa la clave 'result'
-if (res.result) {
-    await m.reply(res.result)
-} else {
-    // Manejo si la respuesta es válida pero no tiene el resultado esperado
-    await m.react('⚠️')
-    // Imprime en el chat lo que la API pudo haber enviado en otras claves comunes (como 'message' o 'error')
-    let errorMessage = res.error || res.message || "La API no devolvió una respuesta válida.";
-    await conn.reply(m.chat, `⚠️ ${errorMessage}`, m)
-}
+    // Intentamos extraer la respuesta buscando las claves más comunes:
+    // 'message' (basado en tu ejemplo inicial), 'result' (común), 'response'
+    let responseText = res.message || res.result || res.response;
+
+    if (responseText) {
+        await m.reply(responseText)
+    } else {
+        // Si la API responde pero el formato es incorrecto (no tiene 'message' ni 'result')
+        await m.react('⚠️')
+        // Intenta mostrar cualquier mensaje de error devuelto por la API
+        let apiError = res.error || res.status_message || (res.status === false ? "API status false" : "Formato de respuesta inesperado.");
+        await conn.reply(m.chat, `⚠️ La API no devolvió una respuesta válida. Mensaje API: ${apiError}`, m)
+    }
 } catch (error) {
-await m.react(msm)
-console.error("Error completo:", error)
-await conn.reply(m.chat, `${msm} Error de conexión con la API o respuesta JSON inválida.`, m)
+    await m.react(msm)
+    console.error("Error de Fetch o JSON:", error)
+    await conn.reply(m.chat, `${msm} Error de conexión con la API o respuesta JSON inválida.`, m)
 }}
 
 handler.command = ['gemini']
