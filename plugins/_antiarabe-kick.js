@@ -4,10 +4,11 @@ export async function before(m, { conn, isAdmin, isBotAdmin, isROwner }) {
     const chat = global?.db?.data?.chats[m.chat];
     if (!chat?.antiarabes) return;
 
-    const arabCodes = ['20','966','971','973','974','965','962','963','964','967','968','970','212','213','216','218','249','961','856','880','92','91','62','60','66','84','90','95','98','86','81','82','63','64','65','852','853','886','855','856','880','670','672','673','674','675','676','677','678','679','680','681','682','683','684','685','686','687','688','689','690','691','692'];
-    const isArab = arabCodes.some(code => m.sender.includes(code) || m.sender.includes(`+${code}`));
+    const codigosBloqueados = ['20','966','971','973','974','965','962','963','964','967','968','970','212','213','216','218','249','961','92','91','93','94','95','98','62','63','64','65','60','66','84','90','86','81','82','880','855','856','670','672','673','674','675','676','677','678','679','680','681','682','683','684','685','686','687','688','689','690','691','692'];
     
-    if (isArab && !isAdmin && !isROwner) {
+    const isBloqueado = codigosBloqueados.some(code => m.sender.includes(code) || m.sender.includes(`+${code}`));
+    
+    if (isBloqueado && !isAdmin && !isROwner) {
         if (!isBotAdmin) return;
         if (m.key.participant === conn.user.jid) return;
 
@@ -36,10 +37,10 @@ export async function participantsUpdate(m, { conn, isBotAdmin }) {
         for (const participant of m.participants) {
             if (participant.action === 'add') {
                 const userJid = participant.id;
-                const arabCodes = ['20','966','971','973','974','965','962','963','964','967','968','970','212','213','216','218','249','961','856','880','92','91','62','60','66','84','90','95','98','86','81','82','63','64','65','852','853','886','855','856','880','670','672','673','674','675','676','677','678','679','680','681','682','683','684','685','686','687','688','689','690','691','692'];
-                const isArab = arabCodes.some(code => userJid.includes(code) || userJid.includes(`+${code}`));
+                const codigosBloqueados = ['20','966','971','973','974','965','962','963','964','967','968','970','212','213','216','218','249','961','92','91','93','94','95','98','62','63','64','65','60','66','84','90','86','81','82','880','855','856','670','672','673','674','675','676','677','678','679','680','681','682','683','684','685','686','687','688','689','690','691','692'];
+                const isBloqueado = codigosBloqueados.some(code => userJid.includes(code) || userJid.includes(`+${code}`));
                 
-                if (isArab) {
+                if (isBloqueado) {
                     await Promise.all([
                         conn.groupParticipantsUpdate(m.chat, [userJid], 'remove'),
                         conn.sendMessage(m.chat, {
