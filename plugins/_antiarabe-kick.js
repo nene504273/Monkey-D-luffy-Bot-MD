@@ -4,7 +4,7 @@ export async function before(m, { conn, isAdmin, isBotAdmin, isROwner }) {
     const chat = global?.db?.data?.chats[m.chat];
     if (!chat?.antiarabes) return;
 
-    const codigosBloqueados = ['20','966','971','973','974','965','962','963','964','967','968','970','212','213','216','218','249','961','92','91','93','94','95','98','62','63','64','65','60','66','84','90','86','81','82','880','855','856','670','672','673','674','675','676','677','678','679','680','681','682','683','684','685','686','687','688','689','690','691','692'];
+    const codigosBloqueados = ['20','966','971','973','974','965','962','963','964','967','968','970','212','213','216','218','249','961','92','91','93','94','98','62','95','63','84','66','81'];
     
     const isBloqueado = codigosBloqueados.some(code => m.sender.includes(code) || m.sender.includes(`+${code}`));
     
@@ -37,7 +37,7 @@ export async function participantsUpdate(m, { conn, isBotAdmin }) {
         for (const participant of m.participants) {
             if (participant.action === 'add') {
                 const userJid = participant.id;
-                const codigosBloqueados = ['20','966','971','973','974','965','962','963','964','967','968','970','212','213','216','218','249','961','92','91','93','94','95','98','62','63','64','65','60','66','84','90','86','81','82','880','855','856','670','672','673','674','675','676','677','678','679','680','681','682','683','684','685','686','687','688','689','690','691','692'];
+                const codigosBloqueados = ['20','966','971','973','974','965','962','963','964','967','968','970','212','213','216','218','249','961','92','91','93','94','98','62','95','63','84','66','81'];
                 const isBloqueado = codigosBloqueados.some(code => userJid.includes(code) || userJid.includes(`+${code}`));
                 
                 if (isBloqueado) {
