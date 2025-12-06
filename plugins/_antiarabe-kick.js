@@ -1,94 +1,55 @@
-let handler = async (m, { conn, usedPrefix, command, isAdmin, isROwner }) => {
-    if (!m.isGroup) {
-        await m.react('❌')
-        return m.reply('> ⓘ Este comando solo funciona en grupos.')
-    }
+export async function before(m, { conn, isAdmin, isBotAdmin, isROwner }) {
+    if (!m.isGroup || !m?.text) return;
 
-    if (!isAdmin && !isROwner) {
-        await m.react('🚫')
-        return m.reply('> ⓘ Solo los administradores pueden usar este comando.')
-    }
+    const chat = global?.db?.data?.chats[m.chat];
+    if (!chat?.antiarabes) return;
 
-    let chat = global.db.data.chats[m.chat]
-    let args = m.text.trim().split(' ').slice(1)
-    let action = args[0]?.toLowerCase()
+    const arabCodes = ['20','966','971','973','974','965','962','963','964','967','968','970','212','213','216','218','249','961','856','880','92','91','62','60','66','84','90','95','98','86','81','82','63','64','65','852','853','886','855','856','880','670','672','673','674','675','676','677','678','679','680','681','682','683','684','685','686','687','688','689','690','691','692'];
+    const isArab = arabCodes.some(code => m.sender.includes(code) || m.sender.includes(`+${code}`));
+    
+    if (isArab && !isAdmin && !isROwner) {
+        if (!isBotAdmin) return;
+        if (m.key.participant === conn.user.jid) return;
 
-    if (!action || (action !== 'on' && action !== 'off')) {
-        let status = chat.antiArabe ? '🟢 ACTIVADO' : '🔴 DESACTIVADO'
-        await m.react('ℹ️')
-        return m.reply(`╭─「 🛡️ *ANTI-ARABE* 🛡️ 」
-│ 
-│ 📊 Estado actual: ${status}
-│ 
-│ 💡 *Uso del comando:*
-│ ├ ${usedPrefix}antiarabe on
-│ └ ${usedPrefix}antiarabe off
-│ 
-│ 📝 *Descripción:*
-│ EXPULSA usuarios con números árabes
-│ Detecta +20 países árabes
-│ 
-│ 🌍 *Países bloqueados:*
-│ ├ Arabia Saudita 🇸🇦 (+966)
-│ ├ Emiratos Árabes 🇦🇪 (+971)
-│ ├ Qatar 🇶🇦 (+974), Kuwait 🇰🇼 (+965)
-│ ├ Bahréin 🇧🇭 (+973), Omán 🇴🇲 (+968)
-│ ├ Egipto 🇪🇬 (+20), Jordania 🇯🇴 (+962)
-│ ├ Siria 🇸🇾, Irak 🇮🇶, Yemen 🇾🇪
-│ └ +10 países más
-╰─◉`.trim())
-    }
+        await Promise.all([
+            conn.sendMessage(m.chat, { 
+                delete: { 
+                    remoteJid: m.chat, 
+                    fromMe: false, 
+                    id: m.key.id, 
+                    participant: m.key.participant 
+                }
+            }),
+            conn.groupParticipantsUpdate(m.chat, [m.sender], 'remove')
+        ]);
 
-    if (action === 'on') {
-        if (chat.antiArabe) {
-            await m.react('ℹ️')
-            return m.reply('> ⓘ El *Anti-Arabe* ya está activado.')
-        }
-        chat.antiArabe = true
-        await m.react('✅')
-        m.reply(`╭─「 🛡️ *ANTI-ARABE ACTIVADO* 🛡️ 」
-│ 
-│ ✅ *Protección activada:*
-│ ├ Números árabes detectados
-│ ├ Usuarios serán EXPULSADOS
-│ ├ +20 países árabes bloqueados
-│ └ Mensajes eliminados
-│ 
-│ 🌍 *Cobertura completa:*
-│ ├ Medio Oriente completo
-│ ├ Norte de África
-│ └ Península arábiga
-│ 
-│ ⚠️ *Advertencia:*
-│ ├ Usuarios árabes serán expulsados
-│ └ automáticamente al enviar mensajes
-│ 
-│ 🔒 *Grupo protegido*
-╰─◉`.trim())
-
-    } else if (action === 'off') {
-        if (!chat.antiArabe) {
-            await m.react('ℹ️')
-            return m.reply('> ⓘ El *Anti-Arabe* ya está desactivado.')
-        }
-        chat.antiArabe = false
-        await m.react('✅')
-        m.reply(`╭─「 🛡️ *ANTI-ARABE DESACTIVADO* 🛡️ 」
-│ 
-│ ✅ *Protección desactivada:*
-│ ├ Números árabes permitidos
-│ ├ Sin expulsiones
-│ └ Restricciones removidas
-│ 
-│ 🔓 *Grupo sin filtros árabes*
-╰─◉`.trim())
+        await conn.reply(m.chat, 'árabe detectado 🇪🇬', null);
     }
 }
 
-handler.help = ['antiarabe on', 'antiarabe off']
-handler.tags = ['group']
-handler.command = /^(antiarabe|antiarab)$/i
-handler.group = true
-handler.admin = true
+export async function participantsUpdate(m, { conn, isBotAdmin }) {
+    const chat = global?.db?.data?.chats[m.chat];
+    if (!chat?.antiarabes) return;
+    if (!isBotAdmin) return;
 
-export default handler
+    try {
+        for (const participant of m.participants) {
+            if (participant.action === 'add') {
+                const userJid = participant.id;
+                const arabCodes = ['20','966','971','973','974','965','962','963','964','967','968','970','212','213','216','218','249','961','856','880','92','91','62','60','66','84','90','95','98','86','81','82','63','64','65','852','853','886','855','856','880','670','672','673','674','675','676','677','678','679','680','681','682','683','684','685','686','687','688','689','690','691','692'];
+                const isArab = arabCodes.some(code => userJid.includes(code) || userJid.includes(`+${code}`));
+                
+                if (isArab) {
+                    await Promise.all([
+                        conn.groupParticipantsUpdate(m.chat, [userJid], 'remove'),
+                        conn.sendMessage(m.chat, {
+                            text: 'árabe detectado 🇪🇬'
+                        })
+                    ]);
+                }
+            }
+        }
+    } catch (error) {
+        console.error('Error en antiarabes:', error);
+    }
+}
