@@ -1,38 +1,52 @@
 const handler = async (m, { conn, usedPrefix, command }) => {
     
-    // Obtenemos todos los grupos en los que está el bot
     let groups = await conn.groupFetchAllParticipating();
     let groupValues = Object.values(groups);
     let totalGroups = groupValues.length;
     let txt = ''; 
 
-    // Obtenemos el ID del bot de forma segura para compararlo
     const botJid = conn.decodeJid(conn.user.id);
 
     // Iteramos sobre cada grupo
     for (let i = 0; i < groupValues.length; i++) {
         const group = groupValues[i];
         const jid = group.id;
-        const participants = group.participants || [];
+
+        // --- CORRECCIÓN CLAVE: OBTENER METADATA FRESCA ---
+        // Intentamos obtener la metadata del grupo directamente para refrescar la lista de participantes
+        let freshMetadata = group;
+        try {
+            freshMetadata = await conn.groupMetadata(jid);
+        } catch (e) {
+            console.error(`Error al obtener metadata del grupo ${jid}:`, e);
+            // Si falla, usamos la data antigua
+        }
         
-        // 1. Corregimos la detección del bot en el grupo
+        const participants = freshMetadata.participants || [];
+        // --------------------------------------------------
+        
+        // 1. Buscamos el objeto del bot
         const bot = participants.find((u) => conn.decodeJid(u.id) === botJid) || {};
         
-        // 2. Corregimos la verificación de administrador (debe ser 'admin' o 'superadmin')
-        const isBotAdmin = bot && (bot.admin === 'admin' || bot.admin === 'superadmin');
+        // 2. Verificación de Administrador
+        const isBotAdmin = bot.admin === 'admin' || bot.admin === 'superadmin';
         
-        // Verificamos si es participante (aunque ya lo sería si está en la lista)
-        const isParticipant = participants.some((u) => conn.decodeJid(u.id) === botJid);
+        // 3. Verificación de Participación (usando la metadata fresca)
+        const isParticipant = Object.keys(bot).length > 0;
         
-        // Emojis y estados mejorados
-        const participantStatus = isParticipant ? '👤 Participante ⚓' : '❌ Ex participante 🏴';
+        const participantStatus = isBotAdmin 
+            ? '👮‍♂️ Admin ⚓' 
+            : isParticipant 
+                ? '👤 Participante ⚓' 
+                : '❌ Ex participante 🏴';
+
+        // Usamos el total de la metadata fresca
         const totalParticipants = participants.length;
         
-        // 3. Implementamos la generación del link (Solo si es admin)
+        // 4. Generación del Link
         let groupLink = '❌ (No soy admin)';
         if (isBotAdmin) {
             try {
-                // Generamos el código de invitación
                 const code = await conn.groupInviteCode(jid);
                 groupLink = `https://chat.whatsapp.com/${code}`;
             } catch (e) {
@@ -40,9 +54,9 @@ const handler = async (m, { conn, usedPrefix, command }) => {
             }
         }
         
-        // --- ESTRUCTURA DE MENSAJE (con emojis) ---
+        // --- ESTRUCTURA DE MENSAJE ---
         txt += `*◉ Grupo ${i + 1}*
-        *➤ 🏴‍☠️ Nombre:* ${group.subject}
+        *➤ 🏴‍☠️ Nombre:* ${freshMetadata.subject}
         *➤ 🆔 ID:* ${jid}
         *➤ 👑 Admin:* ${isBotAdmin ? '✔ Sí' : '❌ No'}
         *➤ ⚓ Estado:* ${participantStatus}
