@@ -21,6 +21,3 @@ handler.rowner = true;
 handler.private = true
 
 export default handler;
-
-
-Puedes editar este comando cerrado y que sirva el admin ya que estaba bug el bot es admin de mi grupo y no sale hay quiero que le agregues unos emojis ojo es un bot normal 
