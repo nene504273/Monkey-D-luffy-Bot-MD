@@ -31,7 +31,7 @@ let handler = async (m, { conn, args }) => {
             let buffer = await sticker(false, args[0], texto1, texto2)
             stiker = buffer
         } else {
-            return await conn.reply(m.chat, '❀ Por favor, envía una *imagen* o *video* para hacer un sticker.', m, ctxErr)
+            return await conn.reply(m.chat, ' Por favor, envía una *imagen* o *video* para hacer un sticker.', m, ctxErr)
         }
     } catch (e) {
         await conn.reply(m.chat, '⚠︎ Ocurrió un Error: ' + e.message, m, ctxErr)
