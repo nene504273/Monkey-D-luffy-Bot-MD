@@ -7,8 +7,9 @@ let handler = async (m, { conn, args }) => {
 let stiker = false
 let userId = m.sender
 let packstickers = global.db.data.users[userId] || {}
-let texto1 = packstickers.text1 || global.packsticker
-let texto2 = packstickers.text2 || global.packsticker2
+// Variables ajustadas a la temática de Luffy/One Piece
+let texto1 = packstickers.text1 || 'SOMBRERO' 
+let texto2 = packstickers.text2 || 'DE PAJA'
 try {
 let q = m.quoted ? m.quoted : m
 let mime = (q.msg || q).mimetype || q.mediaType || ''
@@ -16,11 +17,11 @@ let txt = args.join(' ')
 
 if (/webp|image|video/g.test(mime) && q.download) {
 if (/video/.test(mime) && (q.msg || q).seconds > 16)
-// Mensaje de límite de tiempo, ambientado en One Piece.
-return conn.reply(m.chat, '🚩 ¡Alto! El video no puede durar más de *15 segundos* para crear un sticker de *One Piece* perfecto ✨', m, global.rcanal)
+// Mensaje ajustado
+return conn.reply(m.chat, '⚓️ ¡Oi! El video no puede durar más de *15 segundos*. ¡Necesitas rapidez para este viaje! 💨', m, global.rcanal)
 let buffer = await q.download()
-// Reacción al procesar la imagen/video (📌: como si fijara la recompensa)
-await m.react('📌')
+// Reacción de "haciendo algo" (el Sombrero de Paja)
+await m.react('👒') 
 
 let marca = txt ? txt.split(/[\u2022|]/).map(part => part.trim()) : [texto1, texto2]
 stiker = await sticker(buffer, false, marca[0], marca[1])
@@ -28,23 +29,23 @@ stiker = await sticker(buffer, false, marca[0], marca[1])
 let buffer = await sticker(false, args[0], texto1, texto2)
 stiker = buffer
 } else {
-// Mensaje de solicitud, ambientado en Luffy.
-return conn.reply(m.chat, '🚩 Por favor, envía una *imagen* o *video* para crear un hermoso sticker al estilo *Luffy* ✨', m, global.rcanal)
+// Mensaje ajustado
+return conn.reply(m.chat, '🗺️ ¡Necesito algo de carne! Digo... una *imagen* o *video*. ¡Envíalo o respóndelo para crear tu Jolly Roger (sticker)! 🏴‍☠️', m, global.rcanal)
 }} catch (e) {
-// Mensaje de error, ambientado en la aventura de Luffy.
-await conn.reply(m.chat, '💫 ¡Gomen! Ocurrió un error en la aventura de *Luffy*: ' + e.message + ' ✨', m, global.rcanal)
-await m.react('🎵')
+// Mensaje ajustado
+await conn.reply(m.chat, '💥 ¡Gomu Gomu no! Algo explotó. Ocurrió un error en la aventura pirata: ' + e.message + ' ⚔️', m, global.rcanal)
+// Reacción de "error"
+await m.react('😵‍💫') 
 } finally {
 if (stiker) {
 conn.sendFile(m.chat, stiker, 'sticker.webp', '', m)
-// Reacción final al enviar el sticker (🚩: bandera pirata)
-await m.react('🚩')
+// Reacción de "éxito"
+await m.react('👑') 
 }}}
 
 handler.help = ['sticker']
 handler.tags = ['sticker']
-// Usando solo 's' como comando corto.
-handler.command = ['s'] 
+handler.command = ['s', 'sticker', 'mugiwara'] // Añadí 'mugiwara' como un alias pirata
 handler.register = true
 
 export default handler
