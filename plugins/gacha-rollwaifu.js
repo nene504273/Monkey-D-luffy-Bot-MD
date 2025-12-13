@@ -1,215 +1,130 @@
-import { promises as fs } from 'fs';
-import fetch from 'node-fetch';
+import { promises as fs } from 'fs'
 
-const FILE_PATH = './lib/characters.json';
-let charactersCache = null;
-let lastCacheLoad = 0;
-const CACHE_TTL = 5 * 60 * 1000;
+const charactersFilePath = './src/database/characters.json'
+const haremFilePath = './src/database/harem.json'
+
+const cooldowns = {}
 
 async function loadCharacters() {
-    const now = Date.now();
-    if (charactersCache && (now - lastCacheLoad) < CACHE_TTL) {
-        return charactersCache;
+    try {
+        const data = await fs.readFile(charactersFilePath, 'utf-8')
+        return JSON.parse(data)
+    } catch (error) {
+        throw new Error('❀ No se pudo cargar el archivo characters.json.')
+    }
+}
+
+async function saveCharacters(characters) {
+    try {
+        await fs.writeFile(charactersFilePath, JSON.stringify(characters, null, 2), 'utf-8')
+    } catch (error) {
+        throw new Error('❀ No se pudo guardar el archivo characters.json.')
+    }
+}
+
+async function loadHarem() {
+    try {
+        const data = await fs.readFile(haremFilePath, 'utf-8')
+        return JSON.parse(data)
+    } catch (error) {
+        return []
+    }
+}
+
+// La función saveHarem no es necesaria en este handler, pero la dejo por completitud
+/*
+async function saveHarem(harem) {
+    try {
+        await fs.writeFile(haremFilePath, JSON.stringify(harem, null, 2), 'utf-8')
+    } catch (error) {
+        throw new Error('❀ No se pudo guardar el archivo harem.json.')
+    }
+}
+*/
+
+let handler = async (m, { conn }) => {
+    const userId = m.sender
+    const now = Date.now()
+    const COOLDOWN_TIME = 15 * 60 * 1000 // 15 minutos
+
+    if (cooldowns[userId] && now < cooldowns[userId]) {
+        const remainingTime = Math.ceil((cooldowns[userId] - now) / 1000)
+        const minutes = Math.floor(remainingTime / 60)
+        const seconds = remainingTime % 60
+        return await conn.reply(m.chat, `( ⸝⸝･̆⤚･̆⸝⸝) ¡𝗗𝗲𝗯𝗲𝘀 𝗲𝘀𝗽𝗲𝗿𝗮𝗿 *${minutes} minutos y ${seconds} segundos* 𝗽𝗮𝗿𝗮 𝘃𝗼𝗹𝘃𝗲𝗿  𝘂𝘀𝗮𝗿 *#rw* 𝗱𝗲 𝗻𝘂𝗲𝘃𝗼.`, m)
     }
 
     try {
-        await fs.access(FILE_PATH);
-    } catch {
-        await fs.writeFile(FILE_PATH, '{}');
-    }
-    const data = await fs.readFile(FILE_PATH, 'utf-8');
-    charactersCache = JSON.parse(data);
-    lastCacheLoad = now;
-    return charactersCache;
-}
+        const characters = await loadCharacters()
+        const randomCharacter = characters[Math.floor(Math.random() * characters.length)]
 
-function flattenCharacters(charactersData) {
-    return Object.values(charactersData).flatMap(series => 
-        Array.isArray(series.characters) ? series.characters : []
-    );
-}
+        // --- 🌟 LÓGICA MODIFICADA: Seleccionar entre Video o Imagen ---
+        const hasVideos = randomCharacter.vid && randomCharacter.vid.length > 0
+        const hasImages = randomCharacter.img && randomCharacter.img.length > 0
 
-function getSeriesNameByCharacter(charactersData, characterId) {
-    return Object.entries(charactersData).find(([_, series]) => 
-        Array.isArray(series.characters) && 
-        series.characters.some(char => String(char.id) === String(characterId))
-    )?.[1]?.name || 'Desconocido';
-}
+        let resourceURL
+        let resourceType // 'image' o 'video'
 
-function formatTag(tag) {
-    return String(tag).toLowerCase().trim().replace(/\s+/g, '_');
-}
-
-async function buscarImagenDelirius(tag) {
-    const formattedTag = formatTag(tag);
-    const apiUrls = [
-        `https://safebooru.org/index.php?page=dapi&s=post&q=index&json=1&tags=${formattedTag}`,
-        `https://danbooru.donmai.us/posts.json?tags=${formattedTag}`,
-        `${global.APIs?.delirius?.url || 'https://api.delirius.cc'}/search/gelbooru?query=${formattedTag}`
-    ];
-
-    const fetchPromises = apiUrls.map(async (url) => {
-        try {
-            const controller = new AbortController();
-            const timeout = setTimeout(() => controller.abort(), 5000);
-
-            const response = await fetch(url, {
-                headers: {
-                    'User-Agent': 'Mozilla/5.0',
-                    'Accept': 'application/json'
-                },
-                signal: controller.signal
-            });
-
-            clearTimeout(timeout);
-
-            const contentType = response.headers.get('content-type') || '';
-            if (!response.ok || !contentType.includes('application/json')) return [];
-
-            const data = await response.json();
-            const posts = Array.isArray(data) ? data : data?.posts || data?.data || [];
-
-            const images = posts.map(post => 
-                post?.file_url || 
-                post?.large_file_url || 
-                post?.sample_url || 
-                post?.media_asset?.variants?.[0]?.url
-            ).filter(url => typeof url === 'string' && /\.(jpe?g|png|webp)$/i.test(url));
-
-            return images.length ? images : [];
-        } catch (error) {
-            if (error.name !== 'AbortError') {
-                console.error(`Error fetching from ${url}:`, error);
-            }
-            return [];
+        // Priorizar videos si están disponibles, si no, usar imágenes.
+        if (hasVideos && Math.random() < 0.6) { // 60% de probabilidad de usar video si hay
+            resourceURL = randomCharacter.vid[Math.floor(Math.random() * randomCharacter.vid.length)]
+            resourceType = 'video'
+        } else if (hasImages) {
+            resourceURL = randomCharacter.img[Math.floor(Math.random() * randomCharacter.img.length)]
+            resourceType = 'image'
+        } else if (hasVideos) { // Si solo hay videos y falló el primer Math.random
+            resourceURL = randomCharacter.vid[Math.floor(Math.random() * randomCharacter.vid.length)]
+            resourceType = 'video'
+        } else {
+            // Manejar caso donde no hay ni img ni vid (aunque debe ser raro)
+            throw new Error('El personaje no tiene imágenes ni videos asociados.')
         }
-    });
+        // -------------------------------------------------------------
 
-    const results = await Promise.allSettled(fetchPromises);
-    for (const result of results) {
-        if (result.status === 'fulfilled' && result.value.length > 0) {
-            return result.value;
+        const harem = await loadHarem()
+        const userEntry = harem.find(entry => entry.characterId === randomCharacter.id)
+
+        const statusMessage = randomCharacter.user
+            ? `Reclamado por @${randomCharacter.user.split('@')[0]}`
+            : 'Libre'
+
+        const message = `╔◡╍┅•.⊹︵ࣾ᷼ ׁ𖥓┅╲۪ ⦙᷼͝🧸᷼͝⦙ ׅ╱ׅ╍𖥓 ︵ࣾ᷼︵ׄׄ᷼⊹┅╍◡╗
+┋  ⣿̶ֻ〪ׅ⃕݊⃧🐚⃚̶̸͝ᤢ֠◌ִ̲ 𝑪𝑯𝑨𝑹𝑨𝑪𝑻𝑬𝑹 𝑹𝑨𝑵𝑫𝑶𝑴 🐸ꨪ̸⃙ׅᮬֺ๋֢᳟  ┋
+╚◠┅┅˙•⊹.⁀𖥓 ׅ╍╲۪ ⦙᷼͝🎠᷼͝⦙ ׅ╱ׅ╍𖥓 ◠˙⁀۪ׄ⊹˙╍┅◠╝
+
+꥓໋╭࣭۬═ֽ̥࣪━᜔๋݈═𑂺ׄ︵ິּ֙᷼⌒݈᳹᪾̯ ⋮꥓ּ࣭ׄ🌹〪ິ᜔ּ໋࣭ׄ⋮⌒ໍּ֣ׄ═ᮣໍ࣭ׄ━𑂺᜔꥓໋┉꥓ׂ᷼━᜔࣭֙━๋݈═̥࣭۬╮
+> ᠙᳞✿̶᮫᮫ְְׅ᳝ׅ᳝᳞᳞࣪᪲࣪֘⣷ׅ᳝࣪ ࣪࣪𖡻ְְׅ᳝ׅׅ࣪࣪֘ᰰ🌵᮫ְׅ᳝࣪᪲⃞̶𝝸𝕝᮫ְ᳝᳝⃨۪۪۪ׅ᳝࣪࣪っְְׅ᳝۪⃨۪۪۪࣪:   𝙉𝘖𝘔𝘉𝘙𝘌: *${randomCharacter.name}*
+> ᠙᳞✿̶᮫᮫ְְׅ᳝ׅ᳝᳞᳞࣪᪲࣪֘⣷ׅ᳝࣪ ࣪࣪𖡻ְְׅ᳝ׅׅ࣪࣪֘ᰰ🍭᮫ְׅ᳝࣪᪲⃞̶𝝸𝕝᮫ְ᳝᳝⃨۪۪۪ׅ᳝࣪࣪っְְׅ᳝۪⃨۪۪۪࣪:  𝙂𝘌𝘕𝘌𝘙𝘖: *${randomCharacter.gender}*
+> ᠙᳞✿̶᮫᮫ְְׅ᳝ׅ᳝᳞᳞࣪᪲࣪֘⣷ׅ᳝࣪ ࣪࣪𖡻ְְׅ᳝ׅׅ࣪࣪֘ᰰ💰᮫ְׅ᳝࣪᪲⃞̶𝝸𝕝᮫ְ᳝᳝⃨۪۪۪ׅ᳝࣪࣪っְְׅ᳝۪⃨۪۪۪࣪:   𝙑𝘈𝘓𝘖𝘙: *${randomCharacter.value}*
+> ᠙᳞✿̶᮫᮫ְְׅ᳝ׅ᳝᳞᳞࣪᪲࣪֘⣷ׅ᳝࣪ ࣪࣪𖡻ְְׅ᳝ׅׅ࣪࣪֘ᰰ🪄᮫ְׅ᳝࣪᪲⃞̶𝝸𝕝᮫ְ᳝᳝⃨۪۪۪ׅ᳝࣪࣪っְְׅ᳝۪⃨۪۪۪࣪:   𝙀𝘚𝘛𝘈𝘋𝘖: ${statusMessage}
+> ᠙᳞✿̶᮫᮫ְְׅ᳝ׅ᳝᳞᳞࣪᪲࣪֘⣷ׅ᳝࣪ ࣪࣪𖡻ְְׅ᳝ׅׅ࣪࣪֘ᰰ📚᮫ְׅ᳝࣪᪲⃞̶𝝸𝕝᮫ְ᳝᳝⃨۪۪۪ׅ᳝࣪࣪っְְׅ᳝۪⃨۪۪۪࣪:   𝙁𝘜𝘌𝘕𝘛𝘌: *${randomCharacter.source}*
+> ᠙᳞✿̶᮫᮫ְְׅ᳝ׅ᳝᳞᳞࣪᪲࣪֘⣷ׅ᳝࣪ ࣪࣪𖡻ְְׅ᳝ׅׅ࣪࣪֘ᰰ🆔᮫ְׅ᳝࣪᪲⃞̶𝝸𝕝᮫ְ᳝᳝⃨۪۪۪ׅ᳝࣪࣪っְְׅ᳝۪⃨۪۪۪࣪:   𝙄𝘿: *${randomCharacter.id}*
+꥓໋╰ׅ۬═ֽ̥࣪━᜔๋݈═𑂺ׄ︵ິּ֙᷼⌒݈᳹᪾̯ ⋮꥓ּ࣭ׄ🐦‍🔥⋮⌒ໍּ֣ׄ═ᮣໍ࣭ׄ━𑂺᜔꥓໋┉꥓ׂ᷼━᜔࣭֙━๋݈═̥࣭۬╯`
+
+        const mentions = randomCharacter.user ? [randomCharacter.user] : []
+
+        // --- 🌟 Envío del recurso ---
+        if (resourceType === 'video') {
+             // 50% de probabilidad de enviarlo como GIF
+            const sendAsGif = Math.random() < 0.5
+            conn.sendMessage(m.chat, { video: { url: resourceURL }, gifPlayback: sendAsGif, caption: message }, { quoted: m, mentions })
+        } else {
+            // Envío de imagen
+            await conn.sendFile(m.chat, resourceURL, `${randomCharacter.name}.jpg`, message, m, { mentions })
         }
-    }
-    return [];
-}
+        // -----------------------------
 
-let handler = async (m, { conn, usedPrefix, command }) => {
-    const ctxErr = (global.rcanalx || {});
-    const ctxWarn = (global.rcanalw || {});
-    const ctxOk = (global.rcanalr || {});
-
-    const cooldownTime = 15 * 60 * 1000;
-
-    try {
-        const chatData = global.db?.data?.chats?.[m.chat] || {};
-        if (!chatData.gacha && m.isGroup) {
-            return await conn.reply(m.chat, 'ꕥ Los comandos de *Gacha* están desactivados en este grupo.\n\nUn *administrador* puede activarlos con el comando:\n» *' + usedPrefix + 'gacha on*', m, ctxWarn);
-        }
-
-        if (!chatData.characters) chatData.characters = {};
-        if (!chatData.lastRolledId) chatData.lastRolledId = null;
-        if (!chatData.lastRolledMsgId) chatData.lastRolledMsgId = null;
-
-        const userData = global.db?.data?.users?.[m.sender] || {};
-        const currentTime = Date.now();
-
-        if (userData.lastRoll && currentTime < userData.lastRoll + cooldownTime) {
-            const remainingSeconds = Math.ceil((userData.lastRoll + cooldownTime - currentTime) / 1000);
-            const minutes = Math.floor(remainingSeconds / 60);
-            const seconds = remainingSeconds % 60;
-
-            let timeLeft = '';
-            if (minutes > 0) timeLeft += minutes + ' minuto' + (minutes !== 1 ? 's' : '') + ' ';
-            if (seconds > 0 || timeLeft === '') timeLeft += seconds + ' segundo' + (seconds !== 1 ? 's' : '');
-
-            return await conn.reply(m.chat, 'ꕥ Debes esperar *' + timeLeft.trim() + '* para usar *' + (usedPrefix + command) + '* de nuevo.', m, ctxWarn);
-        }
-
-        const charactersData = await loadCharacters();
-        const allCharacters = flattenCharacters(charactersData);
-
-        if (!allCharacters.length) {
-            return await conn.reply(m.chat, 'ꕥ No hay personajes disponibles en la base de datos.', m, ctxErr);
-        }
-
-        const randomCharacter = allCharacters[Math.floor(Math.random() * allCharacters.length)];
-        const characterId = String(randomCharacter.id);
-        const seriesName = getSeriesNameByCharacter(charactersData, randomCharacter.id);
-
-        const characterTag = formatTag(randomCharacter.tags?.[0] || '');
-        const images = await buscarImagenDelirius(characterTag);
-
-        if (!images.length) {
-            return await conn.reply(m.chat, 'ꕥ No se encontró imágenes para el personaje *' + randomCharacter.name + '*.', m, ctxErr);
-        }
-
-        const randomImage = images[Math.floor(Math.random() * images.length)];
-
-        const charactersDb = global.db?.data?.characters || {};
-        if (!charactersDb[characterId]) {
-            charactersDb[characterId] = {};
-        }
-
-        const characterDb = charactersDb[characterId];
-        const existingData = charactersDb[characterId] || {};
-
-        characterDb.name = String(randomCharacter.name || 'Sin nombre');
-        characterDb.value = typeof existingData.value === 'number' ? existingData.value : Number(randomCharacter.value) || 100;
-        characterDb.votes = Number(characterDb.votes || existingData.votes || 0);
-        characterDb.user = m.sender;
-        characterDb.reservedUntil = currentTime + 20000;
-        characterDb.expiresAt = currentTime + 60000;
-
-        const getClaimantName = async (userId) => {
-            try {
-                return global.db?.data?.users?.[userId]?.name?.trim() || 
-                       (await conn.getName(userId)) || 
-                       userId.split('@')[0];
-            } catch {
-                return userId.split('@')[0];
-            }
-        };
-
-        const claimantName = await getClaimantName(characterDb.user);
-        const statusMessage = characterDb.user ? `Reclamado por ${claimantName}` : 'Libre';
-
-        const infoText = `╭━━━〔  𝐏𝐄𝐑𝐒𝐎𝐍𝐀𝐉𝐄👑 𝐀𝐋𝐄𝐀𝐓𝐎𝐑𝐈𝐎 👑 〕━━━⬣
-│ 🎴 Nombre ➪ *${randomCharacter.name}*
-│ ⚧️ Género ➪ *${randomCharacter.gender || 'Desconocido'}*
-│ 💎 Valor ➪ *${randomCharacter.value || 100}*
-│ 🎯 Estado ➪ ${statusMessage}
-│ 📚 Fuente ➪ *${seriesName}*
-│ 🪪 ID: *${randomCharacter.id}*
-╰━━━━━━━━━━━━━━━━━━━━━━⬣`;
-
-        const sentMessage = await conn.sendFile(
-            m.chat, 
-            randomImage, 
-            characterDb.name + '.jpg', 
-            infoText, 
-            m
-        );
-
-        chatData.lastRolledId = characterId;
-        chatData.lastRolledMsgId = sentMessage?.key?.id || null;
-        chatData.lastRolledCharacter = {
-            id: characterId,
-            name: characterDb.name,
-            media: randomImage
-        };
-
-        userData.lastRoll = currentTime;
+        // Establecer el cooldown sin importar si es video o imagen
+        cooldowns[userId] = now + COOLDOWN_TIME
 
     } catch (error) {
-        console.error('Error en handler de roll:', error);
-        await conn.reply(m.chat, '⚠︎ Se ha producido un problema.\n> Usa *' + usedPrefix + 'report* para informarlo.\n\n' + error.message, m, ctxErr);
+        await conn.reply(m.chat, `✘ Error al cargar el personaje: ${error.message}`, m)
     }
-};
+}
 
-handler.help = ['roll', 'rw', 'rollwaifu'];
-handler.tags = ['gacha'];
-handler.command = ['rollwaifu', 'rw', 'roll'];
-handler.group = true;
+handler.help = ['ver', 'rw', 'rollwaifu']
+handler.tags = ['gacha']
+handler.command = ['ver', 'rw', 'rollwaifu']
+handler.group = true
 
-export default handler;
+export default handler
