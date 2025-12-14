@@ -5,7 +5,8 @@ import axios from 'axios';
 // --- CONFIGURACIÓN DE LA API DE CHATGPT ---
 const apiKey = 'stellar-eFNHF99t'; 
 // Definimos el componente 'url' que contiene el basepath, simulando 'api.url'
-const apiBaseUrl = 'https://rest.alyabotpe.xyz'; // Esto es el 'api.url' de tu ejemplo
+const apiBaseUrl = 'https://rest.alyabotpe.xyz'; // La URL base de tu API
+// -------------------------------------------------------------------
 
 // --- VARIABLES ASUMIDAS (Ajusta si es necesario) ---
 const botname = 'TuBotAI';
@@ -21,12 +22,13 @@ const error = '❌';
 const handler = async (m, { conn, text }) => {
 
     // Obtiene el nombre del usuario
+    // Asumiendo que 'conn.getName(m.sender)' funciona para obtener el nombre.
     const username = `${conn.getName(m.sender)}`;
 
     // Prompt base para la personalidad de la IA
     const basePrompt = `Tu nombre es ${botname} y parece haber sido creada por ${etiqueta}. Tu versión actual es ${vs}, Tú usas el idioma Español. Llamarás a las personas por su nombre ${username}, te gusta ser divertida, y te encanta aprender. Lo más importante es que debes ser amigable con la persona con la que estás hablando.`;
 
-    // --- LÓGICA DE DETECCIÓN DE IMAGEN (DESHABILITADA) ---
+    // --- LÓGICA DE DETECCIÓN DE IMAGEN (FUNCIÓN DE VISIÓN DESHABILITADA) ---
     // Mantenemos la detección para notificar al usuario que la función de Visión no está disponible
     const isQuotedImage = m.quoted && (m.quoted.msg || m.quoted).mimetype && (m.quoted.msg || m.quoted).mimetype.startsWith('image/');
 
@@ -46,7 +48,7 @@ const handler = async (m, { conn, text }) => {
         // 1. Muestra un mensaje de espera
         const { key } = await conn.sendMessage(m.chat, {text: `${emoji2} ${botname} está procesando tu petición, espera unos segundos.`}, {quoted: m});
 
-        // 2. Combina la personalidad y la consulta del usuario
+        // 2. Combina la personalidad y la consulta del usuario en el 'prompt'
         const prompt = `${basePrompt}. Responde lo siguiente: ${text}`; 
 
         // 3. Llama a la API con el prompt completo
@@ -57,7 +59,7 @@ const handler = async (m, { conn, text }) => {
         await m.react(done);
     } catch (e) {
         console.error('Error en el handler principal:', e);
-        // Usa el mensaje del error lanzado por luminsesi
+        // Envía el mensaje de error al usuario
         const errMsg = e.message || `✘ ${username}, no pude responder. Hubo un error desconocido.`;
         await conn.sendMessage(m.chat, {text: errMsg, edit: key});
         await m.react(error);
@@ -77,20 +79,20 @@ export default handler
 
 /**
  * Función para interactuar con la IA usando prompts.
- * Utiliza la URL solicitada: `${api.url}/ai/chatgpt?text=${encodeURIComponent(text)}&key=${api.key}`
+ * Implementa la estructura de URL solicitada: `${api.url}/ai/chatgpt?text=${encodeURIComponent(text)}&key=${api.key}`
  * @param {string} username Nombre del usuario para mensajes de error.
  * @param {string} prompt El texto completo que se enviará a la IA (incluyendo personalidad).
  * @returns {Promise<string>} La respuesta de la IA.
  */
 async function luminsesi(username, prompt) {
     try {
-        // Construcción de la URL usando solo los parámetros text y key
+        // Construcción de la URL: apiBaseUrl + /ai/chatgpt?text=...&key=...
         const apiUrl = `${apiBaseUrl}/ai/chatgpt?text=${encodeURIComponent(prompt)}&key=${apiKey}`;
 
         const response = await axios.get(apiUrl);
         const apiResponse = response.data;
 
-        // Lógica de verificación de respuesta
+        // Lógica de verificación de respuesta (maneja 'response', 'result' o 'text')
         if (apiResponse && (apiResponse.response || apiResponse.result || apiResponse.text)) {
             return apiResponse.response || apiResponse.result || apiResponse.text;
         }
@@ -109,7 +111,7 @@ async function luminsesi(username, prompt) {
 
     } catch (error) {
         console.error(`Error al obtener respuesta de ChatGPT:`, error);
-        // Propaga un error de conexión
+        // Propaga un error de conexión para que el handler lo muestre
         throw new Error(`Lo siento, ${username}, hubo un error de conexión con la IA.`);
     }
 }
