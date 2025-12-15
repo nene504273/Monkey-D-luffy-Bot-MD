@@ -1,84 +1,116 @@
-import fetch from "node-fetch";
-import crypto from "crypto";
-import { FormData, Blob } from "formdata-node";
-import { fileTypeFromBuffer } from "file-type";
+import { upscaleWithIloveimg, VALID_SCALES } from '../lib/iloveimgUpscale.js'
 
-const handler = async (m, { conn }) => {
-  let q = m.quoted ? m.quoted : m;
-  let mime = (q.msg || q).mimetype || '';
+function parseScale(args = []) {
+  for (let i = 0; i < args.length; i += 1) {
+    const token = args[i]
+    if (!token) continue
+    const direct = token.match(/^([248])(?:x)?$/i)
+    if (direct) return Number(direct[1])
+    const flag = token.match(/^--?(?:scale|x)(?:=(\d+))?$/i)
+    if (flag) {
+      if (flag[1]) return Number(flag[1])
+      const next = args[i + 1]
+      if (next && /^\d+$/.test(next)) return Number(next)
+    }
+  }
+  return 2
+}
 
-  // Validación de archivo
-  if (!mime || !/image\/(png|jpe?g)/.test(mime)) {
-    return conn.reply(m.chat, `❌ Por favor, responde a una *imagen válida* (png o jpg).`, m);
+function pickFileName(mime, scale) {
+  if (/png/i.test(mime)) return `iloveimg_x${scale}.png`
+  return `iloveimg_x${scale}.jpg`
+}
+
+const handler = async (m, { conn, args, usedPrefix, command }) => {
+  let q = m.quoted || m
+  let mime = (q.msg || q).mimetype || q.mediaType || ''
+  const fancyQuoted = await makeFkontak()
+  const quotedContact = fancyQuoted || m
+
+  if (!mime || !/image\/(jpe?g|png)/i.test(mime)) {
+    const quotedContext = m.message?.extendedTextMessage?.contextInfo?.quotedMessage
+    const quotedImage = quotedContext?.imageMessage
+    if (quotedImage) {
+      q = {
+        message: { imageMessage: quotedImage },
+        download: async () => conn.downloadMediaMessage({ key: {}, message: { imageMessage: quotedImage } })
+      }
+      mime = quotedImage.mimetype || 'image/jpeg'
+    }
   }
 
-  await m.react("⏳"); // Espera inicial
+  if (!mime || !/image\/(jpe?g|png)/i.test(mime)) {
+    return conn.reply(m.chat, `> ⓘ \`Envía o responde a una imagen JPG/PNG\`\n> ⓘ *Uso:* \`${usedPrefix}${command} [2|4|8]\``, quotedContact)
+  }
 
+  let buffer
   try {
-    // Descarga de la imagen
-    let media = await q.download();
-
-    if (!media) throw new Error("No se pudo descargar la imagen.");
-
-    // Subida a Catbox
-    let link = await catbox(media);
-
-    if (!link || !link.startsWith("http")) {
-      throw new Error("Error al subir la imagen a Catbox.");
-    }
-
-    // Procesando con API upscale
-    let upscaleApi = `https://api.siputzx.my.id/api/iloveimg/upscale?image=${encodeURIComponent(link)}&scale=2`;
-    let res = await fetch(upscaleApi);
-    let data = await res.json();
-
-    if (!data.status || !data.result) {
-      throw new Error(data.message || "La API de upscale no devolvió un resultado válido.");
-    }
-
-    // Aviso de procesamiento exitoso
-    await conn.reply(m.chat, `✅ *Procesando tu imagen en HD...*`, m);
-
-    // Envío de imagen mejorada
-    await conn.sendMessage(m.chat, {
-      image: { url: data.result },
-      caption: `✅ *Imagen mejorada con éxito* \n\n🔗 *Enlace HD:* ${data.result}`
-    }, { quoted: m });
-
-    await m.react("✅"); // Reacción de éxito
-
-  } catch (e) {
-    console.error(e);
-    await m.react("❌");
-    return conn.reply(m.chat, `❌ *Error al procesar la imagen:*\n\`\`\`${e.message}\`\`\``, m);
+    buffer = await q.download?.()
+  } catch (_) {
+    buffer = null
   }
-};
+  if (!buffer) {
+    try {
+      buffer = await conn.downloadMediaMessage(q)
+    } catch (err) {
+      return conn.reply(m.chat, `> ⓘ \`No se pudo descargar la imagen:\` *${err.message || err}*`, quotedContact)
+    }
+  }
 
-handler.help = ['hd', 'upscale'];
-handler.tags = ['herramientas'];
-handler.command = ['hd', 'upscale', 'mejorarimagen']; 
-handler.register = true;
-handler.limit = true;
+  if (!buffer) {
+    return conn.reply(m.chat, '> ⓘ \`No se pudo obtener la imagen\`', quotedContact)
+  }
 
-export default handler;
+  let scale = parseScale(args)
+  if (!VALID_SCALES.has(scale)) {
+    return conn.reply(m.chat, '> ⓘ \`Escala inválida. Usa:\` *2, 4 u 8*', quotedContact)
+  }
 
-// ─── Funciones auxiliares ───
-async function catbox(content) {
-  const { ext, mime } = (await fileTypeFromBuffer(content)) || {};
-  const blob = new Blob([content.toArrayBuffer()], { type: mime });
-  const formData = new FormData();
-  const randomBytes = crypto.randomBytes(5).toString("hex");
-  formData.append("reqtype", "fileupload");
-  formData.append("fileToUpload", blob, randomBytes + "." + ext);
+  await m.react?.('🕑')
+  try {
+    const result = await upscaleWithIloveimg({
+      buffer,
+      fileName: pickFileName(mime, scale),
+      mimeType: /png/i.test(mime) ? 'image/png' : 'image/jpeg',
+      scale
+    })
 
-  const response = await fetch("https://catbox.moe/user/api.php", {
-    method: "POST",
-    body: formData,
-    headers: {
-      "User-Agent":
-        "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/44.0.2403.157 Safari/537.36",
-    },
-  });
+    await conn.sendMessage(
+      m.chat,
+      {
+        image: result.buffer,
+        mimetype: result.contentType || (/png/i.test(result.fileName) ? 'image/png' : 'image/jpeg'),
+        caption: `> ⓘ \`Imagen mejorada\` *x${scale}*`,
+        fileName: result.fileName
+      },
+      { quoted: quotedContact }
+    )
+    await m.react?.('✅')
+  } catch (err) {
+    await m.react?.('❌')
+    const errMsg = err?.response?.status
+      ? `\`Error ${err.response.status}:\` *${err.response.statusText}*`
+      : `\`${err?.message || 'Error desconocido'}\``
+    return conn.reply(m.chat, `> ⓘ \`Fallo al usar IloveIMG:\` *${errMsg}*`, quotedContact)
+  }
+}
 
-  return await response.text();
+handler.help = ['hd']
+handler.tags = ['tools']
+handler.command = /^(hd)$/i
+
+export default handler
+
+async function makeFkontak() {
+  try {
+    const res = await fetch('https://i.postimg.cc/pLh4hJ7D/download-(1)-(1).png')
+    const thumb2 = Buffer.from(await res.arrayBuffer())
+    return {
+      key: { participants: '0@s.whatsapp.net', remoteJid: 'status@broadcast', fromMe: false, id: 'Halo' },
+      message: { locationMessage: { name: 'HD', jpegThumbnail: thumb2 } },
+      participant: '0@s.whatsapp.net'
+    }
+  } catch {
+    return undefined
+  }
 }
