@@ -1,54 +1,154 @@
-import fetch from 'node-fetch'; // Asegúrate de que node-fetch esté disponible si lo vas a usar
+import fetch from "node-fetch";
+import { FormData, Blob } from "formdata-node";
+import { fileTypeFromBuffer } from "file-type";
 
-const handler = async (m, { conn, args, usedPrefix, command }) => {
-  let q = m.quoted ? m.quoted : m;
-  let mime = (q.msg || q).mimetype || '';
+// --- CONSTANTES ESTILO LUFFY ---
+const rwait = "⚔️"; // Preparando el ataque
+const done = "🍖"; // Celebración con carne
+const error = "🔥"; // ¡Fallo de un puñetazo!
+const emoji = "🏴‍☠️";
+const luffy = "👑 ¡Soy Luffy, el que va a ser el Rey de los Piratas!";
 
-  // 1. Validar que se haya respondido a una imagen
-  if (!mime || !/image\/(jpe?g|png)/.test(mime))  
-    throw `📸 Responde a una imagen con *${usedPrefix + command}* para mejorarla en HD.`;
+// --- URLS DE LA API ---
+const VREDEN_API_URL = "https://api.vreden.my.id/api/v1/artificial/imglarger/upscale";
+const CATBOX_API_URL = "https://catbox.moe/user/api.php"; // Endpoint de subida de Catbox
 
-  try { // <<< CORRECCIÓN: Se agrega la llave de apertura del bloque try
-    await m.reply('🛠️ Procesando imagen, subiéndola y mejorándola... espera un momento.');
+function formatBytes(bytes) {
+  if (bytes === 0) return "0 B";
+  const sizes = ["B", "KB", "MB", "GB", "TB"];
+  const i = Math.floor(Math.log(bytes) / Math.log(1024));
+  return `${(bytes / 1024 ** i).toFixed(2)} ${sizes[i]}`;
+}
 
-    // 2. Descargar y subir la imagen para obtener una URL pública
-    const img = await q.download(); // Usa q.download() para obtener el buffer directamente
-    let url_subida = await uploadImage(img);
+// Función para subir imagen a Catbox para obtener URL pública
+async function uploadToCatbox(buffer, mimeType, ext) {
+    const blob = new Blob([buffer], { type: mimeType }); 
+    const formData = new FormData();
+    formData.append("reqtype", "fileupload");
+    formData.append("fileToUpload", blob, `image.${ext}`);
 
-    // 3. Construir el enlace de la API de upscale
-    // Aquí se utiliza el Template Literal (backticks) para inyectar la URL subida
-    let api_url_final = `https://rest.alyabotpe.xyz/tools/upscale?url=${encodeURIComponent(url_subida)}&key=stellar-eFNHF99t`;
-    
-    // 4. Enviar la imagen resultante
-    // Usamos conn.sendFile con la URL de la API. La API debe devolver el archivo de imagen directamente.
-    await conn.sendFile(m.chat, api_url_final, 'hd-image.jpg', '🖼️ Aquí tienes tu imagen mejorada.', m);
+    try {
+        const response = await fetch(CATBOX_API_URL, {
+            method: "POST",
+            body: formData,
+        });
 
-  } catch (e) {
-    // Si la API no funciona o falla la conexión/subida
-    console.error(e); // Mostrar el error completo en la consola
-    m.reply('❌ Ocurrió un error al procesar la imagen. Verifica la URL de la imagen y la clave de la API.');
-  }
+        const result = await response.text();
+
+        if (result.startsWith("https://files.catbox.moe/")) {
+            return result;
+        }
+        // Error simple si Catbox no devuelve la URL esperada
+        throw new Error(`El barco de Catbox falló al zarpar. ¡Necesito un carpintero!`); 
+
+    } catch (e) {
+        throw new Error(`¡Fallo en el salto temporal! ${e.message}`);
+    }
+}
+
+
+let handler = async (m, { conn }) => {
+  let q = m.quoted ? m.quoted : null;
+  if (!q)
+    return conn.reply(
+      m.chat,
+      `${luffy}\n${emoji} ¡Oye! ¿Dónde está mi mapa? ¡Necesito una imagen para zarpar! Responde a una imagen.`,
+      m
+    );
+  let mime = (q.msg || q).mimetype || "";
+  if (!mime || !mime.startsWith("image/"))
+    return conn.reply(
+      m.chat,
+      `${luffy}\n${emoji} ¡Esto no es comida ni un tesoro! ¡No es una imagen! ¡Dame una imagen!`,
+      m
+    );
+
+  await m.react(rwait);
+  const scaleFactor = 4;
+
+  try {
+    let media = await q.download();
+    if (!media || media.length === 0)
+      throw new Error("¡El Sunny no pudo descargar el cofre del tesoro!");
+
+    const { ext, mime: fileMime } = (await fileTypeFromBuffer(media)) || {};
+
+    // ----------------------------------------------------
+    // [PASO 1] SUBIR IMAGEN A CATBOX (El puerto temporal)
+    // ----------------------------------------------------
+    const publicImageUrl = await uploadToCatbox(media, fileMime, ext);
+
+    // ----------------------------------------------------
+    // [PASO 2] LLAMAR A LA API DE VREDEN (GET) (El Gear 5)
+    // ----------------------------------------------------
+    const vredenUrl = `${VREDEN_API_URL}?url=${encodeURIComponent(publicImageUrl)}&scale=${scaleFactor}`;
+
+    const upscaleResponse = await fetch(vredenUrl);
+
+    // Verificar el estado HTTP y lanzar error simple
+    if (!upscaleResponse.ok) {
+        throw new Error(`¡Un Almirante (HTTP ${upscaleResponse.status}) bloqueó el camino!`);
+    }
+
+    // Intentar parsear JSON
+    let upscaleData;
+    try {
+        upscaleData = await upscaleResponse.json();
+    } catch (e) {
+        // Si falla el parseo, el error original es suficiente
+        throw new Error(`¡El mensaje del log pose se rompió!`);
+    }
+
+    // Verificar el status de la API dentro del JSON
+    if (upscaleData.status !== true || !upscaleData.result?.download) {
+        throw new Error(`¡Kizaru nos golpeó! La API rechazó el Gear. Mensaje: ${upscaleData.creator || "Error interno."}`);
+    }
+
+    // ----------------------------------------------------
+    // [PASO 3] DESCARGAR IMAGEN ESCALADA (El One Piece)
+    // ----------------------------------------------------
+    const downloadUrl = upscaleData.result.download;
+
+    const downloadResponse = await fetch(downloadUrl);
+
+    if (!downloadResponse.ok) {
+        throw new Error(`¡Fallo al reclamar el tesoro! HTTP ${downloadResponse.status}.`);
+    }
+
+    const bufferHD = Buffer.from(await downloadResponse.arrayBuffer());
+
+    let textoLuffy = `
+🍖 *¡LO CONSEGUÍ! ¡SOY EL REY DE LA MEJORA DE IMÁGENES!*
+> *Detalles:* La imagen se mejoró ${scaleFactor} veces.
+> *Tamaño final:* ${formatBytes(bufferHD.length)}
+>
+> ¡Mira ese detalle! ¡Ahora dame carne, Sanji!
+`;
+
+    await conn.sendMessage(
+      m.chat,
+      {
+        image: bufferHD,
+        caption: textoLuffy.trim(),
+      },
+      { quoted: m }
+    );
+
+    await m.react(done);
+
+  } catch (e) {
+    // El bloque catch al estilo Luffy (pero manteniendo el error original)
+    await m.react(error);
+    return conn.reply(
+      m.chat,
+      `${luffy}\n${emoji} ¡Ugh! ¡Me golpearon! Algo salió mal, pero ¡NO ME RENDÍ!
+\n*Mira, es culpa de ese pirata:* ${e.message}`,
+      m
+    );
+  }
 };
 
-handler.help = ['hd'];
-handler.tags = ['tools'];
-handler.command = ['hd'];
-handler.register = true;
-
+handler.help = ["hd"];
+handler.tags = ["ai"];
+handler.command = ["hd"];
 export default handler;
-
-/**
- * Función para subir el buffer de la imagen y obtener una URL.
- * @param {Buffer} buffer - El buffer de la imagen.
- * @returns {Promise<string>} La URL de visualización.
- */
-async function uploadImage(buffer) {
-  // Asegúrate de que 'imgbb-uploader' esté instalado (npm install imgbb-uploader)
-  const { default: upload } = await import('imgbb-uploader');
-  
-  // Si necesitas usar una clave de imgbb, añádela al objeto de configuración:
-  // const data = await upload({ apiKey: 'TU_CLAVE_IMGBB', name: 'image', buffer });
-  
-  const data = await upload({ name: 'image', buffer });
-  return data.display_url;
-}
