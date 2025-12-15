@@ -12,6 +12,7 @@ import yargs from 'yargs';
 import {spawn} from 'child_process'
 import lodash from 'lodash'
 import { LuffyJadiBot } from './plugins/jadibot-serbot.js';
+import { checkCodesEndpoint } from './lib/apiChecker.js';
 import chalk from 'chalk'
 import syntaxerror from 'syntax-error'
 import {tmpdir} from 'os'
@@ -262,7 +263,21 @@ console.log(chalk.bold.yellow(`\n❐ ESCANEA EL CÓDIGO QR EXPIRA EN 45 SEGUNDOS
 if (connection == 'open') {
 console.log(chalk.bold.green('\n❀ Luffy-Bot Conectada con éxito ❀')) // Cambiado de Ruby-Bot
 }
+// -------------------------------------------------------------------
+// 🔑 INICIO DE LA LÓGICA DE CHEQUEO DEL ENDPOINT DE CÓDIGOS (MARIA) 🔑
+// Ahora es completamente silencioso, solo reporta errores.
+// -------------------------------------------------------------------
 
+// 1. Ejecutar el chequeo inmediatamente al conectar
+checkCodesEndpoint(conn, global.db.data); 
+
+// 2. Ejecutar el chequeo cada 60 segundos (60,000 milisegundos)
+global.codesCheckInterval = setInterval(() => {
+    // La función checkCodesEndpoint es silenciosa.
+    checkCodesEndpoint(conn, global.db.data); 
+}, 60 * 1000); 
+
+// -------------------------------------------------------------------
 let reason = new Boom(lastDisconnect?.error)?.output?.statusCode
 if (connection === 'close') {
 if (reason === DisconnectReason.badSession) {
