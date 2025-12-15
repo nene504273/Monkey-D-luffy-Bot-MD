@@ -9,7 +9,7 @@ const chatGptApiUrl = 'https://rest.alyabotpe.xyz/ai/chatgpt';
 
 // --- VARIABLES ASUMIDAS (Ajusta si es necesario) ---
 const botname = 'TuBotAI';
-const etiqueta = 'El Creador';
+const etiqueta = 'ɴ͡ᴇ͜ɴᴇ❀᭄☂️';
 const vs = '1.0';
 const emoji = '🤖';
 const emoji2 = '🧠';
