@@ -1,57 +1,79 @@
-import fetch from 'node-fetch';
-import FormData from 'form-data';
+import fetch from 'node-fetch'
+import FormData from 'form-data'
 
-export default {
-  command: ['hd'],
-  category: 'utils',
-  run: async (client, m, args, command, text, prefix) => {
+let handler = async (m, { conn, usedPrefix, command }) => {
+  const ctxErr = (global.rcanalx || {})
+  const ctxWarn = (global.rcanalw || {})
+
+  const quoted = m.quoted ? m.quoted : m
+  const mime = quoted.mimetype || quoted.msg?.mimetype || ''
+
+  if (!/image\/(jpe?g|png)/i.test(mime)) {
+    await conn.sendMessage(m.chat, { react: { text: '❌', key: m.key } })
+    return conn.reply(m.chat, `🏴‍☠️ *Responde a una imagen*`, m, rcanal)
+  }
+
+  try {
+    await conn.sendMessage(m.chat, { react: { text: '🕒', key: m.key } })
+    conn.reply(m.chat, `♻️ *Procesando imagen...*`, m, ctxWarn)  
+
+    const media = await quoted.download()
+    const base64 = media.toString('base64')
+
+
+    let resultBuffer
     try {
-      const q = m.quoted || m
-      const mime = q.mimetype || q.msg?.mimetype || ''
+      const res = await fetch('https://api.ryzendesu.vip/api/ai/enhance', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ image: base64 })
+      })
+      const json = await res.json()
 
-      if (!mime) return m.reply(`《✧》 Envía una *imagen* junto al *comando* ${prefix + command}`)
-      if (!/image\/(jpe?g|png)/.test(mime)) {
-        return m.reply(`《✧》 El formato *${mime}* no es compatible`)
-      }
+      if (json?.status && json?.image) {
+        resultBuffer = Buffer.from(json.image, 'base64')
+      } else throw new Error('API 1 falló')
+    } catch {
 
-     // await m.reply(mess.wait)
+      const form = new FormData()
+      form.append('file', media, 'image.jpg')
 
-      const buffer = await q.download()
-      const uploadedUrl = await uploadToUguu(buffer)
-      if (!uploadedUrl) {
-        return m.reply('《✧》 No se pudo *subir* la imagen')
-      }
+      const uploadRes = await fetch('https://telegra.ph/upload', {
+        method: 'POST',
+        body: form
+      })
+      const uploadJson = await uploadRes.json()
 
-      const enhancedBuffer = await getEnhancedBuffer(uploadedUrl)
-      if (!enhancedBuffer) {
-        return m.reply('《✧》 No se pudo *obtener* la imagen mejorada')
-      }
+      if (!uploadJson?.[0]?.src) throw new Error('No se pudo subir la imagen')
 
-      await client.sendMessage(m.chat, { image: enhancedBuffer, caption: null }, { quoted: m })
-    } catch (err) {
-      console.error(err)
-      await m.reply(magglobal)
+      const imageUrl = 'https://telegra.ph' + uploadJson[0].src
+
+      const res = await fetch(`https://api.betabotz.eu.org/api/tools/remini?url=${encodeURIComponent(imageUrl)}&apikey=beta-Itachi09`, {
+        method: 'GET'
+      })
+      const json = await res.json()
+
+      if (!json?.status || !json?.url) throw new Error('API no respondió')
+
+      const imageRes = await fetch(json.url)
+      resultBuffer = Buffer.from(await imageRes.arrayBuffer())
     }
-  },
-};
 
-async function uploadToUguu(buffer) {
-  const body = new FormData()
-  body.append('files[]', buffer, 'image.jpg')
+    await conn.sendMessage(m.chat, {
+      image: resultBuffer,
+      caption: `✨ *Imagen Mejorada HD*\n💫 *luffy-sempai*`
+    }, { quoted: m })
 
-  const res = await fetch('https://uguu.se/upload.php', {
-    method: 'POST',
-    body,
-    headers: body.getHeaders(),
-  })
+    await conn.sendMessage(m.chat, { react: { text: '✅', key: m.key } })
 
-  const json = await res.json()
-  return json.files?.[0]?.url
+  } catch (err) {
+    await conn.sendMessage(m.chat, { react: { text: '❌', key: m.key } })
+    conn.reply(m.chat, `❎️ *Error:* ${err.message}`, m, ctxErr)
+  }
 }
 
-async function getEnhancedBuffer(url) {
-  const res = await fetch(`${api.url}/tools/upscale?url=${url}&key=${api.key}`)
-  if (!res.ok) return null
+handler.help = ["hd"]
+handler.tags = ["imagen"] 
+handler.command = ["hd", "remini", "mejorar"]
 
-  return Buffer.from(await res.arrayBuffer())
-}
+export default handler
