@@ -2,29 +2,32 @@ import fetch from "node-fetch";
 import { FormData, Blob } from "formdata-node";
 import { fileTypeFromBuffer } from "file-type";
 
-// --- CONSTANTES ESTILO LUFFY ---
-const rwait = "⚔️"; // Preparando el ataque
-const done = "🍖"; // Celebración con carne
-const error = "🔥"; // ¡Fallo de un puñetazo!
-const emoji = "🏴‍☠️";
-const luffy = "👑 ¡Soy Luffy, el que va a ser el Rey de los Piratas!";
+// --- CONSTANTES ---
+// ¡Los colores de la aventura!
+const rwait = "🗺️"; // Mapa para empezar la búsqueda
+const done = "🎉"; // ¡Tesoro encontrado!
+const error = "🏴‍☠️"; // ¡Bandera de peligro!
+const emoji = "⚓"; // Ancla, ¡listos para zarpar!
+const luffy = "🍖 ¡Soy Luffy! ¿Buscas la imagen más grande del mundo? ¡Genial!";
 
 // --- URLS DE LA API ---
 const VREDEN_API_URL = "https://api.vreden.my.id/api/v1/artificial/imglarger/upscale";
-const CATBOX_API_URL = "https://catbox.moe/user/api.php"; // Endpoint de subida de Catbox
+const CATBOX_API_URL = "https://catbox.moe/user/api.php"; // El puerto seguro para dejar la carga
 
 function formatBytes(bytes) {
   if (bytes === 0) return "0 B";
   const sizes = ["B", "KB", "MB", "GB", "TB"];
   const i = Math.floor(Math.log(bytes) / Math.log(1024));
+  // ¡Como las porciones de carne!
   return `${(bytes / 1024 ** i).toFixed(2)} ${sizes[i]}`;
 }
 
-// Función para subir imagen a Catbox para obtener URL pública
+// Función para subir imagen a Catbox para obtener URL pública (¡Dejándola en el puerto!)
 async function uploadToCatbox(buffer, mimeType, ext) {
     const blob = new Blob([buffer], { type: mimeType }); 
     const formData = new FormData();
     formData.append("reqtype", "fileupload");
+    // ¡El nombre del archivo!
     formData.append("fileToUpload", blob, `image.${ext}`);
 
     try {
@@ -36,13 +39,13 @@ async function uploadToCatbox(buffer, mimeType, ext) {
         const result = await response.text();
 
         if (result.startsWith("https://files.catbox.moe/")) {
-            return result;
+            return result; // ¡El mapa del tesoro!
         }
-        // Error simple si Catbox no devuelve la URL esperada
-        throw new Error(`El barco de Catbox falló al zarpar. ¡Necesito un carpintero!`); 
+        // ¡Algo falló en el muelle!
+        throw new Error(`El barco de Catbox no zarpó bien. ¡Maldición, necesito un cocinero!`); 
 
     } catch (e) {
-        throw new Error(`¡Fallo en el salto temporal! ${e.message}`);
+        throw new Error(`¡Fallo al cargar las provisiones! ${e.message}`);
     }
 }
 
@@ -52,77 +55,77 @@ let handler = async (m, { conn }) => {
   if (!q)
     return conn.reply(
       m.chat,
-      `${luffy}\n${emoji} ¡Oye! ¿Dónde está mi mapa? ¡Necesito una imagen para zarpar! Responde a una imagen.`,
+      `${luffy}\n${emoji} ¡Oye! ¿Dónde está el tesoro? ¡Necesito una imagen para empezar la búsqueda! Responde a una.`,
       m
     );
   let mime = (q.msg || q).mimetype || "";
   if (!mime || !mime.startsWith("image/"))
     return conn.reply(
       m.chat,
-      `${luffy}\n${emoji} ¡Esto no es comida ni un tesoro! ¡No es una imagen! ¡Dame una imagen!`,
+      `${luffy}\n${emoji} ¡Eh! ¡Eso no es un cofre! ¡Quiero una IMAGEN! Si no, me da hambre.`,
       m
     );
 
-  await m.react(rwait);
-  const scaleFactor = 4;
+  await m.react(rwait); // ¡Zarpando!
+  const scaleFactor = 4; // ¡Multiplicamos la recompensa!
 
   try {
     let media = await q.download();
     if (!media || media.length === 0)
-      throw new Error("¡El Sunny no pudo descargar el cofre del tesoro!");
+      throw new Error("¡El cofre estaba vacío! ¡Qué decepción!");
 
     const { ext, mime: fileMime } = (await fileTypeFromBuffer(media)) || {};
 
     // ----------------------------------------------------
-    // [PASO 1] SUBIR IMAGEN A CATBOX (El puerto temporal)
+    // [PASO 1] SUBIR IMAGEN A CATBOX (¡Dejamos la imagen en el barco de al lado!)
     // ----------------------------------------------------
     const publicImageUrl = await uploadToCatbox(media, fileMime, ext);
 
     // ----------------------------------------------------
-    // [PASO 2] LLAMAR A LA API DE VREDEN (GET) (El Gear 5)
+    // [PASO 2] LLAMAR A LA API DE VREDEN (¡El Gran Capitán de la escala!)
     // ----------------------------------------------------
     const vredenUrl = `${VREDEN_API_URL}?url=${encodeURIComponent(publicImageUrl)}&scale=${scaleFactor}`;
 
     const upscaleResponse = await fetch(vredenUrl);
 
-    // Verificar el estado HTTP y lanzar error simple
+    // ¡Problemas con la Marina!
     if (!upscaleResponse.ok) {
-        throw new Error(`¡Un Almirante (HTTP ${upscaleResponse.status}) bloqueó el camino!`);
+        throw new Error(`¡El Capitán Vreden nos atacó! HTTP ${upscaleResponse.status}.`);
     }
 
-    // Intentar parsear JSON
+    // Intentar parsear JSON (¡Leemos el cartel de recompensa!)
     let upscaleData;
     try {
         upscaleData = await upscaleResponse.json();
     } catch (e) {
-        // Si falla el parseo, el error original es suficiente
-        throw new Error(`¡El mensaje del log pose se rompió!`);
+        // ¡El mapa se rompió!
+        throw new Error(`El Capitán Vreden escribió su respuesta con jeroglíficos raros.`);
     }
 
-    // Verificar el status de la API dentro del JSON
+    // Verificar el status de la API dentro del JSON (¡Chequeamos si es el tesoro real!)
     if (upscaleData.status !== true || !upscaleData.result?.download) {
-        throw new Error(`¡Kizaru nos golpeó! La API rechazó el Gear. Mensaje: ${upscaleData.creator || "Error interno."}`);
+        throw new Error(`¡No es el One Piece! El mensaje es: ${upscaleData.creator || "¡Error interno del mapa!"}`);
     }
 
     // ----------------------------------------------------
-    // [PASO 3] DESCARGAR IMAGEN ESCALADA (El One Piece)
+    // [PASO 3] DESCARGAR IMAGEN ESCALADA (¡Tomamos el tesoro!)
     // ----------------------------------------------------
     const downloadUrl = upscaleData.result.download;
 
     const downloadResponse = await fetch(downloadUrl);
 
     if (!downloadResponse.ok) {
-        throw new Error(`¡Fallo al reclamar el tesoro! HTTP ${downloadResponse.status}.`);
+        throw new Error(`¡Fallo al agarrar el tesoro final! ¡Se cayó al mar! HTTP ${downloadResponse.status}.`);
     }
 
     const bufferHD = Buffer.from(await downloadResponse.arrayBuffer());
 
     let textoLuffy = `
-🍖 *¡LO CONSEGUÍ! ¡SOY EL REY DE LA MEJORA DE IMÁGENES!*
-> *Detalles:* La imagen se mejoró ${scaleFactor} veces.
-> *Tamaño final:* ${formatBytes(bufferHD.length)}
->
-> ¡Mira ese detalle! ¡Ahora dame carne, Sanji!
+🎉 *¡El One Piece... digo, la imagen HD, es tuya!*
+> *Recompensa (Tamaño):* ${formatBytes(bufferHD.length)}
+> ¡Ahora es tan grande que podrías comerla! (Aunque no lo hagas, sabe a pixeles).
+
+🍖 *¡Ahora a celebrar con carne! ¡Shishishi!*
 `;
 
     await conn.sendMessage(
@@ -134,15 +137,14 @@ let handler = async (m, { conn }) => {
       { quoted: m }
     );
 
-    await m.react(done);
+    await m.react(done); // ¡Fiesta!
 
   } catch (e) {
-    // El bloque catch al estilo Luffy (pero manteniendo el error original)
+    // ¡Alguien se comió mi carne o me dio un golpe!
     await m.react(error);
     return conn.reply(
       m.chat,
-      `${luffy}\n${emoji} ¡Ugh! ¡Me golpearon! Algo salió mal, pero ¡NO ME RENDÍ!
-\n*Mira, es culpa de ese pirata:* ${e.message}`,
+      `${luffy}\n⚠️ ¡Rayos! ¡La aventura se puso difícil! ¡Perdimos el mapa o algo así!\n\n*Error de la Marina:* ${e.message}`,
       m
     );
   }
