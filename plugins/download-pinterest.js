@@ -1,83 +1,69 @@
-import fetch from 'node-fetch';
-import baileys from '@whiskeysockets/baileys';
+/* 
+/////////////////////////////////
 
-async function sendAlbumMessage(jid, medias, options = {}) {
-    if (typeof jid !== "string") throw new TypeError(`jid must be string, received: ${jid}`);
-    if (medias.length < 2) throw new RangeError("Se necesitan al menos 2 imágenes para un álbum");
+ ☆ Código creado por: GabrielZks
+ ☆ GitHub: github.com/glytglobal/
+ ☆ Tipo: Buscador de Pinterest (Modo Carrusel)
+ ☆ Descripción: Creado específicamente y adaptado
+   a las funcionalidades de TheMystic-Bot-MD, prohibida su
+   venta, modificación sin autorización explícita y cambios de
+   derechos de autor. Creative Commons (2025) -License-.
 
-    const caption = options.text || options.caption || "";
-    const delay = !isNaN(options.delay) ? options.delay : 500;
-    delete options.text;
-    delete options.caption;
-    delete options.delay;
+/////////////////////////////////
+*/
 
-    const album = baileys.generateWAMessageFromContent(
-        jid,
-        { messageContextInfo: {}, albumMessage: { expectedImageCount: medias.length } },
-        {}
-    );
+const { proto, generateWAMessageFromContent, generateWAMessageContent } = (await import("baileys")).default;
+import axios from 'axios';
 
-    await conn.relayMessage(album.key.remoteJid, album.message, { messageId: album.key.id });
-
-    for (let i = 0; i < medias.length; i++) {
-        const { type, data } = medias[i];
-        const img = await baileys.generateWAMessage(
-            album.key.remoteJid,
-            { [type]: data, ...(i === 0 ? { caption } : {}) },
-            { upload: conn.waUploadToServer }
-        );
-        img.message.messageContextInfo = {
-            messageAssociation: { associationType: 1, parentMessageKey: album.key },
-        };
-        await conn.relayMessage(img.key.remoteJid, img.message, { messageId: img.key.id });
-        await baileys.delay(delay);
-    }
-    return album;
+const handler = async (m, { conn, usedPrefix, command, text }) => {
+ if (!text) return conn.sendMessage(m.chat, { text: `*_< BUSQUEDAS - PINTEREST />_*\n\n[ ❗️ ] Ingresa un texto para buscar resultados\nEjemplo: ${usedPrefix + command} Gato` }, { quoted: m });
+ try {
+ let { data } = await axios.get(`${global.APIs.stellar}/search/pinterest?query=${text}&apikey=${global.APIKeys[global.APIs.stellar]}`);
+ let images = data.data;
+ let push = [];
+ for (let i = 0; i < images.length; i++) {
+ let image = images[i];
+ push.push({ 
+ body: proto.Message.InteractiveMessage.Body.fromObject({ text: `\n□ Número de resultado: ${i + 1}\n` }), 
+ footer: proto.Message.InteractiveMessage.Footer.fromObject({ text: global.pickbot }), 
+ header: proto.Message.InteractiveMessage.Header.fromObject({ 
+ title: '*_< BUSQUEDAS - PINTEREST />_*', 
+ hasMediaAttachment: true, 
+ imageMessage: await generateWAMessageContent({ image: { url: image.mini } }, { upload: conn.waUploadToServer }).then(res => res.imageMessage) 
+ }), 
+ nativeFlowMessage: proto.Message.InteractiveMessage.NativeFlowMessage.fromObject({ 
+ buttons: [ 
+ { 
+ "name": "cta_url", 
+ "buttonParamsJson": `{"display_text":"Ver en alta calidad","url":"${image.hd}","merchant_url":"${image.hd}"}` 
+    } 
+   ] 
+  }) 
+ });
 }
 
-const pinterest = async (m, { conn, text, usedPrefix, command }) => {
-    if (!text) return conn.reply(m.chat, `*👑 Uso Correcto: ${usedPrefix + command} luffy*`, m, global.rcanal);
-
-    await m.react('⏳');
-    conn.reply(m.chat, '✅ *Descargando imágenes de Pinterest...*', m, {
-        contextInfo: {
-            externalAdReply: {
-                mediaUrl: null,
-                mediaType: 1,
-                showAdAttribution: true,
-                title: packname,
-                body: wm,
-                previewType: 0,
-                thumbnail: icons,
-                sourceUrl: channel
-            }
-        }
-    });
-
-    try {
-        const res = await fetch(`https://api.dorratz.com/v2/pinterest?q=${encodeURIComponent(text)}`);
-        const data = await res.json();
-
-        if (!Array.isArray(data) || data.length < 2) {
-            return conn.reply(m.chat, '👑 No se encontraron suficientes imágenes para un álbum.', m, global.rcanal);
-        }
-
-        const images = data.slice(0, 10).map(img => ({ type: "image", data: { url: img.image_large_url } }));
-
-        const caption = ` *Resultados de búsqueda para:* ${text}`;
-        await sendAlbumMessage(m.chat, images, { caption, quoted: m });
-
-        await m.react('✅');
-    } catch (error) {
-        console.error(error);
-        await m.react('❌');
-        conn.reply(m.chat, '📌 Hubo un error al obtener las imágenes de Pinterest.', m , global.rcanal);
-    }
+ let bot = generateWAMessageFromContent(m.chat, { 
+ viewOnceMessage: { 
+ message: { 
+ messageContextInfo: { deviceListMetadata: {}, deviceListMetadataVersion: 2 }, 
+ interactiveMessage: proto.Message.InteractiveMessage.fromObject({ 
+ body: proto.Message.InteractiveMessage.Body.create({ text: "*_< BUSQUEDAS - PINTEREST />_*" }), 
+ footer: proto.Message.InteractiveMessage.Footer.create({ text: `□ *Busqueda:* ${text}\n□ *Solicitante:* ${global.db.data.users[m.sender].name}` }), 
+ header: proto.Message.InteractiveMessage.Header.create({ hasMediaAttachment: false }), 
+ carouselMessage: proto.Message.InteractiveMessage.CarouselMessage.fromObject({ cards: [ ...push ] }) 
+  }) 
+ } 
+} 
+}, { quoted: m });
+ await conn.relayMessage(m.chat, bot.message, { messageId: bot.key.id });
+ } catch (error) {
+ console.error(error);
+ conn.sendMessage(m.chat, { text: "*_< BUSQUEDAS - PINTEREST />_*\n\n[❗] 𝙾𝙲𝚄𝚁𝚁𝙸𝙾 𝚄𝙽 𝙴𝚁𝚁𝙾𝚁 𝙰𝙻 𝙿𝚁𝙾𝙲𝙴𝚂𝙰𝚁 𝚂𝚄 𝚂𝙾𝙻𝙸𝙲𝙸𝚃𝚄𝙳" }, { quoted: m });
+ }
 };
 
-pinterest.help = ['pinterest <query>'];
-pinterest.tags = ['buscador', 'descargas'];
-pinterest.command = /^(pinterest|pin)$/i;
-pinterest.register = true;
+handler.help = ['pinterest'];
+handler.tags = ['search'];
+handler.command = ['pinterest', 'pin'];
 
-export default pinterest;
+export default handler;
