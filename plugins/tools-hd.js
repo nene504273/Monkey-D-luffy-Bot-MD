@@ -3,19 +3,66 @@ import crypto from "crypto";
 import { FormData, Blob } from "formdata-node";
 import { fileTypeFromBuffer } from "file-type";
 
-const rwait = "⏳"; // Emoji espera
-const done = "✅"; // Emoji listo
-const error = "❌"; // Emoji error
-const emoji = "❕"; // Emoji info
-const dev = "👑 Luffy-sama te cuida ~";
+const handler = async (m, { conn }) => {
+  let q = m.quoted ? m.quoted : m;
+  let mime = (q.msg || q).mimetype || '';
 
-function formatBytes(bytes) {
-  if (bytes === 0) return '0 B';
-  const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
-  const i = Math.floor(Math.log(bytes) / Math.log(1024));
-  return `${(bytes / 1024 ** i).toFixed(2)} ${sizes[i]}`;
-}
+  // Validación de archivo
+  if (!mime || !/image\/(png|jpe?g)/.test(mime)) {
+    return conn.reply(m.chat, `❌ Por favor, responde a una *imagen válida* (png o jpg).`, m);
+  }
 
+  await m.react("⏳"); // Espera inicial
+
+  try {
+    // Descarga de la imagen
+    let media = await q.download();
+
+    if (!media) throw new Error("No se pudo descargar la imagen.");
+
+    // Subida a Catbox
+    let link = await catbox(media);
+
+    if (!link || !link.startsWith("http")) {
+      throw new Error("Error al subir la imagen a Catbox.");
+    }
+
+    // Procesando con API upscale
+    let upscaleApi = `https://api.siputzx.my.id/api/iloveimg/upscale?image=${encodeURIComponent(link)}&scale=2`;
+    let res = await fetch(upscaleApi);
+    let data = await res.json();
+
+    if (!data.status || !data.result) {
+      throw new Error(data.message || "La API de upscale no devolvió un resultado válido.");
+    }
+
+    // Aviso de procesamiento exitoso
+    await conn.reply(m.chat, `✅ *Procesando tu imagen en HD...*`, m);
+
+    // Envío de imagen mejorada
+    await conn.sendMessage(m.chat, {
+      image: { url: data.result },
+      caption: `✅ *Imagen mejorada con éxito* \n\n🔗 *Enlace HD:* ${data.result}`
+    }, { quoted: m });
+
+    await m.react("✅"); // Reacción de éxito
+
+  } catch (e) {
+    console.error(e);
+    await m.react("❌");
+    return conn.reply(m.chat, `❌ *Error al procesar la imagen:*\n\`\`\`${e.message}\`\`\``, m);
+  }
+};
+
+handler.help = ['hd', 'upscale'];
+handler.tags = ['herramientas'];
+handler.command = ['hd', 'upscale', 'mejorarimagen']; 
+handler.register = true;
+handler.limit = true;
+
+export default handler;
+
+// ─── Funciones auxiliares ───
 async function catbox(content) {
   const { ext, mime } = (await fileTypeFromBuffer(content)) || {};
   const blob = new Blob([content.toArrayBuffer()], { type: mime });
@@ -35,68 +82,3 @@ async function catbox(content) {
 
   return await response.text();
 }
-
-let handler = async (m, { conn }) => {
-  // Revisar si el mensaje es respuesta a imagen
-  let q = m.quoted ? m.quoted : null;
-  if (!q) return conn.reply(m.chat, `${emoji} ¡Oye, responde a una imagen, no seas lento!`, m);
-  let mime = (q.msg || q).mimetype || '';
-  if (!mime || !mime.startsWith("image/")) return conn.reply(m.chat, `${emoji} ¡Eso no es una imagen, responde a una imagen!`, m);
-
-  await m.react(rwait);
-
-  try {
-    // Descargar imagen original
-    let media = await q.download();
-    if (!media || media.length === 0) throw new Error("No pude descargar la imagen :(");
-
-    // Subir imagen a Catbox para obtener link accesible públicamente
-    let urlCatbox = await catbox(media);
-
-    if (!urlCatbox || !urlCatbox.startsWith("http")) throw new Error("No pude subir la imagen a Catbox, falla de servidor.");
-
-    // Construir URL de upscale HD con la nueva API
-    let apiUpscaleUrl = `https://api.vreden.my.id/api/v1/artificial/imglarger/upscale?url=${encodeURIComponent(urlCatbox)}&scale=2`;
-
-    // Llamar a la API para obtener el enlace de la imagen en HD
-    let resUpscale = await fetch(apiUpscaleUrl);
-    if (!resUpscale.ok) throw new Error("Upscale API falló, intenta luego.");
-
-    let jsonResponse = await resUpscale.json();
-
-    if (!jsonResponse.status || !jsonResponse.result || !jsonResponse.result.download) {
-        throw new Error("La respuesta de la API no fue exitosa o no contiene la URL de descarga.");
-    }
-
-    let upscaledImageUrl = jsonResponse.result.download;
-
-    // Llamar a la URL de descarga para obtener la imagen directamente
-    let resImage = await fetch(upscaledImageUrl);
-    if (!resImage.ok) throw new Error("No pude descargar la imagen mejorada.");
-
-    let bufferHD = Buffer.from(await resImage.arrayBuffer());
-
-    // Enviar la imagen HD con texto estilo Luffy
-    let textoLuffy = `
-🐒 *¡Oye, mira! Aquí tienes la imagen en HD que me pediste, ¡más clara que el agua del Grand Line!*
-
-🔥 _¡Disfrútala, nakama!_ 💥
-`;
-
-    await conn.sendMessage(m.chat, {
-      image: bufferHD,
-      caption: textoLuffy.trim()
-    }, { quoted: m });
-
-    await m.react(done);
-  } catch (e) {
-    console.error(e);
-    await m.react(error);
-    return conn.reply(m.chat, `⚠️ ¡Uuups! Algo salió mal, intenta de nuevo o dime a luffy-sempai qué pasó.\n\n*Error:* ${e.message}`, m);
-  }
-};
-
-handler.help = ['he'];
-handler.tags = ['transformador', 'imagen'];
-handler.command = ['hd'];
-export default handler;
