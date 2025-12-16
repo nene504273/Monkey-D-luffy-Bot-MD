@@ -259,6 +259,23 @@ WhatsApp puede suspender números por mal uso, spam o automatización. Úsalo co
 
 ---
 
+### **`ᨶ႒ᩚ quintillisas Host ᨶ႒ᩚ`**
+
+<a
+href="https://dash.quintillisas.com"><img src="https://files.catbox.moe/rem95g.png" height="125px"></a>
+
+<details>
+ <summary><b> 🌺 VER EL HOST</b></summary>
+
+* Dashboard : [`Dash`](https://dash.quintillisas.com)
+* Panel : [`Panel`](https://panel.quintillisas.com)
+* Canal de WhatsApp : [`Aqui`](https://whatsapp.com/channel/0029VbBBXTr5fM5flFaxsO06)
+* Grupo Oficial : [`Aquí`](https://chat.whatsapp.com/DWnpVoJgxe25H9nXNCcfCn)
+
+</details>
+
+---
+
 ## 👑 CREADOR & CRÉDITOS
 
 <div align="center">
