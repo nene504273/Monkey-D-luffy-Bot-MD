@@ -259,12 +259,6 @@ WhatsApp puede suspender números por mal uso, spam o automatización. Úsalo co
 
 ---
 
-### **`ᨶ႒ᩚ quintillisas Host ᨶ႒ᩚ`**
-
-<a
-href="https://dash.quintillisas.com"><img src="https://files.catbox.moe/rem95g.png" height="125px"></a>
-
-
 ## 👑 CREADOR & CRÉDITOS
 
 <div align="center">
