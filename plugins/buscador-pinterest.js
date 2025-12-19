@@ -1,79 +1,54 @@
 import axios from 'axios'
-import cheerio from 'cheerio'
 
-let handler = async (m, { conn, text, args, usedPrefix }) => {
-    if (!text) return m.reply(`❀ Por favor, ingresa lo que deseas buscar por Pinterest.`)
-    
+let handler = async (m, { conn, text, usedPrefix, command }) => {
+    if (!text) return m.reply(`❀ Por favor, ingresa lo que deseas buscar.\nEjemplo: *${usedPrefix + command} luffy*`)
+
     try {
         await m.react('🕒')
         
-        if (text.includes("https://")) {
-            // Lógica para descargar desde un link directo
-            let i = await dl(args[0])
-            let isVideo = i.download.includes(".mp4")
-            await conn.sendMessage(m.chat, { [isVideo ? "video" : "image"]: { url: i.download }, caption: i.title }, { quoted: m })
-            await m.react('✔️')
-        } else {
-            // Lógica para buscar por texto
-            const results = await pins(text)
-            if (!results.length) {
-                await m.react('✖️')
-                return conn.reply(m.chat, `ꕥ No se encontraron resultados para "${text}".`, m)
+        // Usamos una API de búsqueda más directa
+        const response = await axios.get(`https://www.pinterest.com/resource/BaseSearchResource/get/`, {
+            params: {
+                source_url: `/search/pins/?q=${encodeURIComponent(text)}`,
+                data: JSON.stringify({
+                    options: {
+                        isPrefetch: false,
+                        query: text,
+                        scope: "pins",
+                        no_fetch_context_on_resource: false
+                    },
+                    context: {}
+                })
             }
+        })
 
-            // Seleccionamos la primera imagen para enviar (o puedes hacer un bucle)
-            let img = results[0].image_large_url
-            
-            await conn.sendMessage(m.chat, { 
-                image: { url: img }, 
-                caption: `❀ *Pinterest Search* ❀\n\n✧ *Búsqueda:* ${text}\n\n> Se ha enviado la imagen principal.` 
-            }, { quoted: m })
-            
-            await m.react('✔️')
+        const results = response.data.resource_response.data.results
+        
+        if (!results || results.length === 0) {
+            await m.react('✖️')
+            return m.reply(`ꕥ No se encontraron resultados para "${text}".`)
         }
+
+        // Seleccionamos una imagen al azar de los primeros 10 resultados
+        const randomImage = results[Math.floor(Math.random() * Math.min(results.length, 10))]
+        const url = randomImage.images.orig.url
+
+        await conn.sendMessage(m.chat, { 
+            image: { url: url }, 
+            caption: `❀ *Pinterest Search* ❀\n\n✧ *Búsqueda:* ${text}\n🔗 *Link:* https://www.pinterest.com/pin/${randomImage.id}` 
+        }, { quoted: m })
+
+        await m.react('✔️')
+
     } catch (e) {
         console.error(e)
         await m.react('✖️')
-        conn.reply(m.chat, `⚠︎ Se ha producido un problema.\n` + e.message, m)
+        m.reply(`⚠︎ Error al buscar en Pinterest. Inténtalo de nuevo.`)
     }
 }
 
 handler.help = ['pinterest']
 handler.command = ['pinterest', 'pin']
 handler.tags = ["download"]
-handler.group = true
 
 export default handler
-
-// --- Funciones de ayuda (se mantienen igual pero corregidas) ---
-
-async function dl(url) {
-    try {
-        let res = await axios.get(url, { headers: { "User-Agent": "Mozilla/5.0" } })
-        let $ = cheerio.load(res.data)
-        let tag = $('script[data-test-id="video-snippet"]')
-        if (tag.length) {
-            let result = JSON.parse(tag.text())
-            return { title: result.name, download: result.contentUrl }
-        } else {
-            let json = JSON.parse($("script[data-relay-response='true']").eq(0).text())
-            let result = json.response.data["v3GetPinQuery"].data
-            return { title: result.title, download: result.imageLargeUrl }
-        }
-    } catch {
-        return { msg: "Error" }
-    }
-}
-
-const pins = async (judul) => {
-    const link = `https://id.pinterest.com/resource/BaseSearchResource/get/?source_url=%2Fsearch%2Fpins%2F%3Fq%3D${encodeURIComponent(judul)}&data=%7B%22options%22%3A%7B%22query%22%3A%22${encodeURIComponent(judul)}%22%2C%22scope%22%3A%22pins%22%7D%2C%22context%22%3A%7B%7D%7D`
-    try {
-        const res = await axios.get(link)
-        const data = res.data.resource_response.data.results
-        return data.map(item => ({
-            image_large_url: item.images.orig?.url || null
-        })).filter(img => img.image_large_url !== null)
-    } catch (error) {
-        return []
-    }
-}
