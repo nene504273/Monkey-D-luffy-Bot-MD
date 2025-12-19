@@ -6,16 +6,27 @@ let handler = async (m, { conn, text, usedPrefix, command }) => {
     try {
         await m.react('🕒')
         
-        // Buscamos las imágenes
-        const results = await searchPinterest(text)
+        // Usamos una API de búsqueda pública para obtener resultados de Pinterest
+        // Esta URL es un ejemplo de una API que suele estar activa para bots
+        const res = await axios.get(`https://api.lolhuman.xyz/api/pinterest?apikey=GataDios&query=${encodeURIComponent(text)}`)
         
-        if (!results || results.length === 0) {
-            await m.react('✖️')
-            return m.reply(`ꕥ No pude encontrar imágenes para "${text}". Intenta con otra palabra.`)
+        // Nota: Si la API de arriba falla, es porque el "apikey" expiró. 
+        // Intentaremos con una segunda opción de respaldo:
+        let images = res.data.result
+        
+        if (!images || images.length === 0) {
+            // Intento con API secundaria si la primera no da resultados
+            const res2 = await axios.get(`https://api.agatz.xyz/api/pinterest?message=${encodeURIComponent(text)}`)
+            images = res2.data.data
         }
 
-        // Elegimos una imagen al azar de los resultados
-        const chosen = results[Math.floor(Math.random() * results.length)]
+        if (!images || images.length === 0) {
+            await m.react('✖️')
+            return m.reply(`ꕥ No se encontraron resultados en ninguna fuente para "${text}".`)
+        }
+
+        // Seleccionamos una imagen al azar de los resultados
+        const chosen = Array.isArray(images) ? images[Math.floor(Math.random() * images.length)] : images
 
         await conn.sendMessage(m.chat, { 
             image: { url: chosen }, 
@@ -25,9 +36,9 @@ let handler = async (m, { conn, text, usedPrefix, command }) => {
         await m.react('✔️')
 
     } catch (e) {
-        console.error("Error en Pinterest:", e)
+        console.error(e)
         await m.react('✖️')
-        m.reply(`⚠︎ Error de conexión. Inténtalo de nuevo en unos segundos.`)
+        m.reply(`⚠︎ Las fuentes de Pinterest están saturadas. Intenta más tarde.`)
     }
 }
 
@@ -36,24 +47,3 @@ handler.command = ['pinterest', 'pin']
 handler.tags = ["download"]
 
 export default handler
-
-async function searchPinterest(query) {
-    try {
-        const url = `https://www.pinterest.com/resource/BaseSearchResource/get/?source_url=%2Fsearch%2Fpins%2F%3Fq%3D${encodeURIComponent(query)}&data=%7B%22options%22%3A%7B%22isPrefetch%22%3Afalse%2C%22query%22%3A%22${encodeURIComponent(query)}%22%2C%22scope%22%3A%22pins%22%2C%22no_fetch_context_on_resource%22%3Afalse%7D%2C%22context%22%3A%7B%7D%7D`
-        
-        const response = await axios.get(url, {
-            headers: {
-                'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36',
-                'referer': 'https://www.pinterest.com/',
-                'x-requested-with': 'XMLHttpRequest'
-            }
-        })
-
-        const data = response.data.resource_response.data.results
-        if (!data) return []
-        
-        return data.map(v => v.images.orig.url)
-    } catch (e) {
-        return []
-    }
-}
