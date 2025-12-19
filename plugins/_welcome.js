@@ -1,146 +1,108 @@
-// Este es un código hecho por nevi-dev para el bot Monkey D. Luffy de nene.
-// ⚠️ Este código no puede ser modificado, copiado o usado sin el permiso explícito de su creador.
+import fetch from 'node-fetch'
 
-import * as baileys from '@whiskeysockets/baileys';
-import fetch from 'node-fetch'; 
+export async function before(m, { conn, participants, groupMetadata }) {
+  try {
+    if (!m.isGroup) return true
+    if (!m.messageStubType) return true
 
-const { WAMessageStubType } = baileys; 
+    if (!global.db) global.db = { data: { chats: {} } }
+    if (!global.db.data) global.db.data = { chats: {} }
+    if (!global.db.data.chats) global.db.data.chats = {}
+    if (!global.db.data.chats[m.chat]) global.db.data.chats[m.chat] = {}
 
-// --- CONFIGURACIÓN DE API Y CONSTANTES ---
-const API_URL = 'http://neviapi.ddns.net:5000/welcome'; 
-const API_KEY = 'luffy'; 
-const DEFAULT_AVATAR_URL = 'https://files.catbox.moe/za5lnn.jpg'; 
-const BACKGROUND_IMAGE_URL = 'https://files.catbox.moe/mncbs0.jpg';
+    const chat = global.db.data.chats[m.chat]
 
-// Información del Canal
-const newsletterJid = '120363420846835529@newsletter';
-const newsletterName = '🎄 Jolly Roger Navideño V2 🎄';
+    if (chat.welcome === undefined) chat.welcome = true
+    if (!chat.welcome) return true
 
-// --- FUNCIONES CENTRALES ---
+    const groupSize = (participants || []).length
+    const groupName = groupMetadata?.subject || 'este grupo'
+    
+    // --- IMAGEN FIJA DE LUFFY ---
+    const luffyImg = 'https://files.catbox.moe/03uko8.jpg'
 
-async function generateImageFromAPI(type, userName, groupName, memberCount, avatarUrl) {
-    const action = type === 'welcome' ? 'welcome' : 'bye';
-    const payload = {
-        username: userName.replace('@', ''), 
-        action: action,
-        group_name: groupName,
-        member_count: memberCount,
-        background_url: BACKGROUND_IMAGE_URL, 
-        profile_url: avatarUrl
-    };
+    const sendSingleWelcome = async (jid, text, user, quoted, type) => {
+      try {
+        await conn.sendMessage(jid, {
+          text: text,
+          contextInfo: {
+            mentionedJid: [user],
+            forwardingScore: 999,
+            isForwarded: true,
+            // Configuración del Canal (Arriba)
+            forwardedNewsletterMessageInfo: {
+              newsletterJid: '120363420846835529@newsletter',
+              newsletterName: '🎄 Jolly Roger Navideño V2 🎄',
+              serverMessageId: -1
+            },
+            externalAdReply: {
+              title: type === 'welcome' ? '✨ B I E N V E N I D O ✨' : '🥀 A D I Ó S  N A K A M A 🥀',
+              body: `Nakama #${groupSize} en el barco 🏴‍☠️`,
+              thumbnailUrl: luffyImg, // Usa la imagen de Luffy que pasaste
+              mediaType: 1,
+              renderLargerThumbnail: true,
+              sourceUrl: 'https://whatsapp.com/channel/0029VajVv9sEwEjwjS0S9q0S'
+            }
+          }
+        }, { quoted })
 
-    try {
-        const response = await fetch(API_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'X-API-KEY': API_KEY },
-            body: JSON.stringify(payload)
-        });
-        if (!response.ok) return null;
-        return await response.buffer(); 
-    } catch (e) {
-        return null;
+      } catch (err) {
+        console.log('Error en sendSingleWelcome:', err)
+        return await conn.reply(jid, text, quoted, { mentions: [user] })
+      }
     }
-}
 
-export async function before(m, { conn, groupMetadata, participants }) {
-    if (!m.isGroup || !m.messageStubType) return;
+    // --- Lógica de Bienvenida (Tipo 27) ---
+    if (m.messageStubType === 27) {
+      const users = m.messageStubParameters || []
+      for (const user of users) {
+        if (!user) continue
+        const mentionTag = '@' + user.replace(/@.+/, '')
 
-    const stubParams = m.messageStubParameters;
-    if (!Array.isArray(stubParams) || stubParams.length === 0) return;
-
-    const chatId = m.chat;
-    const chatConfig = global.db.data.chats[chatId] || {};
-    const groupName = groupMetadata?.subject || 'este grupo';
-    const memberCount = participants?.length || 0;
-
-    if (!chatConfig.welcome) return;
-
-    let who = stubParams[0]; 
-    let taguser = `@${who.split('@')[0]}`;
-    const ppUrl = await conn.profilePictureUrl(who, 'image').catch(() => DEFAULT_AVATAR_URL); 
-
-    const formatMessage = (message, userTag) => {
-        return message
-            .replace(/@user/g, userTag)
-            .replace(/@group/g, groupName)
-            .replace(/@count/g, memberCount);
-    };
-
-    // --- Lógica de Bienvenida ---
-    if (m.messageStubType === WAMessageStubType.GROUP_PARTICIPANT_ADD || m.messageStubType === WAMessageStubType.GROUP_PARTICIPANT_INVITE) {
-
-        const mediaBuffer = await generateImageFromAPI('welcome', taguser, groupName, memberCount, ppUrl);
-
-        const welcomeMessage = `
+        const welcomeText = `
 🕊️ *BIENVENIDO/DA* 🕊️
 ─── ˗ˏˋ 🍖 ˎˊ˗ ───
 
-∫ ⚓ *USUARIO* : @user
-∫ 🌍 *GRUPO* : @group
-∫ 👥 *MIEMBROS* : @count
+∫ ⚓ *USUARIO* : ${mentionTag}
+∫ 🌍 *GRUPO* : ${groupName}
+∫ 👥 *MIEMBROS* : ${groupSize}
 ∫ 📅 *FECHA* : ${new Date().toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}
 
-*Te damos la bienvenida, respeta las reglas.*
-`.trim();
+*¡Yoshaaa! Un nuevo nakama se une a la tripulación.*`.trim()
 
-        const messageOptions = { 
-            caption: formatMessage(welcomeMessage, taguser), 
-            mentions: [who],
-            contextInfo: {
-                mentionedJid: [who],
-                forwardingScore: 999,
-                isForwarded: true,
-                forwardedNewsletterMessageInfo: {
-                    newsletterJid: newsletterJid,
-                    newsletterName: newsletterName,
-                    serverMessageId: -1
-                }
-            }
-        };
-
-        if (mediaBuffer) {
-            await conn.sendMessage(m.chat, { image: mediaBuffer, ...messageOptions });
-        } else {
-            await conn.sendMessage(m.chat, { text: messageOptions.caption, mentions: messageOptions.mentions, contextInfo: messageOptions.contextInfo });
-        }
+        await sendSingleWelcome(m.chat, welcomeText, user, m, 'welcome')
+        await new Promise(resolve => setTimeout(resolve, 1000))
+      }
+      return true
     }
 
-    // --- Lógica de Despedida ---
-    if (m.messageStubType === WAMessageStubType.GROUP_PARTICIPANT_LEAVE || m.messageStubType === WAMessageStubType.GROUP_PARTICIPANT_REMOVE) {
-        if (who === conn.user.jid) return;
-        
-        const mediaBuffer = await generateImageFromAPI('goodbye', taguser, groupName, memberCount, ppUrl);
+    // --- Lógica de Despedida (Tipo 28 o 32) ---
+    if (m.messageStubType === 28 || m.messageStubType === 32) {
+      const users = m.messageStubParameters || []
+      for (const user of users) {
+        if (!user) continue
+        const mentionTag = '@' + user.replace(/@.+/, '')
 
-        const byeMessage = `
+        const byeText = `
 🥀 *ADIÓS NAKAMA* 🥀
 ─── ˗ˏˋ 🌊 ˎˊ˗ ───
 
-∫ 👤 *USUARIO* : @user
-∫ 🚢 *GRUPO* : @group
-∫ 👥 *QUEDAN* : @count
+∫ 👤 *USUARIO* : ${mentionTag}
+∫ 🚢 *GRUPO* : ${groupName}
+∫ 👥 *QUEDAN* : ${groupSize}
 
-*Esperamos que vuelvas pronto.*
-`.trim();
+*¡Esperamos verte de nuevo en Grand Line!*`.trim()
 
-        const messageOptions = { 
-            caption: formatMessage(byeMessage, taguser), 
-            mentions: [who],
-            contextInfo: {
-                mentionedJid: [who],
-                forwardingScore: 999,
-                isForwarded: true,
-                forwardedNewsletterMessageInfo: {
-                    newsletterJid: newsletterJid,
-                    newsletterName: newsletterName,
-                    serverMessageId: -1
-                }
-            }
-        };
-
-        if (mediaBuffer) {
-            await conn.sendMessage(m.chat, { image: mediaBuffer, ...messageOptions });
-        } else {
-            await conn.sendMessage(m.chat, { text: messageOptions.caption, mentions: messageOptions.mentions, contextInfo: messageOptions.contextInfo });
-        }
+        await sendSingleWelcome(m.chat, byeText, user, m, 'bye')
+        await new Promise(resolve => setTimeout(resolve, 1000))
+      }
+      return true
     }
+
+    return true
+
+  } catch (e) {
+    console.error('Error en plugins/_welcome:', e)
+    return true
+  }
 }
