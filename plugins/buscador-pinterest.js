@@ -1,89 +1,84 @@
 import fetch from 'node-fetch';
 import baileys from '@whiskeysockets/baileys';
 
-const NEVI_API_URL = 'http://neviapi.ddns.net:5000';
-const NEVI_API_KEY = 'ellen';
-
-let handler = async (m, { conn, text, usedPrefix, command }) => {
-    // Verificación al estilo Luffy
-    if (!text) return conn.reply(m.chat, `*🍖 ¡Oye! Necesito saber qué buscar, nakama.*\n*Uso:* ${usedPrefix + command} Luffy Gear 5`, m);
-
-    await m.react('🏴‍☠️');
-    
-    // Mensaje de espera con toque pirata
-    await conn.reply(m.chat, '🌊 *¡Zarpando a Pinterest para buscar tus tesoros!* ⚓', m);
-
-    try {
-        // Petición a la Nevi API
-        const res = await fetch(`${NEVI_API_URL}/api/pinterest?q=${encodeURIComponent(text)}&apikey=${NEVI_API_KEY}`);
-        const json = await res.json();
-
-        // Extraer datos (maneja diferentes formatos de respuesta)
-        const data = json.result || json.data || json;
-
-        if (!Array.isArray(data) || data.length < 2) {
-            await m.react('❌');
-            return conn.reply(m.chat, '🏜️ *¡Rayos! No encontré ningún botín. Intenta con otra búsqueda.*', m);
-        }
-
-        // Seleccionamos máximo 10 imágenes (el tesoro de la tripulación)
-        const images = data.slice(0, 10).map(img => ({
-            type: "image",
-            data: { url: typeof img === 'string' ? img : img.image_large_url || img.url }
-        }));
-
-        const caption = `👒 *PINTEREST - BÚSQUEDA PIRATA* 👒\n\n⚓ *Tesoro:* ${text}\n💎 *Botín:* ${images.length} Imágenes encontradas\n\n*¡Soy el hombre que se convertirá en el Rey de los Piratas!* 👑`;
-        
-        // Ejecutar el envío del álbum
-        await sendAlbumMessage(m.chat, images, { caption, quoted: m }, conn);
-
-        await m.react('🍖');
-    } catch (error) {
-        console.error(error);
-        await m.react('✖️');
-        conn.reply(m.chat, '🌪️ *¡Una tormenta nos detuvo! La API no respondió correctamente.*', m);
-    }
-};
-
-// Función de Álbum nativa optimizada para Sub-bots y Bots Oficiales
-async function sendAlbumMessage(jid, medias, options = {}, conn) {
-    const { generateWAMessageFromContent, generateWAMessage } = baileys;
-    
+async function sendAlbumMessage(jid, medias, options = {}) {
     if (typeof jid !== "string") throw new TypeError(`jid must be string, received: ${jid}`);
-    const caption = options.text || options.caption || "";
-    const waitTime = !isNaN(options.delay) ? options.delay : 500;
+    if (medias.length < 2) throw new RangeError("¡Oi! Se necesitan al menos 2 imágenes para armar el tesoro");
 
-    // Crear el mensaje base del álbum
-    const album = await generateWAMessageFromContent(
+    const caption = options.text || options.caption || "";
+    const delay = !isNaN(options.delay) ? options.delay : 500;
+    delete options.text;
+    delete options.caption;
+    delete options.delay;
+
+    const album = baileys.generateWAMessageFromContent(
         jid,
         { messageContextInfo: {}, albumMessage: { expectedImageCount: medias.length } },
-        { userJid: conn.user.id, quoted: options.quoted }
+        {}
     );
 
-    await conn.relayMessage(jid, album.message, { messageId: album.key.id });
+    await conn.relayMessage(album.key.remoteJid, album.message, { messageId: album.key.id });
 
-    // Enviar cada pieza del botín
     for (let i = 0; i < medias.length; i++) {
         const { type, data } = medias[i];
-        const img = await generateWAMessage(
-            jid,
+        const img = await baileys.generateWAMessage(
+            album.key.remoteJid,
             { [type]: data, ...(i === 0 ? { caption } : {}) },
             { upload: conn.waUploadToServer }
         );
         img.message.messageContextInfo = {
             messageAssociation: { associationType: 1, parentMessageKey: album.key },
         };
-        await conn.relayMessage(jid, img.message, { messageId: img.key.id });
-        
-        // Pequeña pausa para no saturar a los nakamas
-        await new Promise(resolve => setTimeout(resolve, waitTime));
+        await conn.relayMessage(img.key.remoteJid, img.message, { messageId: img.key.id });
+        await baileys.delay(delay);
     }
     return album;
 }
 
-handler.help = ['pinterest <búsqueda>'];
-handler.tags = ['search', 'anime'];
-handler.command = /^(pinterest|pin)$/i;
-handler.register = true;
+const pinterest = async (m, { conn, text, usedPrefix, command }) => {
+    // Estilo Luffy: Uso de "Nakama", "Pirata" y comida
+    if (!text) return conn.reply(m.chat, `*🍖 ¡Oi Nakama! Olvidaste decirme qué buscar: ${usedPrefix + command} One Piece*`, m, global.rcanal);
 
-export default handler;
+    await m.react('👒'); // Sombrero de paja
+    conn.reply(m.chat, '🌊 *¡Zarpando a Pinterest para buscar tu tesoro...!* 🍖', m, {
+        contextInfo: {
+            externalAdReply: {
+                mediaUrl: null,
+                mediaType: 1,
+                showAdAttribution: true,
+                title: '🏴‍☠️ ¡SOY EL PRÓXIMO REY DE LOS PIRATAS!',
+                body: 'Buscando imágenes para mi tripulación...',
+                previewType: 0,
+                thumbnail: icons,
+                sourceUrl: channel
+            }
+        }
+    });
+
+    try {
+        const res = await fetch(`https://api.dorratz.com/v2/pinterest?q=${encodeURIComponent(text)}`);
+        const data = await res.json();
+
+        if (!Array.isArray(data) || data.length < 2) {
+            return conn.reply(m.chat, '💀 *¡Rayos! No encontré ningún tesoro con ese nombre.*', m, global.rcanal);
+        }
+
+        const images = data.slice(0, 10).map(img => ({ type: "image", data: { url: img.image_large_url } }));
+
+        const caption = `👒 *¡TESORO ENCONTRADO!* 🍖\n✨ *Búsqueda:* ${text}\n\n_¡Aquí tienes tus imágenes, Nakama!_`;
+        await sendAlbumMessage(m.chat, images, { caption, quoted: m });
+
+        await m.react('🍖'); // Carne para celebrar
+    } catch (error) {
+        console.error(error);
+        await m.react('⛈️');
+        conn.reply(m.chat, '🚢 *¡Tormenta a la vista! Hubo un error al navegar por Pinterest.*', m , global.rcanal);
+    }
+};
+
+pinterest.help = ['pinterest <query>'];
+pinterest.tags = ['buscador', 'descargas'];
+pinterest.command = /^(pinterest|pin)$/i;
+pinterest.register = true;
+
+export default pinterest;
