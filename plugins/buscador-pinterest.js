@@ -1,44 +1,49 @@
 import axios from 'axios'
 
 let handler = async (m, { conn, text, usedPrefix, command }) => {
+    // 1. Validar que el usuario haya escrito algo
     if (!text) return m.reply(`❀ Por favor, ingresa lo que deseas buscar.\nEjemplo: *${usedPrefix + command} luffy*`)
+
+    const NEVI_API_URL = 'http://neviapi.ddns.net:5000'
+    const NEVI_API_KEY = 'ellen'
 
     try {
         await m.react('🕒')
-        
-        // Usamos una API de búsqueda pública para obtener resultados de Pinterest
-        // Esta URL es un ejemplo de una API que suele estar activa para bots
-        const res = await axios.get(`https://api.lolhuman.xyz/api/pinterest?apikey=GataDios&query=${encodeURIComponent(text)}`)
-        
-        // Nota: Si la API de arriba falla, es porque el "apikey" expiró. 
-        // Intentaremos con una segunda opción de respaldo:
-        let images = res.data.result
-        
-        if (!images || images.length === 0) {
-            // Intento con API secundaria si la primera no da resultados
-            const res2 = await axios.get(`https://api.agatz.xyz/api/pinterest?message=${encodeURIComponent(text)}`)
-            images = res2.data.data
-        }
 
-        if (!images || images.length === 0) {
+        // 2. Hacer la petición a la API de Nevi
+        // Usamos el endpoint de Pinterest (asumiendo /pinterest o /api/pinterest según la estructura común de Nevi)
+        const response = await axios.get(`${NEVI_API_URL}/api/pinterest`, {
+            params: {
+                q: text,
+                apikey: NEVI_API_KEY
+            }
+        })
+
+        // 3. Extraer los datos (Nevi suele devolver un array en .result o .data)
+        const results = response.data.result || response.data.data
+        
+        if (!results || results.length === 0) {
             await m.react('✖️')
-            return m.reply(`ꕥ No se encontraron resultados en ninguna fuente para "${text}".`)
+            return m.reply(`ꕥ No se encontraron resultados para "${text}" en la API.`)
         }
 
-        // Seleccionamos una imagen al azar de los resultados
-        const chosen = Array.isArray(images) ? images[Math.floor(Math.random() * images.length)] : images
+        // 4. Elegir una imagen aleatoria del resultado
+        const randomImage = results[Math.floor(Math.random() * results.length)]
 
+        // 5. Enviar la imagen
         await conn.sendMessage(m.chat, { 
-            image: { url: chosen }, 
-            caption: `❀ *Pinterest:* ${text}` 
+            image: { url: randomImage }, 
+            caption: `❀ *Pinterest Search* ❀\n\n✧ *Búsqueda:* ${text}\n✨ *Powered by:* Nevi API` 
         }, { quoted: m })
 
         await m.react('✔️')
 
     } catch (e) {
-        console.error(e)
+        console.error("ERROR NEVI API:", e.response?.data || e.message)
         await m.react('✖️')
-        m.reply(`⚠︎ Las fuentes de Pinterest están saturadas. Intenta más tarde.`)
+        
+        // Mensaje de error más detallado para debug
+        m.reply(`⚠︎ Error al conectar con Nevi API.\n> Detalle: ${e.response?.data?.message || e.message}`)
     }
 }
 
