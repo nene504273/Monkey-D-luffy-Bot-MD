@@ -17,7 +17,7 @@ export async function before(m, { conn, participants, groupMetadata }) {
 
     const groupSize = (participants || []).length
     const groupName = groupMetadata?.subject || 'este grupo'
-    
+
     // --- IMAGEN FIJA DE LUFFY ---
     const luffyImg = 'https://files.catbox.moe/03uko8.jpg'
 
@@ -36,11 +36,13 @@ export async function before(m, { conn, participants, groupMetadata }) {
             },
             externalAdReply: {
               title: type === 'welcome' ? '✨ B I E N V E N I D O ✨' : '🥀 A D I Ó S  N A K A M A 🥀',
-              body: `Nakama #${groupSize} en el barco 🏴‍☠️`,
+              // CAMBIO 1: Ahora dice "Luffy Bot" en lugar de Nakama #77
+              body: `Luffy Bot`, 
               thumbnailUrl: luffyImg,
               mediaType: 1,
               renderLargerThumbnail: true,
-              sourceUrl: 'https://whatsapp.com/channel/0029VajVv9sEwEjwjS0S9q0S'
+              // CAMBIO 2: Texto personalizado en el área del enlace (donde decía whatsapp.com)
+              sourceUrl: 'Power by ɴ͡ᴇ͜ɴᴇ❀᭄☂️' 
             }
           }
         }, { quoted })
@@ -49,7 +51,7 @@ export async function before(m, { conn, participants, groupMetadata }) {
       }
     }
 
-    // --- Lógica de Bienvenida (Detección Corregida) ---
+    // --- Lógica de Bienvenida ---
     if (m.messageStubType === WAMessageStubType.GROUP_PARTICIPANT_ADD || m.messageStubType === 27) {
       const users = m.messageStubParameters || []
       for (const user of users) {
@@ -72,7 +74,7 @@ export async function before(m, { conn, participants, groupMetadata }) {
       }
     }
 
-    // --- Lógica de Despedida (Detección Corregida) ---
+    // --- Lógica de Despedida ---
     if (m.messageStubType === WAMessageStubType.GROUP_PARTICIPANT_REMOVE || m.messageStubType === WAMessageStubType.GROUP_PARTICIPANT_LEAVE || m.messageStubType === 28 || m.messageStubType === 32) {
       const users = m.messageStubParameters || []
       for (const user of users) {
