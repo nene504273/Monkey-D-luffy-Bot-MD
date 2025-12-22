@@ -1,34 +1,52 @@
-let handler = async (m, { conn, text }) => {
-  if (!m.isGroup) throw 'Este comando solo puede usarse en grupos.'
+import ws from 'ws'
 
-  if (!text) throw 'Debes escribir el número del bot que deseas establecer como principal.'
+const handler = async (m, { conn, usedPrefix }) => {
+  // 1. Obtener lista de Sub-bots activos
+  const subBots = [...new Set([...global.conns
+    .filter((conn) => conn.user && conn.ws.socket && conn.ws.socket.readyState !== ws.CLOSED)
+    .map((conn) => conn.user.jid)])]
 
-  let botJid = text.replace(/[^0-9]/g, '') + '@s.whatsapp.net'
-
-  if (!global.db.data.chats[m.chat]) global.db.data.chats[m.chat] = {}
-
-  if (global.db.data.chats[m.chat].primaryBot === botJid) {
-    return conn.reply(m.chat, `✧ @${botJid.split`@`[0]} ya es el bot primario de este grupo.`, m, { mentions: [botJid] });
+  // Agregar el bot principal si no está en la lista
+  if (global.conn?.user?.jid && !subBots.includes(global.conn.user.jid)) {
+    subBots.push(global.conn.user.jid)
   }
 
-  global.db.data.chats[m.chat].primaryBot = botJid
+  // 2. Definir variables
+  const chat = global.db.data.chats[m.chat]
+  const mentionedJid = m.mentionedJid || []
+  const who = mentionedJid[0] ? mentionedJid[0] : m.quoted ? m.quoted.sender : false
 
-  let response = `✐ ¡Listo! Se ha establecido a *@${botJid.split('@')[0]}* como el único bot que responderá en este grupo.
+  // 3. Validaciones
+  if (!who) {
+    return conn.reply(m.chat, '🍖 *¡GOMU GOMU NO... ERROR!*\n\nDebes mencionar a un sub bot para ponerlo como *principal*.', m)
+  }
 
-> A partir de ahora, todos los comandos serán ejecutados por él.
+  if (!subBots.includes(who)) {
+    return conn.reply(m.chat, '⚠️ El usuario que mencionaste no es un *sub bot válido* o no está activo en este momento.', m)
+  }
 
-> *Nota:* Si quieres que todos los bots vuelvan a responder, un administrador puede usar el comando \`resetbot\` (sin prefijo).`;
+  if (chat.primaryBot === who) {
+    return conn.reply(m.chat, `✅ @${who.split('@')[0]} *ya es el bot principal del grupo*.`, m, { mentions: [who] })
+  }
 
-    await conn.sendMessage(m.chat, { 
-        text: response, 
-        mentions: [botJid] 
-    }, { quoted: m });
+  // 4. Ejecución del cambio
+  try {
+    chat.primaryBot = who
+    
+    await conn.reply(m.chat, `🎩 *¡Listo, nakama!* Ahora @${who.split('@')[0]} será el *Bot Principal* en este grupo.\n\n👉 Todos los comandos serán ejecutados por ese bot.`, m, { mentions: [who] })
+    await m.react('✅')
+    
+  } catch (e) {
+    console.error(e)
+    await m.react('❌')
+    conn.reply(m.chat, `❗ *Hubo un error al configurar el bot principal.*\nUsa *${usedPrefix}report* para informar el problema.\n\nError: ${e.message}`, m)
+  }
 }
 
-handler.help = ['setprimary <número>']
-handler.tags = ['owner', 'group']
-handler.command = ['setprimary']
-handler.admin = true
+handler.help = ['setprimary']
+handler.tags = ['grupo']
+handler.command = /^setprimary|principal$/i // He agregado un alias 'principal'
 handler.group = true
+handler.admin = true
 
 export default handler
