@@ -35,15 +35,19 @@ let handler = async (m, { conn, args, usedPrefix, command }) => {
   }
 
   try {
-    // Traducir prompt a inglés
+    // Traducir prompt a inglés (opcional, puedes eliminar esta parte si la API acepta español)
     const { text: translatedPrompt } = await translate(prompt, { to: 'en', autoCorrect: true });
 
     await conn.reply(m.chat, `🎨 *Creando imagen a partir del texto...* ✨\n(⌒‿⌒) 〰️`, m, { contextInfo, quoted: m });
 
-    const apiUrl = `https://api.vreden.my.id/api/artificial/aiease/text2img?prompt=${encodeURIComponent(translatedPrompt)}&style=19`;
+    // Nueva API Stellar con autenticación
+    const apiUrl = `https://rest.alyabotpe.xyz/ai/texttoimage?text=${encodeURIComponent(translatedPrompt)}`;
+    
     const res = await fetch(apiUrl, {
       headers: {
-        'User-Agent': 'Mozilla/5.0'
+        'User-Agent': 'Mozilla/5.0',
+        'Accept': 'application/json',
+        'Authorization': 'stellar-t1opU0P4' // Tu key como header de autorización
       }
     });
 
@@ -53,18 +57,30 @@ let handler = async (m, { conn, args, usedPrefix, command }) => {
     }
 
     const json = await res.json();
-    const images = json?.result;
-    if (!images || images.length === 0) throw new Error('No se recibieron imágenes de la API.');
+    
+    // Verificar la estructura de respuesta de la nueva API
+    let imageUrl;
+    if (json.result && Array.isArray(json.result) && json.result[0]) {
+      imageUrl = json.result[0]; // La nueva API podría devolver un array con URLs
+    } else if (json.image) {
+      imageUrl = json.image; // O podría devolver un campo "image"
+    } else if (json.url) {
+      imageUrl = json.url; // O un campo "url"
+    } else if (json.data && json.data.url) {
+      imageUrl = json.data.url; // O anidado en data
+    } else {
+      // Si no encontramos la estructura esperada, mostramos lo que recibimos para debugging
+      console.log('Respuesta API completa:', JSON.stringify(json, null, 2));
+      throw new Error('Formato de respuesta inesperado de la API');
+    }
 
-    // Tomamos la primera imagen origin
-    const imageUrl = images[0].origin;
-    if (!imageUrl) throw new Error('No se encontró la URL de la imagen.');
+    if (!imageUrl) throw new Error('No se recibió URL de imagen de la API.');
 
-    // Descargar imagen con header Referer para evitar 404 (si hace falta)
+    // Descargar imagen
     const imageRes = await fetch(imageUrl, {
       headers: {
         'User-Agent': 'Mozilla/5.0',
-        'Referer': 'https://api.vreden.my.id/'
+        'Referer': 'https://rest.alyabotpe.xyz/'
       }
     });
 
@@ -81,7 +97,7 @@ let handler = async (m, { conn, args, usedPrefix, command }) => {
     }, { quoted: m, contextInfo });
 
   } catch (e) {
-    console.error(e);
+    console.error('Error en text2img:', e);
     conn.reply(m.chat, `😿 *Ocurrió un error al crear la imagen...*\n\`\`\`${e.message}\`\`\``, m, { contextInfo, quoted: m });
   }
 };
@@ -94,5 +110,3 @@ handler.coin = 3;
 handler.register = true;
 
 export default handler;
-
-    
