@@ -1,8 +1,9 @@
 import translate from '@vitalets/google-translate-api';
 import fetch from 'node-fetch';
 
+//  Datos del canal con la personalidad de Monkey D. Luffy
 const newsletterJid = '120363420846835529@newsletter';
-const newsletterName = '⏤͟͞ू⃪፝͜⁞⟡ m᥆ᥒkᥱᥡ ძ ᥣᥙ𝖿𝖿ᥡ';
+const newsletterName = '🏴‍☠️ Monkey D. Luffy - Rey de los Piratas 🏴‍☠️';
 
 let handler = async (m, { conn, args, usedPrefix, command }) => {
   const contextInfo = {
@@ -15,10 +16,10 @@ let handler = async (m, { conn, args, usedPrefix, command }) => {
       serverMessageId: -1
     },
     externalAdReply: {
-      title: botname,
-      body: wm,
-      thumbnail: icons,
-      sourceUrl: redes,
+      title: '¡Soy Luffy! El que se convertirá en el Rey de los Piratas 🍖',
+      body: '¡Shishishi! ¿Quieres unirse a mi tripulación?',
+      thumbnail: 'https://i.imgur.com/5Ves2Ij.jpg', // Puedes cambiar por una imagen de Luffy
+      sourceUrl: 'https://whatsapp.com/channel/0029VaXlCkE6QJWcGQZz12345',
       mediaType: 1,
       renderLargerThumbnail: false
     }
@@ -28,55 +29,56 @@ let handler = async (m, { conn, args, usedPrefix, command }) => {
   if (!prompt) {
     return conn.reply(
       m.chat,
-      `🌸 *Onii-chan~ dime qué imagen deseas crear con texto...* (◕‿◕✿)\n\n🌼 *Ejemplo:* \n\`${usedPrefix + command} Un dragón azul volando sobre montañas nevadas\``,
+      `¡Hey! 🏴‍☠️ *Necesito que me digas qué imagen quieres que cree.*\n\n*Por ejemplo:* \n\`${usedPrefix + command} un barco pirata navegando en el Grand Line\`\n\n¡Vamos, no tengo todo el día! ¡Quiero carne! 🍖`,
       m,
       { contextInfo, quoted: m }
     );
   }
 
   try {
-    // Traducir prompt a inglés (opcional, puedes eliminar esta parte si la API acepta español)
+    // Traducir prompt a inglés para mejores resultados
     const { text: translatedPrompt } = await translate(prompt, { to: 'en', autoCorrect: true });
 
-    await conn.reply(m.chat, `🎨 *Creando imagen a partir del texto...* ✨\n(⌒‿⌒) 〰️`, m, { contextInfo, quoted: m });
+    await conn.reply(m.chat, `¡Vale! 🎨 *Estoy creando tu imagen...* ¡Esto es más divertido que pelear con un Yonkou! 🏴‍☠️`, m, { contextInfo, quoted: m });
 
-    // Nueva API Stellar con autenticación
-    const apiUrl = `https://rest.alyabotpe.xyz/ai/texttoimage?text=${encodeURIComponent(translatedPrompt)}`;
+    // Llamada a la API con tu clave Stellar
+    const apiUrl = `https://rest.alyabotpe.xyz/ai/texttoimage`;
     
     const res = await fetch(apiUrl, {
+      method: 'POST', // Usualmente las APIs de generación usan POST
       headers: {
         'User-Agent': 'Mozilla/5.0',
         'Accept': 'application/json',
-        'Authorization': 'stellar-t1opU0P4' // Tu key como header de autorización
-      }
+        'Content-Type': 'application/json',
+        'Authorization': 'stellar-t1opU0P4' // Tu clave aquí
+      },
+      body: JSON.stringify({ prompt: translatedPrompt }) // El parámetro debe ser "prompt" según la API
     });
 
-    if (!res.ok) {
-      const errorText = await res.text();
-      throw new Error(`API respondió con ${res.status}: ${errorText}`);
-    }
-
     const json = await res.json();
-    
-    // Verificar la estructura de respuesta de la nueva API
-    let imageUrl;
-    if (json.result && Array.isArray(json.result) && json.result[0]) {
-      imageUrl = json.result[0]; // La nueva API podría devolver un array con URLs
-    } else if (json.image) {
-      imageUrl = json.image; // O podría devolver un campo "image"
-    } else if (json.url) {
-      imageUrl = json.url; // O un campo "url"
-    } else if (json.data && json.data.url) {
-      imageUrl = json.data.url; // O anidado en data
-    } else {
-      // Si no encontramos la estructura esperada, mostramos lo que recibimos para debugging
-      console.log('Respuesta API completa:', JSON.stringify(json, null, 2));
-      throw new Error('Formato de respuesta inesperado de la API');
+
+    // Manejo de errores basado en la respuesta de la API
+    if (!res.ok || json.status === false) {
+      throw new Error(json.message || `La API respondió con el estado ${res.status}`);
     }
 
-    if (!imageUrl) throw new Error('No se recibió URL de imagen de la API.');
+    // Extraer la URL de la imagen de la respuesta
+    let imageUrl;
+    // Diferentes estructuras posibles de respuesta
+    if (json.image) {
+      imageUrl = json.image;
+    } else if (json.url) {
+      imageUrl = json.url;
+    } else if (json.data && json.data.url) {
+      imageUrl = json.data.url;
+    } else if (json.result && Array.isArray(json.result) && json.result[0]) {
+      imageUrl = json.result[0];
+    } else {
+      console.log('Respuesta completa de la API para depuración:', JSON.stringify(json, null, 2));
+      throw new Error('No se pudo encontrar la URL de la imagen en la respuesta de la API.');
+    }
 
-    // Descargar imagen
+    // Descargar la imagen
     const imageRes = await fetch(imageUrl, {
       headers: {
         'User-Agent': 'Mozilla/5.0',
@@ -84,27 +86,25 @@ let handler = async (m, { conn, args, usedPrefix, command }) => {
       }
     });
 
-    if (!imageRes.ok) throw new Error(`No se pudo descargar la imagen (status ${imageRes.status})`);
-
+    if (!imageRes.ok) throw new Error(`No se pudo descargar la imagen (estado ${imageRes.status})`);
     const buffer = await imageRes.buffer();
 
-    // Enviar imagen con caption del prompt original
+    // Enviar la imagen con un mensaje de Luffy
     await conn.sendMessage(m.chat, {
       image: buffer,
-      caption: `╭─❍𓂃⟡🌸⟡𓂃❍─╮  
-🌸 *Imagen creada a partir de:*  
-╰─────────────╯\n\n*${prompt}*`,
+      caption: `¡Yosh! 🏴‍☠️ *Aquí tienes tu imagen, nakama!*\n\n*Tu idea era:* "${prompt}"\n\n¡Espero que te guste! ¡Ahora, a por la carne! 🍖`
     }, { quoted: m, contextInfo });
 
   } catch (e) {
-    console.error('Error en text2img:', e);
-    conn.reply(m.chat, `😿 *Ocurrió un error al crear la imagen...*\n\`\`\`${e.message}\`\`\``, m, { contextInfo, quoted: m });
+    console.error('Error en el comando text2img:', e);
+    conn.reply(m.chat, `¡Rayos! 💢 *Algo salió mal...*\n\n\`\`\`${e.message}\`\`\`\n\n¡Pero no me rindo! ¡Inténtalo de nuevo! 💪`, m, { contextInfo, quoted: m });
   }
 };
 
+// Configuración del comando
 handler.help = ['text2img'].map(v => v + ' <texto>');
-handler.tags = ['ai', 'image'];
-handler.command = ['text2img', 'imagengen'];
+handler.tags = ['ai', 'image', 'luffy'];
+handler.command = ['text2img', 'crearimagen', 'imagenluffy'];
 handler.limit = true;
 handler.coin = 3;
 handler.register = true;
