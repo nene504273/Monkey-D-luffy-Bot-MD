@@ -16,15 +16,18 @@ export async function before(m, { conn, participants, groupMetadata }) {
 
     const groupSize = (participants || []).length
     const groupName = groupMetadata?.subject || 'este grupo'
+    
+    // ESTA ES LA IMAGEN DE LUFFY POR DEFECTO
     const defaultImg = 'https://files.catbox.moe/03uko8.jpg'
 
     const sendSingleWelcome = async (jid, text, user, quoted, type) => {
       try {
-        // --- OBTENER FOTO DE PERFIL O USAR DEFAULT ---
         let pp
         try {
+          // Intenta obtener la foto del usuario
           pp = await conn.profilePictureUrl(user, 'image')
         } catch (e) {
+          // Si falla (privacidad o sin foto), usa la de Luffy
           pp = defaultImg
         }
 
@@ -42,7 +45,7 @@ export async function before(m, { conn, participants, groupMetadata }) {
             externalAdReply: {
               title: type === 'welcome' ? '✨ B I E N V E N I D O ✨' : '🥀 A D I Ó S  N A K A M A 🥀',
               body: `Luffy Bot`, 
-              thumbnailUrl: pp, // Aquí se usa la foto del usuario o la de Luffy
+              thumbnailUrl: pp, // Aquí se aplica la lógica de la imagen
               mediaType: 1,
               renderLargerThumbnail: true,
               sourceUrl: 'Power by ɴ͡ᴇ͜ɴᴇ❀᭄☂️' 
