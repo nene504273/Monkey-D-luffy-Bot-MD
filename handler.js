@@ -41,11 +41,14 @@ if (await manejarRespuestasBotones(this, m)) return;
 // Manejo de stickers con archivo externo
 if (await manejarRespuestasStickers(this, m)) return;
 
-    if (m.isGroup && global.conns && global.conns.length > 1) {
-        let botsEnGrupo = global.conns.filter(c => c.user && c.user.jid && c.ws && c.ws.socket && c.ws.socket.readyState !== 3)
-        let elegido = botsEnGrupo[Math.floor(Math.random() * botsEnGrupo.length)]
-        if (this.user.jid !== elegido.user.jid) return
-    }
+if (m.isGroup) {
+const chat = global.db.data.chats[m.chat]
+if (chat?.primaryBot) {
+const universalWords = ['resetbot', 'resetprimario', 'botreset']
+const firstWord = m.text ? m.text.trim().split(' ')[0].toLowerCase().replace(/^[./#]/, '') : ''
+if (!universalWords.includes(firstWord) && this?.user?.jid !== chat.primaryBot) return
+}
+}
 
     if (global.db.data == null)
         await global.loadDatabase()       
