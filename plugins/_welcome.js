@@ -5,24 +5,29 @@ export async function before(m, { conn, participants, groupMetadata }) {
     if (!m.isGroup) return true
     if (!m.messageStubType) return true
 
-    if (!global.db) global.db = { data: { chats: {} } }
-    if (!global.db.data) global.db.data = { chats: {} }
-    if (!global.db.data.chats) global.db.data.chats = {}
+    if (!global.db?.data?.chats) {
+      global.db = { data: { chats: {} }, ...(global.db || {}) }
+    }
     if (!global.db.data.chats[m.chat]) global.db.data.chats[m.chat] = {}
 
     const chat = global.db.data.chats[m.chat]
-
     if (chat.welcome === undefined) chat.welcome = true
     if (!chat.welcome) return true
 
     const groupSize = (participants || []).length
     const groupName = groupMetadata?.subject || 'este grupo'
-
-    // --- IMAGEN FIJA DE LUFFY ---
-    const luffyImg = 'https://files.catbox.moe/03uko8.jpg'
+    const defaultImg = 'https://files.catbox.moe/03uko8.jpg'
 
     const sendSingleWelcome = async (jid, text, user, quoted, type) => {
       try {
+        // --- OBTENER FOTO DE PERFIL O USAR DEFAULT ---
+        let pp
+        try {
+          pp = await conn.profilePictureUrl(user, 'image')
+        } catch (e) {
+          pp = defaultImg
+        }
+
         await conn.sendMessage(jid, {
           text: text,
           contextInfo: {
@@ -36,12 +41,10 @@ export async function before(m, { conn, participants, groupMetadata }) {
             },
             externalAdReply: {
               title: type === 'welcome' ? '✨ B I E N V E N I D O ✨' : '🥀 A D I Ó S  N A K A M A 🥀',
-              // CAMBIO 1: Ahora dice "Luffy Bot" en lugar de Nakama #77
               body: `Luffy Bot`, 
-              thumbnailUrl: luffyImg,
+              thumbnailUrl: pp, // Aquí se usa la foto del usuario o la de Luffy
               mediaType: 1,
               renderLargerThumbnail: true,
-              // CAMBIO 2: Texto personalizado en el área del enlace (donde decía whatsapp.com)
               sourceUrl: 'Power by ɴ͡ᴇ͜ɴᴇ❀᭄☂️' 
             }
           }
@@ -56,7 +59,8 @@ export async function before(m, { conn, participants, groupMetadata }) {
       const users = m.messageStubParameters || []
       for (const user of users) {
         if (!user) continue
-        const mentionTag = '@' + user.replace(/@.+/, '')
+        const jid = user.includes('@') ? user : `${user}@s.whatsapp.net`
+        const mentionTag = '@' + jid.replace(/@.+/, '')
 
         const welcomeText = `
 🕊️ *BIENVENIDO/DA* 🕊️
@@ -69,7 +73,7 @@ export async function before(m, { conn, participants, groupMetadata }) {
 
 *¡Yoshaaa! Un nuevo nakama se une a la tripulación.*`.trim()
 
-        await sendSingleWelcome(m.chat, welcomeText, user, m, 'welcome')
+        await sendSingleWelcome(m.chat, welcomeText, jid, m, 'welcome')
         await new Promise(resolve => setTimeout(resolve, 1000))
       }
     }
@@ -79,7 +83,8 @@ export async function before(m, { conn, participants, groupMetadata }) {
       const users = m.messageStubParameters || []
       for (const user of users) {
         if (!user) continue
-        const mentionTag = '@' + user.replace(/@.+/, '')
+        const jid = user.includes('@') ? user : `${user}@s.whatsapp.net`
+        const mentionTag = '@' + jid.replace(/@.+/, '')
 
         const byeText = `
 🥀 *ADIÓS NAKAMA* 🥀
@@ -91,8 +96,8 @@ export async function before(m, { conn, participants, groupMetadata }) {
 
 *¡Esperamos verte de nuevo en Grand Line!*`.trim()
 
-        await sendSingleWelcome(m.chat, byeText, user, m, 'bye')
-        await new Promise(resolve => setTimeout(resolve, 1000))
+      await sendSingleWelcome(m.chat, byeText, jid, m, 'bye')
+      await new Promise(resolve => setTimeout(resolve, 1000))
       }
     }
 
