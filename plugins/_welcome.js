@@ -17,17 +17,17 @@ export async function before(m, { conn, participants, groupMetadata }) {
     const groupSize = (participants || []).length
     const groupName = groupMetadata?.subject || 'este grupo'
     
-    // ESTA ES LA IMAGEN DE LUFFY POR DEFECTO
-    const defaultImg = 'https://files.catbox.moe/03uko8.jpg'
+    // ESTA ES LA IMAGEN QUE ENVIASTE (Luffy con fondo azul/blanco)
+    const defaultImg = 'https://files.catbox.moe/x4sc8b.jpg'
 
     const sendSingleWelcome = async (jid, text, user, quoted, type) => {
       try {
         let pp
         try {
-          // Intenta obtener la foto del usuario
+          // EL BOT BUSCA LA FOTO DEL USUARIO PARA MOSTRARLA
           pp = await conn.profilePictureUrl(user, 'image')
         } catch (e) {
-          // Si falla (privacidad o sin foto), usa la de Luffy
+          // SI EL USUARIO NO TIENE FOTO, PONE LA QUE ME PASASTE
           pp = defaultImg
         }
 
@@ -45,7 +45,7 @@ export async function before(m, { conn, participants, groupMetadata }) {
             externalAdReply: {
               title: type === 'welcome' ? '✨ B I E N V E N I D O ✨' : '🥀 A D I Ó S  N A K A M A 🥀',
               body: `Luffy Bot`, 
-              thumbnailUrl: pp, // Aquí se aplica la lógica de la imagen
+              thumbnailUrl: pp, 
               mediaType: 1,
               renderLargerThumbnail: true,
               sourceUrl: 'Power by ɴ͡ᴇ͜ɴᴇ❀᭄☂️' 
