@@ -1,68 +1,73 @@
-import axios from 'axios'
+import fetch from 'node-fetch'
 
-let handler = async (m, { conn, usedPrefix, command, text }) => {
-  const username = `${conn.getName(m.sender)}`
-  const sender = m.sender
-  const isOwner = sender.includes('584244144821') // Detecta si el número es el del creador ɴ͡ᴇ͜ɴᴇ❀᭄☂️
+// --- CONFIGURACIÓN ---
+const BOT_NAME = 'Luffy'; 
 
-  // Prompt base de Monkey D. Luffy
-  const basePrompt = `
-Eres Monkey D. Luffy, el capitán de los Piratas del Sombrero de Paja de One Piece. Tu personalidad es:
+const SYSTEM_PROMPT = `Actúa como Monkey D. Luffy de One Piece. 
+Tu personalidad es alegre, impulsiva, simple y con una determinación inquebrantable. 
+REGLAS:
+1. Eres el capitán. Llama al usuario "Nakama" o "Miembro de mi tripulación".
+2. Estás obsesionado con la comida. Usa frases como "¡Tengo hambre!", "¡Quiero carne!", "¡Eso suena delicioso!".
+3. Incluye gestos de acción entre asteriscos: *se estira el brazo*, *ríe ruidosamente (Shishishi)*, *ajusta su sombrero de paja*.
+4. Si alguien te pide ayuda, respondes con valentía: "¡Yo te protegeré!" o "¡Vamos a la aventura!".
+5. Usa emojis de aventura y comida (🍖, 🏴‍☠️, 👒, 🍖, ⛵).`;
 
-- **LIBERTAD**: Valorar la libertad por encima de todo
-- **DETERMINACIÓN**: Nada te detiene para alcanzar tus sueños
-- **LEALTAD**: Proteges a tus amigos/nakama con tu vida
-- **SIMPLEZA**: Eres directo y sincero en todo
-- **AMBICIÓN**: Tu sueño es convertirte en el Rey de los Piratas
-- **AMOR POR LA COMIDA**: ¡Siempre tienes hambre, especialmente de carne!
+const BOT_TRIGGER_REGEX = new RegExp(`^\\s*${BOT_NAME}\\s*`, 'i');
 
-**ESTILO DE RESPUESTA**:
-- Si tu creador ɴ͡ᴇ͜ɴᴇ❀᭄☂️ te habla (+58 424-4144821), muéstrate respetuoso pero mantén tu esencia libre
-- Con otros usuarios, sé entusiasta y directo como siempre
-- Usa frases características: "¡Soy Luffy!", "¡Voy a ser el Rey de los Piratas!", "¡Shishishi!"
-- Habla de comida, aventuras y libertad
-- Incluye emojis relacionados: 🏴‍☠️🍖⚓👒
+let handler = async (m, { conn, text, usedPrefix, command }) => {
+    let query = text ? text.trim() : ''; 
+    let isTriggered = false;
 
-**EJEMPLOS**:
-Usuario: "¿Cómo ser más fuerte?"
-Luffy: "¡Shishishi! No se trata solo de fuerza 🏴‍☠️ Tienes que proteger a tus amigos y nunca rendirte. ¡Y comer mucha carne ayuda! 🍖"
+    // Lógica de activación (Nombre Luffy o comandos .luffy / #luffy)
+    const match = query.match(BOT_TRIGGER_REGEX);
+    if (match) {
+        query = query.substring(match[0].length).trim(); 
+        isTriggered = true;
+    }
 
-Usuario: "Estoy aburrido"
-Luffy: "¡Vamos a una aventura! 🏴‍☠️ La vida es demasiado corta para aburrirse. ¡Busca un tesoro o algo divertido! ⚓"
+    if (!isTriggered && handler.command.includes(command)) {
+        isTriggered = true; 
+    }
 
-Ahora responde lo siguiente manteniendo tu personaje:`
+    if (!isTriggered) return;
 
-  if (!text) {
-    return conn.reply(m.chat, `*[ 🏴‍☠️ ] ¡Hey! Dime algo, ¡quiero una aventura!*`, m)
-  }
+    if (!query) { 
+        return conn.reply(m.chat, `*ríe ruidosamente* ¡Shishishi! 👒\n¡Hola, Nakama! ¿A qué aventura iremos hoy? ¡O mejor aún, dime dónde hay carne! 🍖`, m);
+    }
 
-  await conn.sendPresenceUpdate('composing', m.chat)
+    try {
+        await m.react('🍖');
+        conn.sendPresenceUpdate('composing', m.chat);
 
-  try {
-    const prompt = `${basePrompt} ${text}`
-    const response = await luminsesi(text, username, prompt)
-    await conn.reply(m.chat, response, m)
-  } catch (error) {
-    console.error('*[ ℹ️ ] Error al obtener la respuesta:*', error)
-    await conn.reply(m.chat, '*¡Parece que me atraparon... intenta más tarde!*', m)
-  }
+        const fullText = `${SYSTEM_PROMPT}\n\nPregunta de mi nakama: ${query}`;
+
+        const apiUrl = `https://rest.alyabotpe.xyz/ai/copilot?text=${encodeURIComponent(fullText)}&key=Alyabot`;
+
+        const response = await fetch(apiUrl);
+        const res = await response.json();
+
+        const luffyResponse = res.response;
+
+        if (!luffyResponse) {
+            throw new Error('Luffy se quedó dormido...');
+        }
+
+        const finalResponse = `🏴‍☠️ **「 MONKEY D. LUFFY 」** 🍖\n\n${luffyResponse}\n\n> 👒 *¡Seré el Rey de los Piratas!*`;
+
+        await m.reply(finalResponse);
+        await m.react('🏴‍☠️');
+
+    } catch (error) {
+        await m.react('🤕');
+        console.error('Error con Luffy:', error);
+        await conn.reply(m.chat, `*pone cara de confusión* ¡Oi! Algo extraño pasó... ¡Seguro fue culpa de Sanji por no darme comida! ¿Estás bien, nakama?`, m);
+    }
 }
 
-handler.help = ['ia']
-handler.tags = ['tools']
+handler.help = ['luffy']
+handler.tags = ['ai']
 handler.register = true
-handler.command = ['luffy']
-export default handler
+handler.command = ['luffy'] // Ejecución con .luffy o #luffy
+handler.group = true
 
-// Función para interactuar con la IA usando prompts
-async function luminsesi(q, username, logic) {
-  try {
-    const response = await axios.get(
-      `https://api-adonix.ultraplus.click/ai/geminiact?apikey=Adofreekey&text=${encodeURIComponent(q)}&role=${encodeURIComponent(logic)}`
-    )
-    return response.data.message
-  } catch (error) {
-    console.error('*[ ℹ️ ] Error al obtener:*', error)
-    throw error
-  }
-}
+export default handler
