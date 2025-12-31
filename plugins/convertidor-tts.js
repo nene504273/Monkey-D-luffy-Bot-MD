@@ -28,7 +28,7 @@ const handler = async (m, { conn, args, usedPrefix, command }) => {
 
 handler.help = ['luffy <texto>'];
 handler.tags = ['ia'];
-handler.command = ['luffy', 'tts-luffy'];
+handler.command = ['tts'];
 handler.register = true;
 
 export default handler;
