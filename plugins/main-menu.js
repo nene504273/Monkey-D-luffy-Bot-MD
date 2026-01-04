@@ -8,25 +8,18 @@ const newsletterName = '🏴‍☠️ StrawHat-Crew V2';
 const packname = '🏴‍☠️ StrawHat-Bot V2 🏴‍☠️';
 
 let handler = async (m, { conn, usedPrefix }) => {
-    // --- Lectura de DB ---
+    // --- Lectura de Base de Datos ---
     let mediaLinks;
     try {
         const dbPath = path.join(process.cwd(), 'src', 'database', 'db.json');
         mediaLinks = JSON.parse(fs.readFileSync(dbPath)).links;
     } catch (e) {
-        return conn.reply(m.chat, '❌ Error al cargar tesoros.', m);
+        return conn.reply(m.chat, '❌ Error al cargar los tesoros del barco.', m);
     }
 
     if (m.quoted?.id && m.quoted?.fromMe) return;
 
     let name = await conn.getName(m.sender);
-    const isMain = conn.user.jid === global.conn.user.jid;
-    
-    // Obtener número del bot correctamente
-    const botNumber = conn.user.jid.split('@')[0];
-    const principalNumber = `+${botNumber}`;
-
-    const totalCommands = Object.keys(global.plugins || {}).length;
     const uptime = clockString(process.uptime() * 1000);
     const totalreg = Object.keys(global.db?.data?.users || {}).length;
     const venezuelaTime = moment().tz('America/Caracas').format('h:mm A');
@@ -34,14 +27,12 @@ let handler = async (m, { conn, usedPrefix }) => {
     const gifVideo = mediaLinks.video[Math.floor(Math.random() * mediaLinks.video.length)];
     const randomThumbnail = mediaLinks.imagen[Math.floor(Math.random() * mediaLinks.imagen.length)];
 
-    // --- Procesar Comandos (SIN REPETIDOS) ---
+    // --- Filtrado de Comandos (Sin Repetidos) ---
     let groups = {};
-    const totalPlugins = Object.values(global.plugins || {});
-    
-    totalPlugins.forEach(plugin => {
+    Object.values(global.plugins || {}).forEach(plugin => {
         if (!plugin.help || !plugin.tags) return;
         plugin.tags.forEach(tag => {
-            if (!groups[tag]) groups[tag] = new Set(); // Usamos Set para evitar duplicados automáticos
+            if (!groups[tag]) groups[tag] = new Set(); 
             plugin.help.forEach(help => {
                 if (!/^\$|^=>|^>/.test(help)) {
                     groups[tag].add(`${usedPrefix}${help}`);
@@ -51,26 +42,29 @@ let handler = async (m, { conn, usedPrefix }) => {
     });
 
     // --- Construcción del Menú ---
-    let menuText = `*┏━━━ 🏴‍☠️ STRAW HAT V2 🏴‍☠️ ━━━┓*\n`;
-    menuText += `┃ *Capitán:* _${name}_\n`;
-    menuText += `┃ *Número:* _${principalNumber}_\n`;
-    menuText += `┃ *Tripulación:* _${totalreg}_\n`;
-    menuText += `┃ *Navegación:* _${uptime}_\n`;
-    menuText += `┃ *Hora Local:* _${venezuelaTime}_\n`;
+    let menuText = `*┏━━━━━━━━━━━━━━━━━━━━┓*\n`;
+    menuText += `┃  🏴‍☠️ *STRAW HAT BOT V2* 🏴‍☠️\n`;
+    menuText += `*┣━━━━━━━━━━━━━━━━━━━━┛*\n`;
+    menuText += `┃ ⚓ *Capitán:* _${name}_\n`;
+    menuText += `┃ 👑 *Rey Pirata:* wa.me/584244144821\n`;
+    menuText += `┃ 👥 *Tripulación:* _${totalreg}_\n`;
+    menuText += `┃ 🧭 *Navegación:* _${uptime}_\n`;
+    menuText += `┃ 🕒 *Hora Local:* _${venezuelaTime}_\n`;
     menuText += `*┗━━━━━━━━━━━━━━━━━━━━┛*\n\n`;
 
-    // Secciones organizadas
+    // Secciones de comandos organizadas
     const sortedTags = Object.keys(groups).sort();
     sortedTags.forEach(tag => {
-        menuText += `┏━━━━━━━ *⚓ ${tag.toUpperCase()}* ━━━━━━━┓\n`;
+        menuText += `*╭┈─────── ⚓ ───────*\n`;
+        menuText += `*╰┈➤ 🌊 ${tag.toUpperCase()}*\n`;
         const sortedCommands = Array.from(groups[tag]).sort();
         sortedCommands.forEach(cmd => {
-            menuText += `┃ 🍖 ${cmd.trim()}\n`; // Emoji de carne para cada comando
+            menuText += `  *🍖* ${cmd.trim()}\n`; // Emoji solicitado
         });
-        menuText += `┗━━━━━━━━━━━━━━━━━━━━━━━━┛\n\n`;
+        menuText += `\n`;
     });
 
-    menuText += `_🚢 ¡Rumbo al One Piece!_`;
+    menuText += `_🚢 ¡Hacia el Nuevo Mundo!_`;
 
     const contextInfo = {
         mentionedJid: [m.sender],
@@ -82,12 +76,12 @@ let handler = async (m, { conn, usedPrefix }) => {
             serverMessageId: -1
         },
         externalAdReply: {
-            title: '🏴‍☠️ STRAW HAT BOT V2',
-            body: 'Sistema de Comandos • Online',
+            title: '🏴‍☠️ STRAW HAT CREW • ONLINE',
+            body: 'Menú de Comandos V2',
             thumbnailUrl: randomThumbnail,
-            sourceUrl: 'https://github.com/nevi-dev/Vermeil-bot',
+            sourceUrl: 'https://wa.me/584244144821', // Enlace al Rey Pirata también aquí
             mediaType: 1,
-            renderLargerThumbnail: false // <-- ESTO hace que la imagen sea PEQUEÑA
+            renderLargerThumbnail: false // Imagen pequeña confirmada
         }
     };
 
