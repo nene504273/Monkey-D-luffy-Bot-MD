@@ -3,129 +3,74 @@ import path from 'path';
 import moment from 'moment-timezone';
 import PhoneNumber from 'awesome-phonenumber';
 
-// --- Configuración de Identidad Pirata ---
 const newsletterJid = '120363420846835529@newsletter';
-const newsletterName = '*🏴‍☠️ StrawHat-Crew V2 - Dashboard 🏴‍☠️*'; 
+const newsletterName = '🏴‍☠️ StrawHat-Crew V2'; 
 const packname = '🏴‍☠️ StrawHat-Bot V2 🏴‍☠️';
 
-// --- Estilos de Letras y Estética ---
-const aesthetic = {
-    info: (key, value) => `*| ${key}:* _${value}_`,
-    section_title: (text) => `\n╭┈─────── ⚓ ─────── \n*╰┈➤ 🌊 ${text}*`, 
-    command: (cmd) => `*🍖* ${cmd}`, // Emoji de carne solicitado
-};
-
 let handler = async (m, { conn, usedPrefix }) => {
-    // --- Manejo de Base de Datos de Medios ---
+    // --- Lectura de DB ---
     let mediaLinks;
     try {
         const dbPath = path.join(process.cwd(), 'src', 'database', 'db.json');
-        const dbRaw = fs.readFileSync(dbPath);
-        mediaLinks = JSON.parse(dbRaw).links;
+        mediaLinks = JSON.parse(fs.readFileSync(dbPath)).links;
     } catch (e) {
-        console.error("Error al leer la base de datos:", e);
-        return conn.reply(m.chat, '❌ ¡Error de navegación! No se pudo acceder a los archivos del barco.', m);
+        return conn.reply(m.chat, '❌ Error al cargar tesoros.', m);
     }
 
     if (m.quoted?.id && m.quoted?.fromMe) return;
 
-    let name;
-    try {
-        name = await conn.getName(m.sender);
-    } catch {
-        name = 'Tripulante Nuevo';
-    }
-
+    let name = await conn.getName(m.sender);
     const isMain = conn.user.jid === global.conn.user.jid;
-    const principalNumber = global.conn?.user?.jid?.split('@')[0] || "No detectado";
+    
+    // Obtener número del bot correctamente
+    const botNumber = conn.user.jid.split('@')[0];
+    const principalNumber = `+${botNumber}`;
+
     const totalCommands = Object.keys(global.plugins || {}).length;
     const uptime = clockString(process.uptime() * 1000);
     const totalreg = Object.keys(global.db?.data?.users || {}).length;
-
-    // --- Gestión de Tiempos ---
-    const localTime = moment().tz('America/Caracas').format('h:mm A');
-    let userTimezoneText = 'No configurada 🗺️';
-    const userDB = global.db.data.users[m.sender];
-
-    if (userDB?.timezone && moment.tz.names().includes(userDB.timezone)) {
-        const userTime = moment().tz(userDB.timezone).format('h:mm A');
-        const friendlyName = userDB.timezone.split('/').pop().replace('_', ' ');
-        userTimezoneText = `${userTime} (${friendlyName})`;
-    } else {
-        try {
-            const pn = new PhoneNumber(m.sender);
-            const regionCode = pn.getRegionCode();
-            if (regionCode) {
-                const timezones = moment.tz.zonesForCountry(regionCode);
-                if (timezones?.length > 0) {
-                    const userTime = moment().tz(timezones[0]).format('h:mm A');
-                    userTimezoneText = `${userTime} (${regionCode})`;
-                }
-            }
-        } catch (e) {}
-    }
+    const venezuelaTime = moment().tz('America/Caracas').format('h:mm A');
 
     const gifVideo = mediaLinks.video[Math.floor(Math.random() * mediaLinks.video.length)];
     const randomThumbnail = mediaLinks.imagen[Math.floor(Math.random() * mediaLinks.imagen.length)];
 
-    const emojis = {
-        'main': '📜', 'tools': '🛠️', 'audio': '🎵', 'group': '🏴‍☠️', 
-        'owner': '👑', 'fun': '🃏', 'info': '📂', 'internet': '🌐',
-        'downloads': '📥', 'admin': '⚓', 'anime': '🎋', 'nsfw': '🔞',
-        'search': '🔍', 'sticker': '✨', 'game': '🎮', 'premium': '🎫', 'bot': '🤖'
-    };
-
-    // --- Procesamiento de Comandos (Eliminando duplicados) ---
+    // --- Procesar Comandos (SIN REPETIDOS) ---
     let groups = {};
-    for (let plugin of Object.values(global.plugins || {})) {
-        if (!plugin.help || !plugin.tags) continue;
-        for (let tag of plugin.tags) {
-            if (!groups[tag]) groups[tag] = [];
-            for (let help of plugin.help) {
-                if (/^\$|^=>|^>/.test(help)) continue;
-                
-                let cmdName = `${usedPrefix}${help}`;
-                // Evitamos que el mismo comando se repita en la misma categoría
-                if (!groups[tag].includes(cmdName)) {
-                    groups[tag].push(cmdName);
+    const totalPlugins = Object.values(global.plugins || {});
+    
+    totalPlugins.forEach(plugin => {
+        if (!plugin.help || !plugin.tags) return;
+        plugin.tags.forEach(tag => {
+            if (!groups[tag]) groups[tag] = new Set(); // Usamos Set para evitar duplicados automáticos
+            plugin.help.forEach(help => {
+                if (!/^\$|^=>|^>/.test(help)) {
+                    groups[tag].add(`${usedPrefix}${help}`);
                 }
-            }
-        }
-    }
+            });
+        });
+    });
 
-    // --- Generación de Secciones ---
-    const sections = Object.entries(groups)
-        .sort((a, b) => a[0].localeCompare(b[0]))
-        .map(([tag, cmds]) => {
-            const emoji = emojis[tag] || '🚩';
-            const sectionTitle = aesthetic.section_title(`${emoji} ${tag.toUpperCase()}`);
-            const commandList = cmds.sort().map(cmd => aesthetic.command(cmd)).join('\n');
-            return `${sectionTitle}\n${commandList}`;
-        }).join(''); 
+    // --- Construcción del Menú ---
+    let menuText = `*┏━━━ 🏴‍☠️ STRAW HAT V2 🏴‍☠️ ━━━┓*\n`;
+    menuText += `┃ *Capitán:* _${name}_\n`;
+    menuText += `┃ *Número:* _${principalNumber}_\n`;
+    menuText += `┃ *Tripulación:* _${totalreg}_\n`;
+    menuText += `┃ *Navegación:* _${uptime}_\n`;
+    menuText += `┃ *Hora Local:* _${venezuelaTime}_\n`;
+    menuText += `*┗━━━━━━━━━━━━━━━━━━━━┛*\n\n`;
 
-    // --- Encabezado ---
-    const headerTitle = `🏴‍☠️ *S T R A W H A T - B O T  V 2* 🏴‍☠️`;
-    const headerInfo = `
-${aesthetic.info('Capitán', name)}
-${aesthetic.info('Estado', isMain ? 'Barco Principal' : 'Sub-Bote')}
-${aesthetic.info('Técnicas', totalCommands)}
-${aesthetic.info('Navegación', uptime)}
-${aesthetic.info('Hora Local', localTime)}
-${aesthetic.info('Tu Hora', userTimezoneText)}
-${aesthetic.info('Tripulación', totalreg)}
-`.trim();
+    // Secciones organizadas
+    const sortedTags = Object.keys(groups).sort();
+    sortedTags.forEach(tag => {
+        menuText += `┏━━━━━━━ *⚓ ${tag.toUpperCase()}* ━━━━━━━┓\n`;
+        const sortedCommands = Array.from(groups[tag]).sort();
+        sortedCommands.forEach(cmd => {
+            menuText += `┃ 🍖 ${cmd.trim()}\n`; // Emoji de carne para cada comando
+        });
+        menuText += `┗━━━━━━━━━━━━━━━━━━━━━━━━┛\n\n`;
+    });
 
-    // --- Bloque Final del Menú ---
-    const menuBlock = `
-*┏━━━ ☠️ M E N Ú   P I R A T A ☠️ ━━━┓*
-${sections}
-
-*╭┈─────── ⚓ ───────*
-*╰┈➤* [💡] Usa *.settimezone* para ajustar tu reloj.
-*┗━━━━━━━━━━━━━━━━━━━━━━┛*
-`.trim();
-
-    const finalText = `${headerTitle}\n\n${headerInfo}\n\n${menuBlock}`;
+    menuText += `_🚢 ¡Rumbo al One Piece!_`;
 
     const contextInfo = {
         mentionedJid: [m.sender],
@@ -137,30 +82,26 @@ ${sections}
             serverMessageId: -1
         },
         externalAdReply: {
-            title: '⚓ ¡A bordo del Thousand Sunny!',
-            body: 'Sistema de Comandos V2',
+            title: '🏴‍☠️ STRAW HAT BOT V2',
+            body: 'Sistema de Comandos • Online',
             thumbnailUrl: randomThumbnail,
-            sourceUrl: 'https://github.com/nevi-dev/Vermeil-bot', 
+            sourceUrl: 'https://github.com/nevi-dev/Vermeil-bot',
             mediaType: 1,
-            renderLargerThumbnail: true
+            renderLargerThumbnail: false // <-- ESTO hace que la imagen sea PEQUEÑA
         }
     };
 
-    try {
-        await conn.sendMessage(m.chat, {
-            video: { url: gifVideo },
-            gifPlayback: true,
-            caption: finalText,
-            contextInfo
-        }, { quoted: m });
-    } catch (e) {
-        await conn.reply(m.chat, finalText, m, { contextInfo });
-    }
+    await conn.sendMessage(m.chat, {
+        video: { url: gifVideo },
+        gifPlayback: true,
+        caption: menuText,
+        contextInfo
+    }, { quoted: m });
 };
 
 handler.help = ['menu'];
 handler.tags = ['main'];
-handler.command = ['menu', 'menú', 'help', 'v2']; 
+handler.command = ['menu', 'help', 'comandos', 'v2']; 
 
 export default handler;
 
