@@ -3,125 +3,164 @@ import path from 'path';
 import moment from 'moment-timezone';
 import PhoneNumber from 'awesome-phonenumber';
 
-// --- Constantes de Configuración ---
+// --- Configuración de Identidad Pirata ---
 const newsletterJid = '120363420846835529@newsletter';
-const newsletterName = '*🏴‍☠️ Luffy - Rey de los Piratas V2 🏴‍☠️*'; 
-const packname = '🍖 StrawHat-Crew - Gear 5 🍖';
+const newsletterName = '*🏴‍☠️ StrawHat-Crew V2 - Dashboard 🏴‍☠️*'; 
+const packname = '🏴‍☠️ StrawHat-Bot V2 🏴‍☠️';
 
-const styles = {
-    section_title: (text) => `\n╭┈─────── 🍖 ───────╼ \n*╰┈➤ 👒 ${text}*`, 
-    command: (cmd, desc) => `*🍖* \`${cmd}\`\n   └─ _${desc}_`,
+// --- Estilos de Letras y Estética ---
+const aesthetic = {
+    info: (key, value) => `*| ${key}:* _${value}_`,
+    section_title: (text) => `\n╭┈─────── ⚓ ─────── \n*╰┈➤ 🌊 ${text}*`, 
+    command: (cmd) => `*🍖* ${cmd}`, // Emoji de carne solicitado
 };
 
 let handler = async (m, { conn, usedPrefix }) => {
+    // --- Manejo de Base de Datos de Medios ---
     let mediaLinks;
     try {
         const dbPath = path.join(process.cwd(), 'src', 'database', 'db.json');
         const dbRaw = fs.readFileSync(dbPath);
         mediaLinks = JSON.parse(dbRaw).links;
     } catch (e) {
-        return conn.reply(m.chat, '¡El Log Pose se rompió! Error de base de datos. ⚓', m);
+        console.error("Error al leer la base de datos:", e);
+        return conn.reply(m.chat, '❌ ¡Error de navegación! No se pudo acceder a los archivos del barco.', m);
     }
 
-    let name = await conn.getName(m.sender);
+    if (m.quoted?.id && m.quoted?.fromMe) return;
+
+    let name;
+    try {
+        name = await conn.getName(m.sender);
+    } catch {
+        name = 'Tripulante Nuevo';
+    }
+
+    const isMain = conn.user.jid === global.conn.user.jid;
+    const principalNumber = global.conn?.user?.jid?.split('@')[0] || "No detectado";
+    const totalCommands = Object.keys(global.plugins || {}).length;
     const uptime = clockString(process.uptime() * 1000);
     const totalreg = Object.keys(global.db?.data?.users || {}).length;
 
-    const emojis = {
-        'main': '📜', 'tools': '🛠️', 'audio': '🎶', 'group': '🏴‍☠️', 
-        'owner': '👑', 'fun': '🍖', 'info': '💡', 'downloads': '📥', 
-        'admin': '⚓', 'anime': '🎌', 'search': '🔍', 'sticker': '🖼️', 'game': '🎲'
-    };
+    // --- Gestión de Tiempos ---
+    const localTime = moment().tz('America/Caracas').format('h:mm A');
+    let userTimezoneText = 'No configurada 🗺️';
+    const userDB = global.db.data.users[m.sender];
 
-    let groups = {};
-    let uniqueCommands = new Set(); // Para evitar comandos repetidos
-
-    for (let plugin of Object.values(global.plugins || {})) {
-        if (!plugin.help || !plugin.tags) continue;
-        for (let tag of plugin.tags) {
-            if (!groups[tag]) groups[tag] = [];
-            
-            for (let i = 0; i < plugin.help.length; i++) {
-                let helpName = plugin.help[i];
-                if (/^\$|^=>|^>/.test(helpName)) continue;
-
-                // FILTRO DE REPETIDOS: Si el comando ya existe, no lo agregamos otra vez
-                if (uniqueCommands.has(helpName)) continue;
-                uniqueCommands.add(helpName);
-
-                // LÓGICA DE EXPLICACIÓN (Personaliza aquí según tus necesidades)
-                let description = '';
-                if (plugin.desc && plugin.desc[i]) {
-                    description = plugin.desc[i];
-                } else {
-                    // Descripciones automáticas por tag si no existe una específica
-                    const autoDesc = {
-                        'main': 'Comandos principales del sistema.',
-                        'downloads': 'Descarga contenido de redes sociales.',
-                        'group': 'Gestión de grupos y nakamas.',
-                        'tools': 'Herramientas de navegación útiles.',
-                        'sticker': 'Crea y edita tus propios stickers.',
-                        'fun': 'Diversión y juegos para la tripulación.',
-                        'owner': 'Habilidades exclusivas de mi capitán.',
-                        'search': 'Busca información en los siete mares.'
-                    };
-                    description = autoDesc[tag] || 'Comando para la aventura pirata.';
+    if (userDB?.timezone && moment.tz.names().includes(userDB.timezone)) {
+        const userTime = moment().tz(userDB.timezone).format('h:mm A');
+        const friendlyName = userDB.timezone.split('/').pop().replace('_', ' ');
+        userTimezoneText = `${userTime} (${friendlyName})`;
+    } else {
+        try {
+            const pn = new PhoneNumber(m.sender);
+            const regionCode = pn.getRegionCode();
+            if (regionCode) {
+                const timezones = moment.tz.zonesForCountry(regionCode);
+                if (timezones?.length > 0) {
+                    const userTime = moment().tz(timezones[0]).format('h:mm A');
+                    userTimezoneText = `${userTime} (${regionCode})`;
                 }
-
-                groups[tag].push({
-                    cmd: `${usedPrefix}${helpName}`,
-                    desc: description
-                });
             }
-        }
+        } catch (e) {}
     }
-
-    // Ordenar categorías y comandos
-    const sortedTags = Object.keys(groups).sort();
-    let sections = sortedTags.map(tag => {
-        const emoji = emojis[tag] || '🍖';
-        const sectionTitle = styles.section_title(`${emoji} ${tag.toUpperCase()} `);
-        const commandList = groups[tag]
-            .sort((a, b) => a.cmd.localeCompare(b.cmd))
-            .map(c => styles.command(c.cmd, c.desc))
-            .join('\n');
-        return `${sectionTitle}\n${commandList}`;
-    }).join('');
-
-    const header = `🍖 *¡BIENVENIDO A BORDO, ${name.toUpperCase()}!* 👒\n\n` +
-                   `🏴‍☠️ *Navegando hace:* ${uptime}\n` +
-                   `🏴‍☠️ *Tripulantes:* ${totalreg}\n` +
-                   `🏴‍☠️ *Estatus:* Buscando el One Piece\n\n` +
-                   `*╭━━━ ☠️ ━━━✶━━━ ☠️ ━━━╮*\n` +
-                   `*✨ M E N Ú   P I R A T A ✨*\n` +
-                   `*╰━━━ ☠️ ━━━✶━━━ ☠️ ━━━╮*`;
-
-    const footer = `\n\n*╭┈─────── 👒 ───────╼*\n*╰┈➤* ¡Usa los comandos con sabiduría!\n*¡S E R É   E L   R E Y! 🍖*`;
-
-    const finalText = `${header}\n${sections}${footer}`;
 
     const gifVideo = mediaLinks.video[Math.floor(Math.random() * mediaLinks.video.length)];
     const randomThumbnail = mediaLinks.imagen[Math.floor(Math.random() * mediaLinks.imagen.length)];
 
-    await conn.sendMessage(m.chat, {
-        video: { url: gifVideo },
-        gifPlayback: true,
-        caption: finalText,
-        contextInfo: {
-            mentionedJid: [m.sender],
-            externalAdReply: {
-                title: packname,
-                body: 'Rumbo al One Piece',
-                thumbnailUrl: randomThumbnail,
-                mediaType: 1
+    const emojis = {
+        'main': '📜', 'tools': '🛠️', 'audio': '🎵', 'group': '🏴‍☠️', 
+        'owner': '👑', 'fun': '🃏', 'info': '📂', 'internet': '🌐',
+        'downloads': '📥', 'admin': '⚓', 'anime': '🎋', 'nsfw': '🔞',
+        'search': '🔍', 'sticker': '✨', 'game': '🎮', 'premium': '🎫', 'bot': '🤖'
+    };
+
+    // --- Procesamiento de Comandos (Eliminando duplicados) ---
+    let groups = {};
+    for (let plugin of Object.values(global.plugins || {})) {
+        if (!plugin.help || !plugin.tags) continue;
+        for (let tag of plugin.tags) {
+            if (!groups[tag]) groups[tag] = [];
+            for (let help of plugin.help) {
+                if (/^\$|^=>|^>/.test(help)) continue;
+                
+                let cmdName = `${usedPrefix}${help}`;
+                // Evitamos que el mismo comando se repita en la misma categoría
+                if (!groups[tag].includes(cmdName)) {
+                    groups[tag].push(cmdName);
+                }
             }
         }
-    }, { quoted: m });
+    }
+
+    // --- Generación de Secciones ---
+    const sections = Object.entries(groups)
+        .sort((a, b) => a[0].localeCompare(b[0]))
+        .map(([tag, cmds]) => {
+            const emoji = emojis[tag] || '🚩';
+            const sectionTitle = aesthetic.section_title(`${emoji} ${tag.toUpperCase()}`);
+            const commandList = cmds.sort().map(cmd => aesthetic.command(cmd)).join('\n');
+            return `${sectionTitle}\n${commandList}`;
+        }).join(''); 
+
+    // --- Encabezado ---
+    const headerTitle = `🏴‍☠️ *S T R A W H A T - B O T  V 2* 🏴‍☠️`;
+    const headerInfo = `
+${aesthetic.info('Capitán', name)}
+${aesthetic.info('Estado', isMain ? 'Barco Principal' : 'Sub-Bote')}
+${aesthetic.info('Técnicas', totalCommands)}
+${aesthetic.info('Navegación', uptime)}
+${aesthetic.info('Hora Local', localTime)}
+${aesthetic.info('Tu Hora', userTimezoneText)}
+${aesthetic.info('Tripulación', totalreg)}
+`.trim();
+
+    // --- Bloque Final del Menú ---
+    const menuBlock = `
+*┏━━━ ☠️ M E N Ú   P I R A T A ☠️ ━━━┓*
+${sections}
+
+*╭┈─────── ⚓ ───────*
+*╰┈➤* [💡] Usa *.settimezone* para ajustar tu reloj.
+*┗━━━━━━━━━━━━━━━━━━━━━━┛*
+`.trim();
+
+    const finalText = `${headerTitle}\n\n${headerInfo}\n\n${menuBlock}`;
+
+    const contextInfo = {
+        mentionedJid: [m.sender],
+        isForwarded: true,
+        forwardingScore: 1,
+        forwardedNewsletterMessageInfo: {
+            newsletterJid,
+            newsletterName,
+            serverMessageId: -1
+        },
+        externalAdReply: {
+            title: '⚓ ¡A bordo del Thousand Sunny!',
+            body: 'Sistema de Comandos V2',
+            thumbnailUrl: randomThumbnail,
+            sourceUrl: 'https://github.com/nevi-dev/Vermeil-bot', 
+            mediaType: 1,
+            renderLargerThumbnail: true
+        }
+    };
+
+    try {
+        await conn.sendMessage(m.chat, {
+            video: { url: gifVideo },
+            gifPlayback: true,
+            caption: finalText,
+            contextInfo
+        }, { quoted: m });
+    } catch (e) {
+        await conn.reply(m.chat, finalText, m, { contextInfo });
+    }
 };
 
 handler.help = ['menu'];
 handler.tags = ['main'];
-handler.command = ['menu', 'help', 'comandos', 'luffy']; 
+handler.command = ['menu', 'menú', 'help', 'v2']; 
 
 export default handler;
 
