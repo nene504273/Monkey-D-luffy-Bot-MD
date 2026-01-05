@@ -76,8 +76,8 @@ let handler = async (m, { conn, usedPrefix }) => {
             serverMessageId: -1
         },
         externalAdReply: {
-            title: '🏴‍☠️ STRAW HAT CREW • ONLINE',
-            body: 'Menú de Comandos V2',
+            title: '🏴‍☠️ LUFFY PIRATA CREW 🏴‍☠️',
+            body: 'Menú de Comandos',
             thumbnailUrl: randomThumbnail,
             sourceUrl: 'https://wa.me/584244144821', // Enlace al Rey Pirata también aquí
             mediaType: 1,
