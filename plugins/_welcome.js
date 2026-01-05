@@ -5,19 +5,16 @@ export async function before(m, { conn, participants, groupMetadata }) {
     if (!m.isGroup) return true
     if (!m.messageStubType) return true
 
-    const groupSize = (participants || []).length
+    // Obtener la cantidad actual de miembros
+    const currentSize = (participants || []).length
     const groupName = groupMetadata?.subject || 'este grupo'
-    
-    // Imagen de respaldo (Luffy) si el usuario no tiene foto de perfil
-    const defaultImg = 'https://files.catbox.moe/x4sc8b.jpg'
+    const defaultImg = 'https://files.catbox.moe/x4sc8b.jpg' 
 
     const sendMsg = async (jid, text, user, title) => {
       let pp
       try {
-        // Busca la foto de perfil del usuario
         pp = await conn.profilePictureUrl(user, 'image')
       } catch (e) {
-        // Si no tiene foto, usa la de Catbox
         pp = defaultImg
       }
 
@@ -27,7 +24,6 @@ export async function before(m, { conn, participants, groupMetadata }) {
           mentionedJid: [user],
           forwardingScore: 999,
           isForwarded: true,
-          // Vinculación a tu canal
           forwardedNewsletterMessageInfo: {
             newsletterJid: '120363420846835529@newsletter',
             newsletterName: '🎄 Jolly Roger Navideño V2 🎄',
@@ -38,7 +34,6 @@ export async function before(m, { conn, participants, groupMetadata }) {
             body: '', 
             thumbnailUrl: pp,
             mediaType: 1,
-            // ESTO HACE QUE LA FOTO SALGA GRANDE
             renderLargerThumbnail: true, 
             sourceUrl: 'Power by ɴ͡ᴇ͜ɴᴇ❀᭄☂️' 
           }
@@ -46,20 +41,23 @@ export async function before(m, { conn, participants, groupMetadata }) {
       }, { quoted: m })
     }
 
-    // --- LÓGICA DE BIENVENIDA ---
+    // --- LÓGICA DE BIENVENIDA (Suma 1 al conteo) ---
     if (m.messageStubType === WAMessageStubType.GROUP_PARTICIPANT_ADD || m.messageStubType === 27) {
       const users = m.messageStubParameters || []
       for (const user of users) {
         const jid = user.includes('@') ? user : `${user}@s.whatsapp.net`
         const mentionTag = '@' + jid.split('@')[0]
         
+        // Sumamos 1 porque el evento ocurre mientras se añaden
+        const realSize = currentSize + 1 
+
         const welcomeText = `
 🕊️ *BIENVENIDO/DA* 🕊️
 ─── ˗ˏˋ 🍖 ˎˊ˗ ───
 
 ∫ ⚓ *USUARIO* : ${mentionTag}
 ∫ 🌍 *GRUPO* : ${groupName}
-∫ 👥 *MIEMBROS* : ${groupSize}
+∫ 👥 *MIEMBROS* : ${realSize}
 ∫ 📅 *FECHA* : ${new Date().toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}
 
 *¡Yoshaaa! Un nuevo nakama se une a la tripulación.*`.trim()
@@ -68,12 +66,15 @@ export async function before(m, { conn, participants, groupMetadata }) {
       }
     }
 
-    // --- LÓGICA DE ADIÓS ---
+    // --- LÓGICA DE ADIÓS (Resta 1 al conteo) ---
     if (m.messageStubType === WAMessageStubType.GROUP_PARTICIPANT_REMOVE || m.messageStubType === 32) {
       const users = m.messageStubParameters || []
       for (const user of users) {
         const jid = user.includes('@') ? user : `${user}@s.whatsapp.net`
         const mentionTag = '@' + jid.split('@')[0]
+
+        // Restamos 1 porque el bot todavía cuenta a la persona que se acaba de ir
+        const realSize = currentSize - 1
 
         const byeText = `
 🥀 *ADIÓS NAKAMA* 🥀
@@ -81,7 +82,7 @@ export async function before(m, { conn, participants, groupMetadata }) {
 
 ∫ 👤 *USUARIO* : ${mentionTag}
 ∫ 🚢 *GRUPO* : ${groupName}
-∫ 👥 *QUEDAN* : ${groupSize}
+∫ 👥 *QUEDAN* : ${realSize}
 
 *¡Esperamos verte de nuevo en Grand Line!*`.trim()
         
@@ -91,7 +92,7 @@ export async function before(m, { conn, participants, groupMetadata }) {
 
     return true
   } catch (e) {
-    console.error('Error en el plugin de bienvenida:', e)
+    console.error(e)
     return true
   }
 }
