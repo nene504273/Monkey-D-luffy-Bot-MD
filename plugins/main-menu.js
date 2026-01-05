@@ -4,8 +4,8 @@ import moment from 'moment-timezone';
 import PhoneNumber from 'awesome-phonenumber';
 
 const newsletterJid = '120363420846835529@newsletter';
-const newsletterName = '🏴‍☠️ StrawHat-Crew V2'; 
-const packname = '🏴‍☠️ StrawHat-Bot V2 🏴‍☠️';
+const newsletterName = '🏴‍☠️ luffy-gear5 🏴‍☠️'; 
+const packname = '🏴‍☠️ LUFFY-Bot  🏴‍☠️';
 
 let handler = async (m, { conn, usedPrefix }) => {
     // --- Lectura de Base de Datos ---
@@ -43,7 +43,7 @@ let handler = async (m, { conn, usedPrefix }) => {
 
     // --- Construcción del Menú ---
     let menuText = `*┏━━━━━━━━━━━━━━━━━━━━┓*\n`;
-    menuText += `┃  🏴‍☠️ *STRAW HAT BOT V2* 🏴‍☠️\n`;
+    menuText += `┃  🏴‍☠️ *MONKEY D LUFFY* 🏴‍☠️\n`;
     menuText += `*┣━━━━━━━━━━━━━━━━━━━━┛*\n`;
     menuText += `┃ ⚓ *Capitán:* _${name}_\n`;
     menuText += `┃ 👑 *Rey Pirata:* wa.me/584244144821\n`;
