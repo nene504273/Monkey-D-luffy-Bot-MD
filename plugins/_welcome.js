@@ -5,66 +5,54 @@ export async function before(m, { conn, participants, groupMetadata }) {
     if (!m.isGroup) return true
     if (!m.messageStubType) return true
 
-    if (!global.db?.data?.chats) {
-      global.db = { data: { chats: {} }, ...(global.db || {}) }
-    }
-    if (!global.db.data.chats[m.chat]) global.db.data.chats[m.chat] = {}
-
-    const chat = global.db.data.chats[m.chat]
-    if (chat.welcome === undefined) chat.welcome = true
-    if (!chat.welcome) return true
-
     const groupSize = (participants || []).length
     const groupName = groupMetadata?.subject || 'este grupo'
     
-    // ESTA ES LA IMAGEN QUE ENVIASTE (Luffy con fondo azul/blanco)
+    // Imagen de respaldo (Luffy) si el usuario no tiene foto de perfil
     const defaultImg = 'https://files.catbox.moe/x4sc8b.jpg'
 
-    const sendSingleWelcome = async (jid, text, user, quoted, type) => {
+    const sendMsg = async (jid, text, user, title) => {
+      let pp
       try {
-        let pp
-        try {
-          // EL BOT BUSCA LA FOTO DEL USUARIO PARA MOSTRARLA
-          pp = await conn.profilePictureUrl(user, 'image')
-        } catch (e) {
-          // SI EL USUARIO NO TIENE FOTO, PONE LA QUE ME PASASTE
-          pp = defaultImg
-        }
-
-        await conn.sendMessage(jid, {
-          text: text,
-          contextInfo: {
-            mentionedJid: [user],
-            forwardingScore: 999,
-            isForwarded: true,
-            forwardedNewsletterMessageInfo: {
-              newsletterJid: '120363420846835529@newsletter',
-              newsletterName: '🎄 Jolly Roger Navideño V2 🎄',
-              serverMessageId: -1
-            },
-            externalAdReply: {
-              title: type === 'welcome' ? '✨ B I E N V E N I D O ✨' : '🥀 A D I Ó S  N A K A M A 🥀',
-              body: `Luffy Bot`, 
-              thumbnailUrl: pp, 
-              mediaType: 1,
-              renderLargerThumbnail: true,
-              sourceUrl: 'Power by ɴ͡ᴇ͜ɴᴇ❀᭄☂️' 
-            }
-          }
-        }, { quoted })
-      } catch (err) {
-        console.log('Error en sendSingleWelcome:', err)
+        // Busca la foto de perfil del usuario
+        pp = await conn.profilePictureUrl(user, 'image')
+      } catch (e) {
+        // Si no tiene foto, usa la de Catbox
+        pp = defaultImg
       }
+
+      await conn.sendMessage(jid, {
+        text: text,
+        contextInfo: {
+          mentionedJid: [user],
+          forwardingScore: 999,
+          isForwarded: true,
+          // Vinculación a tu canal
+          forwardedNewsletterMessageInfo: {
+            newsletterJid: '120363420846835529@newsletter',
+            newsletterName: '🎄 Jolly Roger Navideño V2 🎄',
+            serverMessageId: -1
+          },
+          externalAdReply: {
+            title: title,
+            body: '', 
+            thumbnailUrl: pp,
+            mediaType: 1,
+            // ESTO HACE QUE LA FOTO SALGA GRANDE
+            renderLargerThumbnail: true, 
+            sourceUrl: 'Power by ɴ͡ᴇ͜ɴᴇ❀᭄☂️' 
+          }
+        }
+      }, { quoted: m })
     }
 
-    // --- Lógica de Bienvenida ---
+    // --- LÓGICA DE BIENVENIDA ---
     if (m.messageStubType === WAMessageStubType.GROUP_PARTICIPANT_ADD || m.messageStubType === 27) {
       const users = m.messageStubParameters || []
       for (const user of users) {
-        if (!user) continue
         const jid = user.includes('@') ? user : `${user}@s.whatsapp.net`
-        const mentionTag = '@' + jid.replace(/@.+/, '')
-
+        const mentionTag = '@' + jid.split('@')[0]
+        
         const welcomeText = `
 🕊️ *BIENVENIDO/DA* 🕊️
 ─── ˗ˏˋ 🍖 ˎˊ˗ ───
@@ -75,19 +63,17 @@ export async function before(m, { conn, participants, groupMetadata }) {
 ∫ 📅 *FECHA* : ${new Date().toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}
 
 *¡Yoshaaa! Un nuevo nakama se une a la tripulación.*`.trim()
-
-        await sendSingleWelcome(m.chat, welcomeText, jid, m, 'welcome')
-        await new Promise(resolve => setTimeout(resolve, 1000))
+        
+        await sendMsg(m.chat, welcomeText, jid, '✨ B I E N V E N I D O ✨')
       }
     }
 
-    // --- Lógica de Despedida ---
-    if (m.messageStubType === WAMessageStubType.GROUP_PARTICIPANT_REMOVE || m.messageStubType === WAMessageStubType.GROUP_PARTICIPANT_LEAVE || m.messageStubType === 28 || m.messageStubType === 32) {
+    // --- LÓGICA DE ADIÓS ---
+    if (m.messageStubType === WAMessageStubType.GROUP_PARTICIPANT_REMOVE || m.messageStubType === 32) {
       const users = m.messageStubParameters || []
       for (const user of users) {
-        if (!user) continue
         const jid = user.includes('@') ? user : `${user}@s.whatsapp.net`
-        const mentionTag = '@' + jid.replace(/@.+/, '')
+        const mentionTag = '@' + jid.split('@')[0]
 
         const byeText = `
 🥀 *ADIÓS NAKAMA* 🥀
@@ -98,16 +84,14 @@ export async function before(m, { conn, participants, groupMetadata }) {
 ∫ 👥 *QUEDAN* : ${groupSize}
 
 *¡Esperamos verte de nuevo en Grand Line!*`.trim()
-
-      await sendSingleWelcome(m.chat, byeText, jid, m, 'bye')
-      await new Promise(resolve => setTimeout(resolve, 1000))
+        
+        await sendMsg(m.chat, byeText, jid, '┖ [ 🖇️ A D I O S / B Y E ] ───⊚')
       }
     }
 
     return true
-
   } catch (e) {
-    console.error('Error en plugins/_welcome:', e)
+    console.error('Error en el plugin de bienvenida:', e)
     return true
   }
 }
