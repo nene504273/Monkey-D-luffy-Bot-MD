@@ -43,7 +43,7 @@ let handler = async (m, { conn, usedPrefix }) => {
 
     // --- Construcción del Menú ---
     let menuText = `*┏━━━━━━━━━━━━━━━━━━━━┓*\n`;
-    menuText += `┃  🏴‍☠️ *MONKEY D LUFFY* 🏴‍☠️\n`;
+    menuText += `┃  🏴‍☠️ *MONKEY D LUFFY BOT* 🏴‍☠️\n`;
     menuText += `*┣━━━━━━━━━━━━━━━━━━━━┛*\n`;
     menuText += `┃ ⚓ *Capitán:* _${name}_\n`;
     menuText += `┃ 👑 *Rey Pirata:* wa.me/584244144821\n`;
