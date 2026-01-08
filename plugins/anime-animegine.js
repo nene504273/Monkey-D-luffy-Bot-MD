@@ -10,46 +10,51 @@ let handler = async (m, { conn, args }) => {
   }
 
   try {
+    // Reacción de "procesando"
     await conn.sendMessage(m.chat, { react: { text: '🎨', key: m.key } });
 
     const apiUrl = `https://rest.alyabotpe.xyz/ai/texttoimage?prompt=${encodeURIComponent(prompt)}&style=realista&key=${ApiKey}`;
 
     const res = await fetch(apiUrl);
-    const data = await res.json();
 
-    // Esto te ayudará a ver en la terminal qué está pasando si falla
-    console.log('Respuesta de la API:', data);
+    // Verificamos si la respuesta es una imagen (binario)
+    const contentType = res.headers.get('content-type');
 
-    // Intentamos obtener la URL de diferentes posibles campos (url, result o link)
-    const imageUrl = data.url || data.result || (data.data && data.data.url);
+    if (contentType && contentType.includes('image')) {
+      // Si es imagen, la convertimos en buffer para enviarla directamente
+      const buffer = await res.buffer();
 
-    if (!imageUrl) {
-      throw new Error('La API no envió una imagen. Verifica si tu Key tiene créditos o si el prompt es válido.');
+      await conn.sendMessage(
+        m.chat,
+        {
+          image: buffer,
+          caption: `*¡Imagen generada! 🎨*\n\n*Prompt:* ${prompt}\n*Estilo:* Realista`
+        },
+        { quoted: m }
+      );
+
+      // Reacción de éxito
+      await conn.sendMessage(m.chat, { react: { text: '✅', key: m.key } });
+    } else {
+      // Si no es imagen, intentamos leer el error en formato JSON
+      const data = await res.json();
+      throw new Error(data.message || 'La API no devolvió una imagen válida.');
     }
 
-    await conn.sendMessage(
-      m.chat,
-      {
-        image: { url: imageUrl },
-        caption: `*¡Imagen generada! 🎨*\n\n> ${prompt}`
-      },
-      { quoted: m }
-    );
-
-    await conn.sendMessage(m.chat, { react: { text: '✅', key: m.key } });
-
   } catch (error) {
-    console.error(error);
-    await conn.sendMessage(m.chat, { react: { text: '✖️', key: m.key } });
+    console.error('Error en el comando:', error);
     
-    // Si el error es por la API, mostramos el mensaje que envíe el servidor
-    m.reply(`*¡Error! 💢*\n${error.message}`);
+    // Reacción de error
+    await conn.sendMessage(m.chat, { react: { text: '✖️', key: m.key } });
+
+    // Mensaje de error amigable
+    m.reply(`*¡Error! 💢*\n\n> *Detalle:* ${error.message}`);
   }
 };
 
 handler.help = ['text2img <texto>'];
 handler.tags = ['ai'];
-handler.command = ['text2img'];
+handler.command = ['text2img', 'imagen', 'iaimg']; // Atajos extra
 handler.limit = true;
 handler.register = true;
 
