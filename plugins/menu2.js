@@ -90,8 +90,8 @@ _Disfruta de los audios_ 🏴‍☠️`
 }
 
 // Configuración del plugin para que el bot NO diga que no existe
-handler.help = ['menu2']
-handler.tags = ['main']
+handler.help = ['v2']
+handler.tags = ['']
 handler.command = /^(menu2|audios2)$/i // Aquí se define el comando
 
 export default handler
