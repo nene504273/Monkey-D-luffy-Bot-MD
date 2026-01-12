@@ -343,6 +343,19 @@ const handler = async (m, { conn, usedPrefix, command, args, isOwner, isAdmin, i
       chat.antiarabes = isEnable;
       break;
 
+      case 'audios':
+      if (m.isGroup) {
+        if (!(isAdmin || isOwner)) {
+          global.dfail('admin', m, conn);
+          throw false;
+        }
+      } else {
+        global.dfail('group', m, conn);
+        throw false;
+      }
+      chat.audios = isEnable;
+      break;
+
     default:
       return conn.reply(m.chat, `Comando no reconocido: ${type}`, m);
   }
