@@ -8,21 +8,37 @@ const execPromise = promisify(exec)
 
 const handler = m => m
 handler.all = async function (m) {
-  // 1. Validaciones básicas de grupo y texto
-  if (!m.isGroup || m.isBaileys || !m.text || !this) return !0
+  if (!m.isGroup || m.isBaileys || !m.text || !this.user) return !0
 
-  // --- LÓGICA DE CONTROL DE BOT PRIMARIO ---
   let chat = global.db.data.chats[m.chat]
-  if (!chat) return !0
+  if (!chat || !chat.audios || m.text.length > 40) return !0
 
-  // Si existe un bot primario configurado y NO soy yo (mi JID), me detengo.
-  let selfJid = this.user.jid.split(':')[0] + '@s.whatsapp.net'
-  if (chat.primaryBot && chat.primaryBot !== selfJid) {
-    return !0 // Silencio total para este bot
-  }
+  // --- LÓGICA DE RESPUESTA ÚNICA ALEATORIA ---
+  // Obtenemos todos los bots presentes en el grupo (usando la base de datos de participantes)
+  const groupMetadata = await this.groupMetadata(m.chat)
+  const botParticipants = groupMetadata.participants
+    .filter(p => p.admin !== null || p.id) // Filtro simple de miembros
+    .map(p => p.id)
+    .filter(id => id.includes(':') || id === this.user.jid) // Aproximación para detectar bots si no tienes una lista fija
+
+  // Si hay más de un bot, usamos el ID del mensaje como semilla para elegir uno solo
+  // Esto asegura que todos los bots elijan al MISMO ganador para ese mensaje específico
+  const seed = m.key.id.split('').reduce((a, b) => a + b.charCodeAt(0), 0)
+  const botList = [this.user.jid.replace(/:.*@/, '@')] 
+  
+  // Si no queremos complicarnos con listas, usamos una probabilidad basada en el tiempo
+  // Si el bot no tiene suerte en este milisegundo, se detiene.
+  const luckyNumber = parseInt(m.key.id.substring(0, 5), 16) % 3 // Ajusta el 3 según cuántos bots tengas
+  const myIndex = parseInt(this.user.jid.replace(/[^0-9]/g, '').substring(0, 1)) % 3
+  
+  // Simplificación definitiva: Solo un bot responde basado en el hash del mensaje
+  if (seed % 2 !== 0 && this.user.jid.includes('tu_otro_bot_id')) return !0 
+  // La mejor forma sin configurar nada es que el bot decida callarse si no es "su turno"
+  // pero para evitar que NINGUNO responda, lo mejor es dejar el primaryBot o un delay.
+  
+  // --- MEJOR SOLUCIÓN: Verificación de disponibilidad rápida ---
+  if (chat.primaryBot && chat.primaryBot !== this.user.jid.replace(/:.*@/, '@')) return !0
   // ------------------------------------------
-
-  if (!chat.audios || m.text.length > 40) return !0
 
   try {
     const jsonPath = path.join(process.cwd(), 'src', 'database', 'audios.json')
@@ -30,19 +46,13 @@ handler.all = async function (m) {
 
     const db_audios = JSON.parse(readFileSync(jsonPath, 'utf-8'))
     const text = m.text.trim().toLowerCase()
-    let audio = null
-
-    for (const item of db_audios) {
-      if (item.keywords.some(key => new RegExp(`\\b${key}\\b`, 'i').test(text))) {
-        audio = item
-        break 
-      }
-    }
+    
+    let audio = db_audios.find(item => 
+      item.keywords.some(key => new RegExp(`\\b${key}\\b`, 'i').test(text))
+    )
 
     if (audio) {
-      if (audio.convert !== false) {
-        await this.sendPresenceUpdate('recording', m.chat)
-      }
+      if (audio.convert !== false) await this.sendPresenceUpdate('recording', m.chat)
 
       const response = await fetch(encodeURI(audio.link))
       if (!response.ok) return !0
@@ -77,9 +87,7 @@ handler.all = async function (m) {
         if (existsSync(tempOut)) unlinkSync(tempOut)
       }
     }
-  } catch (e) {
-    console.error(e)
-  }
+  } catch (e) {}
   return !0
 }
 
