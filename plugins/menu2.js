@@ -1,63 +1,97 @@
-// plugins/menu2.js
+import fetch from 'node-fetch'
 
 let handler = async (m, { conn, usedPrefix, command }) => {
-    const imagenLuffy = "https://raw.githubusercontent.com/nevi-dev/nevi-dev/main/src/IMG-20260110-WA0014.jpg";
+  // Enlace directo de la imagen de Luffy
+  let img = 'https://raw.githubusercontent.com/nevi-dev/nevi-dev/main/src/IMG-20260110-WA0014.jpg'
+  
+  let menu = `*┏━━━━━━━━━━━━━━━━┓*
+*┃   🎧  MENÚ DE AUDIOS 2  🎧   ┃*
+*┗━━━━━━━━━━━━━━━━┛*
 
-    let menu = `*┏━━━━━━━━━━━━━━━━┓*\n`;
-    menu += `*┃   🎧  MENÚ DE AUDIOS 2  🎧   ┃*\n`;
-    menu += `*┗━━━━━━━━━━━━━━━━┛*\n\n`;
+> _Escribe la palabra para reproducir el audio_
 
-    menu += `> _Escribe la palabra para reproducir el audio_\n\n\n`;
 
-    menu += `💼 *【 TRABAJO 】*\n`;
-    menu += `• chamba\n\n`;
-    menu += `• chamba digital\n\n`;
-    menu += `• trabajar\n\n\n`;
+💼 *【 TRABAJO 】*
 
-    menu += `🐉 *【 ANIME 】*\n`;
-    menu += `• goku / seria\n\n`;
-    menu += `• vegeta / moto\n\n`;
-    menu += `• dinero / donar\n\n`;
-    menu += `• onichan / yamete\n\n`;
-    menu += `• paimon / emergencia\n\n\n`;
+• chamba
 
-    menu += `😂 *【 HUMOR / XD 】*\n`;
-    menu += `• xd / xddd\n\n`;
-    menu += `• momazo / momo\n\n`;
-    menu += `• risa / yupi\n\n`;
-    menu += `• vete alv / terreneitor\n\n\n`;
+• chamba digital
 
-    menu += `🔥 *【 ESENCIA 】*\n`;
-    menu += `• esencia / tablos\n\n`;
-    menu += `• 7 palabras\n\n`;
-    menu += `• algo cambio\n\n\n`;
+• trabajar
 
-    menu += `💬 *【 SOCIAL 】*\n`;
-    menu += `• bienvenido\n\n`;
-    menu += `• respondan\n\n`;
-    menu += `• grupo muerto / he vuelto\n\n\n`;
 
-    menu += `🔞 *【 PAJA 】*\n`;
-    menu += `• turbo paja / pajin\n\n`;
-    menu += `• mucha paja\n\n\n`;
+🐉 *【 ANIME 】*
 
-    menu += `⚠️ *【 OTROS 】*\n`;
-    menu += `• ya se donde vives\n\n`;
-    menu += `• arrepientete\n\n`;
-    menu += `• me vale verga / gay\n\n`;
-    menu += `• se fue la luz\n\n\n`;
+• goku / seria
 
-    menu += `_Disfruta de los audios_ 🏴‍☠️`;
+• vegeta / moto
 
-    await conn.sendMessage(m.chat, { 
-        image: { url: imagenLuffy }, 
-        caption: menu 
-    }, { quoted: m });
-};
+• dinero / donar
 
-// Esta parte es vital para que reconozca el comando
-handler.command = /^(menu2|audios2)$/i;
-handler.tags = ['main'];
-handler.help = ['menu2'];
+• onichan / yamete
 
-export default handler;
+• paimon / emergencia
+
+
+😂 *【 HUMOR / XD 】*
+
+• xd / xddd
+
+• momazo / momo
+
+• risa / yupi
+
+• vete alv / terreneitor
+
+
+🔥 *【 ESENCIA 】*
+
+• esencia / tablos
+
+• 7 palabras
+
+• algo cambio
+
+
+💬 *【 SOCIAL 】*
+
+• bienvenido
+
+• respondan
+
+• grupo muerto / he vuelto
+
+
+🔞 *【 PAJA 】*
+
+• turbo paja / pajin
+
+• mucha paja
+
+
+⚠️ *【 OTROS 】*
+
+• ya se donde vives
+
+• arrepientete
+
+• me vale verga / gay
+
+• se fue la luz
+
+
+_Disfruta de los audios_ 🏴‍☠️`
+
+  await conn.sendMessage(m.chat, { 
+    image: { url: img }, 
+    caption: menu,
+    mentions: [m.sender]
+  }, { quoted: m })
+}
+
+// Configuración del plugin para que el bot NO diga que no existe
+handler.help = ['menu2']
+handler.tags = ['main']
+handler.command = /^(menu2|audios2)$/i // Aquí se define el comando
+
+export default handler
