@@ -1,10 +1,6 @@
-/**
- * PLUGIN: menu2.js
- * Descripción: Menú de audios organizado con la imagen de Luffy.
- */
+// plugins/menu2.js
 
-let handler = async (m, { conn }) => {
-    // Imagen de Luffy que proporcionaste
+let handler = async (m, { conn, usedPrefix, command }) => {
     const imagenLuffy = "https://raw.githubusercontent.com/nevi-dev/nevi-dev/main/src/IMG-20260110-WA0014.jpg";
 
     let menu = `*┏━━━━━━━━━━━━━━━━┓*\n`;
@@ -29,32 +25,27 @@ let handler = async (m, { conn }) => {
     menu += `• xd / xddd\n\n`;
     menu += `• momazo / momo\n\n`;
     menu += `• risa / yupi\n\n`;
-    menu += `• vete alv\n\n`;
-    menu += `• terreneitor\n\n\n`;
+    menu += `• vete alv / terreneitor\n\n\n`;
 
     menu += `🔥 *【 ESENCIA 】*\n`;
-    menu += `• esencia\n\n`;
-    menu += `• tablos\n\n`;
+    menu += `• esencia / tablos\n\n`;
     menu += `• 7 palabras\n\n`;
     menu += `• algo cambio\n\n\n`;
 
     menu += `💬 *【 SOCIAL 】*\n`;
     menu += `• bienvenido\n\n`;
     menu += `• respondan\n\n`;
-    menu += `• grupo muerto\n\n`;
-    menu += `• he vuelto\n\n\n`;
+    menu += `• grupo muerto / he vuelto\n\n\n`;
 
     menu += `🔞 *【 PAJA 】*\n`;
-    menu += `• turbo paja\n\n`;
-    menu += `• pajin\n\n`;
+    menu += `• turbo paja / pajin\n\n`;
     menu += `• mucha paja\n\n\n`;
 
     menu += `⚠️ *【 OTROS 】*\n`;
     menu += `• ya se donde vives\n\n`;
     menu += `• arrepientete\n\n`;
-    menu += `• me vale verga\n\n`;
-    menu += `• se fue la luz\n\n`;
-    menu += `• gay\n\n\n`;
+    menu += `• me vale verga / gay\n\n`;
+    menu += `• se fue la luz\n\n\n`;
 
     menu += `_Disfruta de los audios_ 🏴‍☠️`;
 
@@ -64,6 +55,9 @@ let handler = async (m, { conn }) => {
     }, { quoted: m });
 };
 
-handler.command = /^(menu2)$/i; // Se activa al escribir "menu2"
+// Esta parte es vital para que reconozca el comando
+handler.command = /^(menu2|audios2)$/i;
+handler.tags = ['main'];
+handler.help = ['menu2'];
 
 export default handler;
