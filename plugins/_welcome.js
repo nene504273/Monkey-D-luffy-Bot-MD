@@ -1,91 +1,98 @@
 import { WAMessageStubType } from '@whiskeysockets/baileys'
 
 export async function before(m, { conn, participants, groupMetadata }) {
-    if (!m.isGroup || !m.messageStubType) return true
+  try {
+    if (!m.isGroup) return true
+    if (!m.messageStubType) return true
 
-    // --- CONFIGURACIÓN ---
-    const apiKey = "stellar-LarjcWHD"
-    const fotoRespaldo = "https://files.catbox.moe/xr2m6u.jpg"
-    const canalId = '120363420846835529@newsletter'
-    const canalNombre = 'monkey D. luffy'
+    // Obtener la cantidad actual de miembros
+    const currentSize = (participants || []).length
+    const groupName = groupMetadata?.subject || 'este grupo'
+    const defaultImg = 'https://files.catbox.moe/x4sc8b.jpg' 
 
-    const id = m.chat
-    const user = m.messageStubParameters[0] 
-    const userName = conn.getName(user) || "Nakama"
-    const groupName = groupMetadata.subject
-    const memberCount = participants.length
-
-    const fechaActual = new Date().toLocaleDateString('es-ES', {
-        day: 'numeric',
-        month: 'long',
-        year: 'numeric'
-    })
-
-    let pp
-    try {
+    const sendMsg = async (jid, text, user, title) => {
+      let pp
+      try {
         pp = await conn.profilePictureUrl(user, 'image')
-    } catch {
-        pp = fotoRespaldo
+      } catch (e) {
+        pp = defaultImg
+      }
+
+      await conn.sendMessage(jid, {
+        text: text,
+        contextInfo: {
+          mentionedJid: [user],
+          forwardingScore: 999,
+          isForwarded: true,
+          forwardedNewsletterMessageInfo: {
+            newsletterJid: '120363420846835529@newsletter',
+            newsletterName: '🎄 Jolly Roger Navideño V2 🎄',
+            serverMessageId: -1
+          },
+          externalAdReply: {
+            title: title,
+            body: '', 
+            thumbnailUrl: pp,
+            mediaType: 1,
+            renderLargerThumbnail: true, 
+            sourceUrl: 'Power by ɴ͡ᴇ͜ɴᴇ❀᭄☂️' 
+          }
+        }
+      }, { quoted: m })
     }
 
-    // --- ACCIÓN: BIENVENIDA ---
-    if (m.messageStubType === WAMessageStubType.GROUP_PARTICIPANT_ADD || m.messageStubType === WAMessageStubType.GROUP_PARTICIPANT_INVITE_VIA_LINK) {
-        
-        const urlImagen = `https://rest.alyabotpe.xyz/whatsapp/welcome?name=${encodeURIComponent(userName)}&gcname=${encodeURIComponent(groupName)}&pp=${pp}&member=${memberCount}&key=${apiKey}`
+    // --- LÓGICA DE BIENVENIDA (Suma 1 al conteo) ---
+    if (m.messageStubType === WAMessageStubType.GROUP_PARTICIPANT_ADD || m.messageStubType === 27) {
+      const users = m.messageStubParameters || []
+      for (const user of users) {
+        const jid = user.includes('@') ? user : `${user}@s.whatsapp.net`
+        const mentionTag = '@' + jid.split('@')[0]
 
-        const textoBienvenida = `🕊️ *BIENVENIDO/DA* 🕊️
+        // Sumamos 1 porque el evento ocurre mientras se añaden
+        const realSize = currentSize + 1 
+
+        const welcomeText = `
+🕊️ *BIENVENIDO/DA* 🕊️
 ─── ˗ˏˋ 🍖 ˎˊ˗ ───
 
-∫ ⚓ *USUARIO* : @${user.split('@')[0]}
+∫ ⚓ *USUARIO* : ${mentionTag}
 ∫ 🌍 *GRUPO* : ${groupName}
-∫ 👥 *MIEMBROS* : ${memberCount}
-∫ 📅 *FECHA* : ${fechaActual}
+∫ 👥 *MIEMBROS* : ${realSize}
+∫ 📅 *FECHA* : ${new Date().toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}
 
-*¡Yoshaaa! Un nuevo nakama se une a la tripulación.*`
+*¡Yoshaaa! Un nuevo nakama se une a la tripulación.*`.trim()
 
-        await conn.sendMessage(id, { 
-            image: { url: urlImagen }, 
-            caption: textoBienvenida, 
-            mentions: [user],
-            contextInfo: {
-                mentionedJid: [user],
-                forwardedNewsletterMessageInfo: {
-                    newsletterJid: canalId,
-                    newsletterName: canalNombre,
-                    serverMessageId: -1
-                }
-            }
-        })
+        await sendMsg(m.chat, welcomeText, jid, '✨ B I E N V E N I D O ✨')
+      }
     }
 
-    // --- ACCIÓN: DESPEDIDA ---
-    if (m.messageStubType === WAMessageStubType.GROUP_PARTICIPANT_LEAVE || m.messageStubType === WAMessageStubType.GROUP_PARTICIPANT_REMOVE) {
-        
-        const urlImagen = `https://rest.alyabotpe.xyz/whatsapp/goodbye?name=${encodeURIComponent(userName)}&gcname=${encodeURIComponent(groupName)}&pp=${pp}&member=${memberCount}&key=${apiKey}`
+    // --- LÓGICA DE ADIÓS (Resta 1 al conteo) ---
+    if (m.messageStubType === WAMessageStubType.GROUP_PARTICIPANT_REMOVE || m.messageStubType === 32) {
+      const users = m.messageStubParameters || []
+      for (const user of users) {
+        const jid = user.includes('@') ? user : `${user}@s.whatsapp.net`
+        const mentionTag = '@' + jid.split('@')[0]
 
-        const textoDespedida = `⚓ *PARTIDA DE NAKAMA* ⚓
+        // Restamos 1 porque el bot todavía cuenta a la persona que se acaba de ir
+        const realSize = currentSize - 1
+
+        const byeText = `
+🥀 *ADIÓS NAKAMA* 🥀
 ─── ˗ˏˋ 🌊 ˎˊ˗ ───
 
-∫ 👤 *USUARIO* : @${user.split('@')[0]}
-∫ 🌍 *GRUPO* : ${groupName}
-∫ 👥 *QUEDAN* : ${memberCount}
+∫ 👤 *USUARIO* : ${mentionTag}
+∫ 🚢 *GRUPO* : ${groupName}
+∫ 👥 *QUEDAN* : ${realSize}
 
-*¡Buen viaje! Aunque dejes la tripulación, siempre recordaremos tu camino.*`
+*¡Esperamos verte de nuevo en Grand Line!*`.trim()
 
-        await conn.sendMessage(id, { 
-            image: { url: urlImagen }, 
-            caption: textoDespedida, 
-            mentions: [user],
-            contextInfo: {
-                mentionedJid: [user],
-                forwardedNewsletterMessageInfo: {
-                    newsletterJid: canalId,
-                    newsletterName: canalNombre,
-                    serverMessageId: -1
-                }
-            }
-        })
+        await sendMsg(m.chat, byeText, jid, '┖ [ 🖇️ A D I O S / B Y E ] ───⊚')
+      }
     }
 
     return true
+  } catch (e) {
+    console.error(e)
+    return true
+  }
 }
