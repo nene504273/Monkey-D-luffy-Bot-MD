@@ -1,98 +1,91 @@
 import { WAMessageStubType } from '@whiskeysockets/baileys'
 
 export async function before(m, { conn, participants, groupMetadata }) {
-  try {
+    // 1. Validaciones de seguridad
     if (!m.isGroup) return true
     if (!m.messageStubType) return true
 
-    // Obtener la cantidad actual de miembros
-    const currentSize = (participants || []).length
-    const groupName = groupMetadata?.subject || 'este grupo'
-    const defaultImg = 'https://files.catbox.moe/x4sc8b.jpg' 
+    // --- CONFIGURACIÓN ---
+    const apiKey = "stellar-LarjcWHD"
+    const fotoRespaldo = "https://files.catbox.moe/xr2m6u.jpg"
+    const canalId = '120363420846835529@newsletter'
+    const canalNombre = '🎄 Jolly Roger Navideño V2 🎄'
 
-    const sendMsg = async (jid, text, user, title) => {
-      let pp
-      try {
+    const id = m.chat
+    const user = m.messageStubParameters[0] // El usuario que entra o sale
+    const userName = conn.getName(user) || "Nakama"
+    const groupName = groupMetadata.subject
+    const memberCount = participants.length
+
+    // Fecha automática
+    const fechaActual = new Date().toLocaleDateString('es-ES', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric'
+    })
+
+    // 2. Lógica de foto (Perfil o Respaldo)
+    let pp
+    try {
         pp = await conn.profilePictureUrl(user, 'image')
-      } catch (e) {
-        pp = defaultImg
-      }
-
-      await conn.sendMessage(jid, {
-        text: text,
-        contextInfo: {
-          mentionedJid: [user],
-          forwardingScore: 999,
-          isForwarded: true,
-          forwardedNewsletterMessageInfo: {
-            newsletterJid: '120363420846835529@newsletter',
-            newsletterName: '🎄 Jolly Roger Navideño V2 🎄',
-            serverMessageId: -1
-          },
-          externalAdReply: {
-            title: title,
-            body: '', 
-            thumbnailUrl: pp,
-            mediaType: 1,
-            renderLargerThumbnail: true, 
-            sourceUrl: 'Power by ɴ͡ᴇ͜ɴᴇ❀᭄☂️' 
-          }
-        }
-      }, { quoted: m })
+    } catch {
+        pp = fotoRespaldo
     }
 
-    // --- LÓGICA DE BIENVENIDA (Suma 1 al conteo) ---
-    if (m.messageStubType === WAMessageStubType.GROUP_PARTICIPANT_ADD || m.messageStubType === 27) {
-      const users = m.messageStubParameters || []
-      for (const user of users) {
-        const jid = user.includes('@') ? user : `${user}@s.whatsapp.net`
-        const mentionTag = '@' + jid.split('@')[0]
+    // --- ACCIÓN: ALGUIEN SE UNE (WELCOME) ---
+    if (m.messageStubType === WAMessageStubType.GROUP_PARTICIPANT_ADD || m.messageStubType === WAMessageStubType.GROUP_PARTICIPANT_INVITE_VIA_LINK) {
         
-        // Sumamos 1 porque el evento ocurre mientras se añaden
-        const realSize = currentSize + 1 
+        const urlImagen = `https://rest.alyabotpe.xyz/whatsapp/welcome?name=${encodeURIComponent(userName)}&gcname=${encodeURIComponent(groupName)}&pp=${pp}&member=${memberCount}&key=${apiKey}`
 
-        const welcomeText = `
-🕊️ *BIENVENIDO/DA* 🕊️
-─── ˗ˏˋ 🍖 ˎˊ˗ ───
+        let textoBienvenida = `🕊️ *BIENVENIDO/DA* 🕊️\n`
+        textoBienvenida += `─── ˗ˏˋ 🍖 ˎˊ˗ ───\n\n`
+        textoBienvenida += `∫ ⚓ *USUARIO* : @${user.split('@')[0]}\n`
+        textoBienvenida += `∫ 🌍 *GRUPO* : ${groupName}\n`
+        textoBienvenida += `∫ 👥 *MIEMBROS* : ${memberCount}\n`
+        textoBienvenida += `∫ 📅 *FECHA* : ${fechaActual}\n\n`
+        textoBienvenida += `*¡Yoshaaa! Un nuevo nakama se une a la tripulación.*`
 
-∫ ⚓ *USUARIO* : ${mentionTag}
-∫ 🌍 *GRUPO* : ${groupName}
-∫ 👥 *MIEMBROS* : ${realSize}
-∫ 📅 *FECHA* : ${new Date().toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}
-
-*¡Yoshaaa! Un nuevo nakama se une a la tripulación.*`.trim()
-        
-        await sendMsg(m.chat, welcomeText, jid, '✨ B I E N V E N I D O ✨')
-      }
+        await conn.sendMessage(id, { 
+            image: { url: urlImagen }, 
+            caption: textoBienvenida, 
+            mentions: [user],
+            contextInfo: {
+                mentionedJid: [user],
+                forwardedNewsletterMessageInfo: {
+                    newsletterJid: canalId,
+                    newsletterName: canalNombre,
+                    serverMessageId: -1
+                }
+            }
+        })
     }
 
-    // --- LÓGICA DE ADIÓS (Resta 1 al conteo) ---
-    if (m.messageStubType === WAMessageStubType.GROUP_PARTICIPANT_REMOVE || m.messageStubType === 32) {
-      const users = m.messageStubParameters || []
-      for (const user of users) {
-        const jid = user.includes('@') ? user : `${user}@s.whatsapp.net`
-        const mentionTag = '@' + jid.split('@')[0]
-
-        // Restamos 1 porque el bot todavía cuenta a la persona que se acaba de ir
-        const realSize = currentSize - 1
-
-        const byeText = `
-🥀 *ADIÓS NAKAMA* 🥀
-─── ˗ˏˋ 🌊 ˎˊ˗ ───
-
-∫ 👤 *USUARIO* : ${mentionTag}
-∫ 🚢 *GRUPO* : ${groupName}
-∫ 👥 *QUEDAN* : ${realSize}
-
-*¡Esperamos verte de nuevo en Grand Line!*`.trim()
+    // --- ACCIÓN: ALGUIEN SE VA (GOODBYE) ---
+    if (m.messageStubType === WAMessageStubType.GROUP_PARTICIPANT_LEAVE || m.messageStubType === WAMessageStubType.GROUP_PARTICIPANT_REMOVE) {
         
-        await sendMsg(m.chat, byeText, jid, '┖ [ 🖇️ A D I O S / B Y E ] ───⊚')
-      }
+        const urlImagen = `https://rest.alyabotpe.xyz/whatsapp/goodbye?name=${encodeURIComponent(userName)}&gcname=${encodeURIComponent(groupName)}&pp=${pp}&member=${memberCount}&key=${apiKey}`
+
+        let textoDespedida = `⚓ *PARTIDA DE NAKAMA* ⚓\n`
+        textoDespedida += `─── ˗ˏˋ 🌊 ˎˊ˗ ───\n\n`
+        textoDespedida += `∫ 👤 *USUARIO* : @${user.split('@')[0]}\n`
+        textoDespedida += `∫ 🌍 *GRUPO* : ${groupName}\n`
+        textoDespedida += `∫ 👥 *QUEDAN* : ${memberCount}\n\n`
+        textoDespedida += `*¡Buen viaje! Aunque dejes la tripulación, siempre recordaremos tu camino.*`
+
+        await conn.sendMessage(id, { 
+            image: { url: urlImagen }, 
+            caption: textoDespedida, 
+            mentions: [user],
+            contextInfo: {
+                mentionedJid: [user],
+                forwardedNewsletterMessageInfo: {
+                    newsletterJid: canalId,
+                    newsletterName: canalNombre,
+                    serverMessageId: -1
+                }
+            }
+        })
     }
 
     return true
-  } catch (e) {
-    console.error(e)
-    return true
-  }
 }
