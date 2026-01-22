@@ -1,6 +1,6 @@
 import fetch from 'node-fetch';
 
-const ApiKey = 'stellar-eFNHF99t';
+const ApiKey = 'stellar-LarjcWHD';
 
 let handler = async (m, { conn, args }) => {
   const prompt = args.join(' ');
