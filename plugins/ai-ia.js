@@ -4,7 +4,7 @@ import axios from 'axios';
 // -------------------------------------------------------------------
 // --- CONFIGURACIÓN DE LA API DE CHATGPT ---
 // ¡CRÍTICO! Clave de API actualizada con la que proporcionaste:
-const apiKey = 'stellar-eFNHF99t'; 
+const apiKey = 'stellar-LarjcWHD'; 
 const chatGptApiUrl = 'https://rest.alyabotpe.xyz/ai/chatgpt';
 
 // --- VARIABLES ASUMIDAS (Ajusta si es necesario) ---
