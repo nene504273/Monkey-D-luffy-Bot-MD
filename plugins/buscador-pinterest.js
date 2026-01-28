@@ -3,89 +3,60 @@ import baileys from '@whiskeysockets/baileys';
 
 const { generateWAMessageFromContent, generateWAMessage, delay } = baileys;
 
-/**
- * Función para enviar álbumes de fotos/videos de forma simplificada
- */
 async function sendAlbumMessage(conn, jid, medias, options = {}) {
-  if (typeof jid !== "string") throw new TypeError("El JID debe ser un string.");
-  if (medias.length < 2) throw new RangeError("Se requieren al menos 2 medios para un álbum.");
-
-  const caption = options.text || options.caption || "";
-  const albumDelay = 500;
-
-  // Configuración de la cita (quoted)
-  const quotedMessageOptions = options.quoted ? {
-    contextInfo: {
-      remoteJid: options.quoted.key.remoteJid,
-      fromMe: options.quoted.key.fromMe,
-      stanzaId: options.quoted.key.id,
-      participant: options.quoted.key.participant || options.quoted.key.remoteJid,
-      quotedMessage: options.quoted.message,
+  const album = generateWAMessageFromContent(jid, {
+    messageContextInfo: {},
+    albumMessage: {
+      expectedImageCount: medias.filter(m => m.type === "image").length,
+      expectedVideoCount: medias.filter(m => m.type === "video").length,
+      ...(options.quoted ? { contextInfo: { ...options.quoted.message, ...options.quoted.key } } : {})
     }
-  } : {};
-
-  // Crear mensaje contenedor del álbum
-  const album = generateWAMessageFromContent(
-    jid,
-    {
-      messageContextInfo: {},
-      albumMessage: {
-        expectedImageCount: medias.filter(m => m.type === "image").length,
-        expectedVideoCount: medias.filter(m => m.type === "video").length,
-        ...quotedMessageOptions,
-      },
-    },
-    {}
-  );
+  }, {});
 
   await conn.relayMessage(jid, album.message, { messageId: album.key.id });
 
-  // Enviar cada medio del álbum
   for (let i = 0; i < medias.length; i++) {
-    const { type, data } = medias[i];
-    const img = await generateWAMessage(
-      jid,
-      { [type]: data, ...(i === 0 ? { caption } : {}) },
-      { upload: conn.waUploadToServer }
-    );
-
-    img.message.messageContextInfo = {
-      messageAssociation: { associationType: 1, parentMessageKey: album.key },
-    };
-
+    const img = await generateWAMessage(jid, { 
+      [medias[i].type]: medias[i].data, 
+      ...(i === 0 ? { caption: options.caption } : {}) 
+    }, { upload: conn.waUploadToServer });
+    
+    img.message.messageContextInfo = { messageAssociation: { associationType: 1, parentMessageKey: album.key } };
     await conn.relayMessage(jid, img.message, { messageId: img.key.id });
-    await delay(albumDelay);
+    await delay(500);
   }
-  return album;
 }
 
-/**
- * Handler principal
- */
 let handler = async (m, { conn, text }) => {
-  if (!text) return m.reply('✨ *Luffy-MD* | Ingresa lo que deseas buscar.\n\nEjemplo: *.pin anime*');
+  if (!text) return m.reply('🍟 Ingresa el texto de lo que quieres buscar.');
 
   try {
-    await m.react('🔍');
-
-    const res = await fetch(`https://api.dorratz.com/v2/pinterest?q=${encodeURIComponent(text)}`);
-    if (!res.ok) throw new Error();
+    await m.react('⛏️');
     
-    const data = await res.json();
+    const apiKey = 'stellar-LarjcWHD';
+    const response = await fetch(`https://rest.alyabotpe.xyz/search/pinterest?q=${encodeURIComponent(text)}&apikey=${apiKey}`);
+    
+    if (!response.ok) throw new Error('Error en la API');
+    
+    const json = await response.json();
+    const data = json.result; // Ajustado según estructura típica de Alyabot
 
-    if (!Array.isArray(data) || data.length === 0) {
-      return m.reply('❌ No se encontraron imágenes.');
-    }
+    if (!data || data.length === 0) return m.reply('✨ No se encontraron resultados.');
 
-    // Máximo 12 imágenes para un álbum equilibrado
-    const max = Math.min(data.length, 12);
-    const medias = data.slice(0, max).map(item => ({
+    const limit = Math.min(data.length, 10);
+    const medias = data.slice(0, limit).map(url => ({
       type: 'image',
-      data: { url: item.image_large_url || item.image_medium_url || item.image_small_url }
+      data: { url }
     }));
 
+    // Estilo Yuki / Luffy-MD (Limpio y directo)
+    const txt = `乂  P I N T E R E S T  🔍\n\n` +
+                `✩  Búsqueda: ${text}\n` +
+                `✩  Cantidad: ${limit}\n\n` +
+                `L u f f y - M D`;
+
     await sendAlbumMessage(conn, m.chat, medias, {
-      caption: `🏴‍☠️ *LUFFY - PINTEREST*\n\n🔍 *Búsqueda:* ${text}\n🖼️ *Imágenes:* ${max}`,
+      caption: txt,
       quoted: m
     });
 
@@ -94,7 +65,7 @@ let handler = async (m, { conn, text }) => {
   } catch (e) {
     console.error(e);
     await m.react('✖️');
-    m.reply('⚠️ Error al buscar imágenes.');
+    m.reply('🚀 Ocurrió un fallo con la API de búsqueda.');
   }
 };
 
