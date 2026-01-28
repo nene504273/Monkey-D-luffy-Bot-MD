@@ -3,11 +3,11 @@ import baileys from '@whiskeysockets/baileys';
 
 const { generateWAMessageFromContent, generateWAMessage, delay } = baileys;
 
-async function sendAlbumMessage(conn, jid, medias, options = {}) {
+async function sendAlbumMessage(conn, jid, imagenes, options = {}) {
   const album = generateWAMessageFromContent(jid, {
     messageContextInfo: {},
     albumMessage: {
-      expectedImageCount: medias.length,
+      expectedImageCount: imagenes.length,
       expectedVideoCount: 0,
       ...(options.quoted ? { contextInfo: { ...options.quoted.message, ...options.quoted.key } } : {})
     }
@@ -15,9 +15,12 @@ async function sendAlbumMessage(conn, jid, medias, options = {}) {
 
   await conn.relayMessage(jid, album.message, { messageId: album.key.id });
 
-  for (let i = 0; i < medias.length; i++) {
+  for (let i = 0; i < imagenes.length; i++) {
+    // Aquí tomamos la URL directamente, sin importar el nombre en el JSON
+    const url = typeof imagenes[i] === 'string' ? imagenes[i] : (imagenes[i].url || imagenes[i].image || imagenes[i].link);
+    
     const img = await generateWAMessage(jid, { 
-      image: { url: medias[i] }, 
+      image: { url: url }, 
       ...(i === 0 ? { caption: options.caption } : {}) 
     }, { upload: conn.waUploadToServer });
     
@@ -35,26 +38,24 @@ let handler = async (m, { conn, text }) => {
     
     const apiKey = 'stellar-LarjcWHD';
     const response = await fetch(`https://rest.alyabotpe.xyz/search/pinterest?q=${encodeURIComponent(text)}&apikey=${apiKey}`);
-    const json = await response.json();
+    const res = await response.json();
 
-    // Lógica "Anti-Fallo": Busca el array de imágenes donde sea que esté
-    let data = json.result || json.results || (Array.isArray(json) ? json : null);
+    // Intentamos extraer los resultados de cualquier forma posible
+    const data = res.result || res.results || res.data || (Array.isArray(res) ? res : null);
 
-    if (!data || !Array.isArray(data) || data.length === 0) {
+    if (!data || !Array.isArray(data)) {
       return m.reply('✨ No se encontraron resultados.');
     }
 
-    // Limitar a 12 imágenes para un álbum perfecto
     const limit = Math.min(data.length, 12);
-    const imagenes = data.slice(0, limit);
+    const imagenesParaEnviar = data.slice(0, limit);
 
-    // Estilo Yuki / Luffy-MD (Simple y limpio)
     const txt = `乂  P I N T E R E S T  🔍\n\n` +
                 `✩  Búsqueda: ${text}\n` +
                 `✩  Imágenes: ${limit}\n\n` +
                 `L u f f y - M D`;
 
-    await sendAlbumMessage(conn, m.chat, imagenes, {
+    await sendAlbumMessage(conn, m.chat, imagenesParaEnviar, {
       caption: txt,
       quoted: m
     });
@@ -63,8 +64,7 @@ let handler = async (m, { conn, text }) => {
 
   } catch (e) {
     console.error(e);
-    await m.react('✖️');
-    m.reply('🚀 Error al conectar con la API.');
+    m.reply('🚀 Hubo un error con la API.');
   }
 };
 
