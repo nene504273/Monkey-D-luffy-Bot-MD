@@ -17,7 +17,7 @@ async function sendAlbumMessage(conn, jid, medias, options = {}) {
 
   for (let i = 0; i < medias.length; i++) {
     const img = await generateWAMessage(jid, { 
-      image: medias[i].data, 
+      image: { url: medias[i] }, 
       ...(i === 0 ? { caption: options.caption } : {}) 
     }, { upload: conn.waUploadToServer });
     
@@ -31,32 +31,30 @@ let handler = async (m, { conn, text }) => {
   if (!text) return m.reply('🍟 Ingresa el texto de lo que quieres buscar.');
 
   try {
-    await m.react('⛏️');
+    await m.react('🔍');
     
     const apiKey = 'stellar-LarjcWHD';
     const response = await fetch(`https://rest.alyabotpe.xyz/search/pinterest?q=${encodeURIComponent(text)}&apikey=${apiKey}`);
     const json = await response.json();
 
-    // La API de Alya devuelve las URLs directamente en json.result
-    const data = json.result;
+    // Lógica "Anti-Fallo": Busca el array de imágenes donde sea que esté
+    let data = json.result || json.results || (Array.isArray(json) ? json : null);
 
     if (!data || !Array.isArray(data) || data.length === 0) {
-      return m.reply('✨ No se encontraron imágenes para tu búsqueda.');
+      return m.reply('✨ No se encontraron resultados.');
     }
 
-    // Filtramos para enviar solo 12 imágenes (estilo álbum limpio)
+    // Limitar a 12 imágenes para un álbum perfecto
     const limit = Math.min(data.length, 12);
-    const medias = data.slice(0, limit).map(url => ({
-      data: { url: url }
-    }));
+    const imagenes = data.slice(0, limit);
 
-    // Estilo Yuki / Luffy-MD (Sin exceso de símbolos)
+    // Estilo Yuki / Luffy-MD (Simple y limpio)
     const txt = `乂  P I N T E R E S T  🔍\n\n` +
                 `✩  Búsqueda: ${text}\n` +
                 `✩  Imágenes: ${limit}\n\n` +
                 `L u f f y - M D`;
 
-    await sendAlbumMessage(conn, m.chat, medias, {
+    await sendAlbumMessage(conn, m.chat, imagenes, {
       caption: txt,
       quoted: m
     });
@@ -66,7 +64,7 @@ let handler = async (m, { conn, text }) => {
   } catch (e) {
     console.error(e);
     await m.react('✖️');
-    m.reply('🚀 Hubo un fallo en el servidor de imágenes.');
+    m.reply('🚀 Error al conectar con la API.');
   }
 };
 
