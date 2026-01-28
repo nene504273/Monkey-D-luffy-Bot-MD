@@ -1,84 +1,157 @@
-import fetch from 'node-fetch';
+import axios from 'axios';
 import baileys from '@whiskeysockets/baileys';
 
 async function sendAlbumMessage(jid, medias, options = {}) {
-    if (typeof jid !== "string") throw new TypeError(`jid must be string, received: ${jid}`);
-    if (medias.length < 2) throw new RangeError("¡Oi! Se necesitan al menos 2 imágenes para armar el tesoro");
+  if (typeof jid !== "string") throw new TypeError(`jid must be string, received: ${jid}`);
 
-    const caption = options.text || options.caption || "";
-    const delay = !isNaN(options.delay) ? options.delay : 500;
-    delete options.text;
-    delete options.caption;
-    delete options.delay;
+  for (const media of medias) {
+    if (!media.type || (media.type !== "image" && media.type !== "video")) 
+      throw new TypeError(`media.type must be "image" or "video", received: ${media.type}`);
+    if (!media.data || (!media.data.url && !Buffer.isBuffer(media.data))) 
+      throw new TypeError(`media.data must be object with url or buffer, received: ${media.data}`);
+  }
 
-    const album = baileys.generateWAMessageFromContent(
-        jid,
-        { messageContextInfo: {}, albumMessage: { expectedImageCount: medias.length } },
-        {}
+  if (medias.length < 2) throw new RangeError("Minimum 2 media");
+
+  const caption = options.text || options.caption || "";
+  const delay = !isNaN(options.delay) ? options.delay : 500;
+  delete options.text;
+  delete options.caption;
+  delete options.delay;
+
+  const album = baileys.generateWAMessageFromContent(
+    jid,
+    {
+      messageContextInfo: {},
+      albumMessage: {
+        expectedImageCount: medias.filter(m => m.type === "image").length,
+        expectedVideoCount: medias.filter(m => m.type === "video").length,
+        ...(options.quoted ? { contextInfo: options.quoted } : {})
+      }
+    },
+    {}
+  );
+
+  await conn.relayMessage(album.key.remoteJid, album.message, { 
+    messageId: album.key.id,
+    forwardedNewsletterMessageInfo: options.forwardedNewsletterMessageInfo
+  });
+
+  for (let i = 0; i < medias.length; i++) {
+    const { type, data } = medias[i];
+    const img = await baileys.generateWAMessage(
+      album.key.remoteJid,
+      { [type]: data, ...(i === 0 ? { caption } : {}) },
+      { upload: conn.waUploadToServer }
     );
 
-    await conn.relayMessage(album.key.remoteJid, album.message, { messageId: album.key.id });
+    img.message.messageContextInfo = {
+      messageAssociation: { associationType: 1, parentMessageKey: album.key },
+      ...(options.quoted || {}),
+    };
 
-    for (let i = 0; i < medias.length; i++) {
-        const { type, data } = medias[i];
-        const img = await baileys.generateWAMessage(
-            album.key.remoteJid,
-            { [type]: data, ...(i === 0 ? { caption } : {}) },
-            { upload: conn.waUploadToServer }
-        );
-        img.message.messageContextInfo = {
-            messageAssociation: { associationType: 1, parentMessageKey: album.key },
-        };
-        await conn.relayMessage(img.key.remoteJid, img.message, { messageId: img.key.id });
-        await baileys.delay(delay);
-    }
-    return album;
-}
-
-const pinterest = async (m, { conn, text, usedPrefix, command }) => {
-    // Estilo Luffy: Uso de "Nakama", "Pirata" y comida
-    if (!text) return conn.reply(m.chat, `*🍖 ¡Oi Nakama! Olvidaste decirme qué buscar: ${usedPrefix + command} One Piece*`, m, global.rcanal);
-
-    await m.react('👒'); // Sombrero de paja
-    conn.reply(m.chat, '🌊 *¡Zarpando a Pinterest para buscar tu tesoro...!* 🍖', m, {
-        contextInfo: {
-            externalAdReply: {
-                mediaUrl: null,
-                mediaType: 1,
-                showAdAttribution: true,
-                title: '🏴‍☠️ ¡SOY EL PRÓXIMO REY DE LOS PIRATAS!',
-                body: 'Buscando imágenes para mi tripulación...',
-                previewType: 0,
-                thumbnail: icons,
-                sourceUrl: channel
-            }
-        }
+    await conn.relayMessage(img.key.remoteJid, img.message, { 
+      messageId: img.key.id,
+      forwardedNewsletterMessageInfo: options.forwardedNewsletterMessageInfo
     });
 
-    try {
-        const res = await fetch(`https://api.dorratz.com/v2/pinterest?q=${encodeURIComponent(text)}`);
-        const data = await res.json();
+    await baileys.delay(delay);
+  }
 
-        if (!Array.isArray(data) || data.length < 2) {
-            return conn.reply(m.chat, '💀 *¡Rayos! No encontré ningún tesoro con ese nombre.*', m, global.rcanal);
-        }
+  return album;
+}
 
-        const images = data.slice(0, 10).map(img => ({ type: "image", data: { url: img.image_large_url } }));
-
-        const caption = `👒 *¡TESORO ENCONTRADO!* 🍖\n✨ *Búsqueda:* ${text}\n\n_¡Aquí tienes tus imágenes, Nakama!_`;
-        await sendAlbumMessage(m.chat, images, { caption, quoted: m });
-
-        await m.react('🍖'); // Carne para celebrar
-    } catch (error) {
-        console.error(error);
-        await m.react('⛈️');
-        conn.reply(m.chat, '🚢 *¡Tormenta a la vista! Hubo un error al navegar por Pinterest.*', m , global.rcanal);
+const pins = async (judul) => {
+  try {
+    const res = await axios.get(`https://anime-xi-wheat.vercel.app/api/pinterest?q=${encodeURIComponent(judul)}`);
+    if (Array.isArray(res.data.images)) {
+      return res.data.images.map(url => ({
+        image_large_url: url,
+        image_medium_url: url,
+        image_small_url: url
+      }));
     }
+    return [];
+  } catch (error) {
+    console.error('Error:', error);
+    return [];
+  }
 };
 
-pinterest.help = ['pinterest <query>'];
-pinterest.tags = ['buscador', 'descargas'];
-pinterest.command = /^(pinterest|pin)$/i;
-pinterest.register = true;
+let handler = async (m, { conn, text }) => {
+  // Configuración de tu canal
+  const newsletterJid = '120363420846835529@newsletter';
+  const newsletterName = 'Luffy-MD⚡️';
 
-export default pinterest;
+  if (!text) return conn.sendMessage(m.chat, { text: `Ingresa un texto. Ejemplo: .pin Luffy` }, { 
+    quoted: m,
+    forwardedNewsletterMessageInfo: {
+      newsletterJid,
+      newsletterName,
+      serverMessageId: 100
+    }
+  });
+
+  try {
+    const res2 = await fetch('https://files.catbox.moe/dloo3r.jpg');
+    const thumb2 = Buffer.from(await res2.arrayBuffer());
+
+    const fkontak = {
+      key: { 
+        participants: "0@s.whatsapp.net", 
+        remoteJid: "status@broadcast", 
+        fromMe: false, 
+        id: "Halo" 
+      },
+      message: {
+        locationMessage: {
+          name: '𝗕𝗨𝗦𝗤𝗨𝗘𝗗𝗔 𝗗𝗘 ✦ 𝗣𝗶𝗻𝘁𝗲𝗿𝗲𝘀𝘁',
+          jpegThumbnail: thumb2
+        }
+      },
+      participant: "0@s.whatsapp.net"
+    };
+
+    m.react('🕒');
+    const results = await pins(text);
+    if (!results || results.length === 0) return conn.sendMessage(m.chat, { text: `No se encontraron resultados para "${text}".` }, { 
+      quoted: m,
+      forwardedNewsletterMessageInfo: { newsletterJid, newsletterName, serverMessageId: 100 }
+    });
+
+    const maxImages = Math.min(results.length, 15);
+    const medias = [];
+
+    for (let i = 0; i < maxImages; i++) {
+      medias.push({
+        type: 'image',
+        data: { url: results[i].image_large_url || results[i].image_medium_url || results[i].image_small_url }
+      });
+    }
+
+    await sendAlbumMessage(m.chat, medias, {
+      caption: `*LUFFY - PINTEREST*\n\n*Búsqueda:* ${text}\n*Imágenes:* ${maxImages}`,
+      quoted: fkontak,
+      forwardedNewsletterMessageInfo: {
+        newsletterJid,
+        newsletterName,
+        serverMessageId: 100
+      }
+    });
+
+    await conn.sendMessage(m.chat, { react: { text: '✅', key: m.key } });
+
+  } catch (error) {
+    console.error(error);
+    conn.sendMessage(m.chat, { text: 'Error al obtener imágenes.' }, { 
+      quoted: m,
+      forwardedNewsletterMessageInfo: { newsletterJid, newsletterName, serverMessageId: 100 }
+    });
+  }
+};
+
+handler.help = ['pinterest'];
+handler.command = ['pinterest', 'pin'];
+handler.tags = ['buscador'];
+
+export default handler;
