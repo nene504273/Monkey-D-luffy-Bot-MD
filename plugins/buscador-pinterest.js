@@ -34,22 +34,24 @@ let handler = async (m, { conn, text }) => {
     await m.react('⛏️');
     
     const apiKey = 'stellar-LarjcWHD';
-    const response = await fetch(`https://rest.alyabotpe.xyz/search/pinterest?q=${encodeURIComponent(text)}&apikey=${apiKey}`);
-    
-    if (!response.ok) throw new Error('Error en la API');
-    
+    const url = `https://rest.alyabotpe.xyz/search/pinterest?q=${encodeURIComponent(text)}&apikey=${apiKey}`;
+    const response = await fetch(url);
     const json = await response.json();
-    const data = json.result; // Ajustado según estructura típica de Alyabot
 
-    if (!data || data.length === 0) return m.reply('✨ No se encontraron resultados.');
+    // Validación flexible de la respuesta de la API
+    const data = json.result || json.results || (Array.isArray(json) ? json : null);
 
+    if (!data || !Array.isArray(data) || data.length === 0) {
+      return m.reply('✨ No se encontraron resultados.');
+    }
+
+    // Enviamos 10 imágenes por defecto
     const limit = Math.min(data.length, 10);
     const medias = data.slice(0, limit).map(url => ({
       type: 'image',
       data: { url }
     }));
 
-    // Estilo Yuki / Luffy-MD (Limpio y directo)
     const txt = `乂  P I N T E R E S T  🔍\n\n` +
                 `✩  Búsqueda: ${text}\n` +
                 `✩  Cantidad: ${limit}\n\n` +
@@ -65,13 +67,12 @@ let handler = async (m, { conn, text }) => {
   } catch (e) {
     console.error(e);
     await m.react('✖️');
-    m.reply('🚀 Ocurrió un fallo con la API de búsqueda.');
+    m.reply('🚀 Error interno al obtener las imágenes.');
   }
 };
 
 handler.help = ['pin'];
 handler.command = ['pinterest', 'pin'];
 handler.tags = ['buscador'];
-handler.register = true;
 
 export default handler;
