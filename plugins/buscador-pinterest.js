@@ -1,157 +1,106 @@
-import axios from 'axios';
+import fetch from 'node-fetch';
 import baileys from '@whiskeysockets/baileys';
 
-async function sendAlbumMessage(jid, medias, options = {}) {
-  if (typeof jid !== "string") throw new TypeError(`jid must be string, received: ${jid}`);
+const { generateWAMessageFromContent, generateWAMessage, delay } = baileys;
 
-  for (const media of medias) {
-    if (!media.type || (media.type !== "image" && media.type !== "video")) 
-      throw new TypeError(`media.type must be "image" or "video", received: ${media.type}`);
-    if (!media.data || (!media.data.url && !Buffer.isBuffer(media.data))) 
-      throw new TypeError(`media.data must be object with url or buffer, received: ${media.data}`);
-  }
-
-  if (medias.length < 2) throw new RangeError("Minimum 2 media");
+/**
+ * Función para enviar álbumes de fotos/videos de forma simplificada
+ */
+async function sendAlbumMessage(conn, jid, medias, options = {}) {
+  if (typeof jid !== "string") throw new TypeError("El JID debe ser un string.");
+  if (medias.length < 2) throw new RangeError("Se requieren al menos 2 medios para un álbum.");
 
   const caption = options.text || options.caption || "";
-  const delay = !isNaN(options.delay) ? options.delay : 500;
-  delete options.text;
-  delete options.caption;
-  delete options.delay;
+  const albumDelay = 500;
 
-  const album = baileys.generateWAMessageFromContent(
+  // Configuración de la cita (quoted)
+  const quotedMessageOptions = options.quoted ? {
+    contextInfo: {
+      remoteJid: options.quoted.key.remoteJid,
+      fromMe: options.quoted.key.fromMe,
+      stanzaId: options.quoted.key.id,
+      participant: options.quoted.key.participant || options.quoted.key.remoteJid,
+      quotedMessage: options.quoted.message,
+    }
+  } : {};
+
+  // Crear mensaje contenedor del álbum
+  const album = generateWAMessageFromContent(
     jid,
     {
       messageContextInfo: {},
       albumMessage: {
         expectedImageCount: medias.filter(m => m.type === "image").length,
         expectedVideoCount: medias.filter(m => m.type === "video").length,
-        ...(options.quoted ? { contextInfo: options.quoted } : {})
-      }
+        ...quotedMessageOptions,
+      },
     },
     {}
   );
 
-  await conn.relayMessage(album.key.remoteJid, album.message, { 
-    messageId: album.key.id,
-    forwardedNewsletterMessageInfo: options.forwardedNewsletterMessageInfo
-  });
+  await conn.relayMessage(jid, album.message, { messageId: album.key.id });
 
+  // Enviar cada medio del álbum
   for (let i = 0; i < medias.length; i++) {
     const { type, data } = medias[i];
-    const img = await baileys.generateWAMessage(
-      album.key.remoteJid,
+    const img = await generateWAMessage(
+      jid,
       { [type]: data, ...(i === 0 ? { caption } : {}) },
       { upload: conn.waUploadToServer }
     );
 
     img.message.messageContextInfo = {
       messageAssociation: { associationType: 1, parentMessageKey: album.key },
-      ...(options.quoted || {}),
     };
 
-    await conn.relayMessage(img.key.remoteJid, img.message, { 
-      messageId: img.key.id,
-      forwardedNewsletterMessageInfo: options.forwardedNewsletterMessageInfo
-    });
-
-    await baileys.delay(delay);
+    await conn.relayMessage(jid, img.message, { messageId: img.key.id });
+    await delay(albumDelay);
   }
-
   return album;
 }
 
-const pins = async (judul) => {
-  try {
-    const res = await axios.get(`https://anime-xi-wheat.vercel.app/api/pinterest?q=${encodeURIComponent(judul)}`);
-    if (Array.isArray(res.data.images)) {
-      return res.data.images.map(url => ({
-        image_large_url: url,
-        image_medium_url: url,
-        image_small_url: url
-      }));
-    }
-    return [];
-  } catch (error) {
-    console.error('Error:', error);
-    return [];
-  }
-};
-
+/**
+ * Handler principal
+ */
 let handler = async (m, { conn, text }) => {
-  // Configuración de tu canal
-  const newsletterJid = '120363420846835529@newsletter';
-  const newsletterName = 'Luffy-MD⚡️';
-
-  if (!text) return conn.sendMessage(m.chat, { text: `Ingresa un texto. Ejemplo: .pin Luffy` }, { 
-    quoted: m,
-    forwardedNewsletterMessageInfo: {
-      newsletterJid,
-      newsletterName,
-      serverMessageId: 100
-    }
-  });
+  if (!text) return m.reply('✨ *Luffy-MD* | Ingresa lo que deseas buscar.\n\nEjemplo: *.pin anime*');
 
   try {
-    const res2 = await fetch('https://files.catbox.moe/dloo3r.jpg');
-    const thumb2 = Buffer.from(await res2.arrayBuffer());
+    await m.react('🔍');
 
-    const fkontak = {
-      key: { 
-        participants: "0@s.whatsapp.net", 
-        remoteJid: "status@broadcast", 
-        fromMe: false, 
-        id: "Halo" 
-      },
-      message: {
-        locationMessage: {
-          name: '𝗕𝗨𝗦𝗤𝗨𝗘𝗗𝗔 𝗗𝗘 ✦ 𝗣𝗶𝗻𝘁𝗲𝗿𝗲𝘀𝘁',
-          jpegThumbnail: thumb2
-        }
-      },
-      participant: "0@s.whatsapp.net"
-    };
+    const res = await fetch(`https://api.dorratz.com/v2/pinterest?q=${encodeURIComponent(text)}`);
+    if (!res.ok) throw new Error();
+    
+    const data = await res.json();
 
-    m.react('🕒');
-    const results = await pins(text);
-    if (!results || results.length === 0) return conn.sendMessage(m.chat, { text: `No se encontraron resultados para "${text}".` }, { 
-      quoted: m,
-      forwardedNewsletterMessageInfo: { newsletterJid, newsletterName, serverMessageId: 100 }
-    });
-
-    const maxImages = Math.min(results.length, 15);
-    const medias = [];
-
-    for (let i = 0; i < maxImages; i++) {
-      medias.push({
-        type: 'image',
-        data: { url: results[i].image_large_url || results[i].image_medium_url || results[i].image_small_url }
-      });
+    if (!Array.isArray(data) || data.length === 0) {
+      return m.reply('❌ No se encontraron imágenes.');
     }
 
-    await sendAlbumMessage(m.chat, medias, {
-      caption: `*LUFFY - PINTEREST*\n\n*Búsqueda:* ${text}\n*Imágenes:* ${maxImages}`,
-      quoted: fkontak,
-      forwardedNewsletterMessageInfo: {
-        newsletterJid,
-        newsletterName,
-        serverMessageId: 100
-      }
+    // Máximo 12 imágenes para un álbum equilibrado
+    const max = Math.min(data.length, 12);
+    const medias = data.slice(0, max).map(item => ({
+      type: 'image',
+      data: { url: item.image_large_url || item.image_medium_url || item.image_small_url }
+    }));
+
+    await sendAlbumMessage(conn, m.chat, medias, {
+      caption: `🏴‍☠️ *LUFFY - PINTEREST*\n\n🔍 *Búsqueda:* ${text}\n🖼️ *Imágenes:* ${max}`,
+      quoted: m
     });
 
-    await conn.sendMessage(m.chat, { react: { text: '✅', key: m.key } });
+    await m.react('✅');
 
-  } catch (error) {
-    console.error(error);
-    conn.sendMessage(m.chat, { text: 'Error al obtener imágenes.' }, { 
-      quoted: m,
-      forwardedNewsletterMessageInfo: { newsletterJid, newsletterName, serverMessageId: 100 }
-    });
+  } catch (e) {
+    console.error(e);
+    await m.react('✖️');
+    m.reply('⚠️ Error al buscar imágenes.');
   }
 };
 
-handler.help = ['pinterest'];
+handler.help = ['pin'];
 handler.command = ['pinterest', 'pin'];
 handler.tags = ['buscador'];
+handler.register = true;
 
 export default handler;
