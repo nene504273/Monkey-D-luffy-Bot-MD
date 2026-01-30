@@ -42,7 +42,7 @@ const handler = async (m, { conn, args, usedPrefix, command }) => {
     await m.react("⏳");
 
     try {
-      const apiUrl = `https://api-causas.duckdns.org/api/v1/descargas/youtube?url=${encodeURIComponent(queryOrUrl)}&type=${mode}&apikey=${CAUSA_API_KEY}`;
+      const apiUrl = `https://rest.apicausas.xyz/api/v1/descargas/youtube?url=${encodeURIComponent(queryOrUrl)}&type=${mode}&apikey=${CAUSA_API_KEY}`;
       const res = await fetch(apiUrl);
       const json = await res.json();
 
