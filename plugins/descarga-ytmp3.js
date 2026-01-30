@@ -1,7 +1,7 @@
 import fetch from 'node-fetch';
 
 // --- Constantes y Configuración de Transmisión ---
-const NEVI_API_KEY = 'luffy'; // Clave de API para NEVI, según lo solicitado.
+const ALYA_API_KEY = 'estellar-LarjcWHD'; // Tu nueva clave de API
 const newsletterJid  = '120363420846835529@newsletter';
 const newsletterName = '⏤͟͞ू⃪፝͜⁞⟡『 𝐓͢ᴇ𝙖፝ᴍ⃨ 𝘾𝒉꯭𝐚𝑛𝑛𝒆𝑙:🏴‍☠️MONKEY • D • L U F F Y🏴‍☠️』࿐⟡';
 
@@ -17,10 +17,10 @@ var handler = async (m, { conn, args, usedPrefix, command }) => {
       serverMessageId: -1
     },
     externalAdReply: {
-      title: wm, // Asume que 'wm' está definido globalmente
-      body: dev, // Asume que 'dev' está definido globalmente
-      thumbnail: icons, // Asume que 'icons' está definido globalmente
-      sourceUrl: redes, // Asume que 'redes' está definido globalmente
+      title: wm, 
+      body: dev, 
+      thumbnail: icons, 
+      sourceUrl: redes, 
       mediaType: 1,
       renderLargerThumbnail: false
     }
@@ -45,76 +45,62 @@ var handler = async (m, { conn, args, usedPrefix, command }) => {
 
     const url = args[0];
 
-    // --- CAMBIO: Usando la API de NEVI ---
-    const neviApiUrl = `http://neviapi.ddns.net:5000/download`;
-    const res = await fetch(neviApiUrl, {
-      method: 'POST', // La API de NEVI usa POST para descargas
-      headers: {
-        'Content-Type': 'application/json',
-        'X-API-KEY': NEVI_API_KEY, // Usando la clave 'luffy'
-      },
-      body: JSON.stringify({
-        url: url,
-        format: "mp3" // Solicitando formato MP3
-      }),
-    });
-
+    // --- CAMBIO: Usando la API de AlyaBot ---
+    // Se construye la URL con los parámetros necesarios: url y apikey
+    const alyaApiUrl = `https://rest.alyabotpe.xyz/dl/ytmp3?url=${encodeURIComponent(url)}&apikey=${ALYA_API_KEY}`;
+    
+    const res = await fetch(alyaApiUrl);
     const json = await res.json().catch(e => {
-        console.error(`[ERROR] No se pudo parsear la respuesta JSON de la API de NEVI: ${e.message}`);
+        console.error(`[ERROR] No se pudo parsear la respuesta JSON: ${e.message}`);
         return null;
     });
 
-    if (!json) {
-        const rawText = await res.text().catch(() => "No se pudo obtener el texto de la respuesta.");
+    if (!json || !json.status) {
         return conn.reply(
             m.chat,
-            `❌ *¡Oh no~! La API de NEVI no me dio una respuesta JSON válida, senpai.*\nPodría ser un problema con la API o un formato inesperado.\nRespuesta cruda (si disponible, primeros 200 caracteres): ${rawText.substring(0, 200)}...`,
+            `❌ *¡Error!* La API no respondió correctamente o el enlace es inválido.`,
             m,
             { contextInfo, quoted: m }
         );
     }
 
-    // --- CAMBIO: Adaptando la verificación de la respuesta y extracción de metadatos de NEVI ---
-    if (json.status === "success" && json.download_link) {
-      // Los metadatos vienen directamente en el objeto JSON raíz de la respuesta de NEVI
-      const title       = json.title || 'Título Desconocido';
-      const description = json.description || 'Sin descripción.';
-      const duration    = json.duration || 'Desconocida'; // NEVI usa 'duration'
-      const views       = json.views?.toLocaleString() || '0';
-      const ago         = json.ago || 'Desconocida';
-      const authorName  = json.author?.name || 'Desconocido';
-      const downloadURL = json.download_link;
-      const quality     = json.quality || 'Desconocida';
-      const filename    = `${title}.mp3`; // Construimos el nombre del archivo
+    // --- Adaptando la extracción de datos de AlyaBot ---
+    // Nota: Se asume que la API devuelve { status: true, result: { title, download_url, ... } }
+    const result = json.result;
+    const title = result.title || 'Audio de YouTube';
+    const downloadURL = result.download_url || result.url; // Ajustar según la respuesta real del JSON
+    const thumb = result.thumbnail || icons;
 
-      // Caption con separadores y datos de NEVI
-      const caption = `
+    const caption = `
 ╭───[ 𝚈𝚃𝙼𝙿𝟹 • 🎶 ]───⬣
 📌 *Título:* ${title}
-👤 *Autor:* ${authorName}
-⏱️ *Duración:* ${duration}
-📅 *Publicado:* ${ago}
-👁️ *Vistas:* ${views}
-🎚️ *Calidad:* ${quality}
-📄 *Descripción:*
-${description.substring(0, 500) + (description.length > 500 ? '...' : '')}
+🎚️ *Calidad:* 128kbps
+🎧 *Enviando audio...*
 ╰────────────────⬣`;
 
-      // --- CAMBIO: Enviar audio directamente desde la URL de descarga de NEVI ---
+    if (downloadURL) {
+      // Enviar el archivo de audio
       await conn.sendMessage(
         m.chat,
         {
-          audio: { url: downloadURL }, // Usa directamente el enlace de descarga
+          audio: { url: downloadURL },
           mimetype: 'audio/mpeg',
-          fileName: filename,
-          ptt: false, // Mantener ptt en false para enviar como música
-          caption
+          fileName: `${title}.mp3`,
+          ptt: false,
+          contextInfo: {
+            ...contextInfo,
+            externalAdReply: {
+               ...contextInfo.externalAdReply,
+               title: title,
+               body: 'Descarga Completada',
+               thumbnail: await (await fetch(thumb)).buffer() 
+            }
+          }
         },
-        { contextInfo, quoted: m }
+        { quoted: m }
       );
-
     } else {
-      throw new Error(`No pude descargar el audio usando la API de NEVI. Razón: ${json.message || 'Respuesta inválida del servidor de NEVI.'}`);
+      throw new Error('No se encontró un enlace de descarga válido en la respuesta.');
     }
 
   } catch (e) {
