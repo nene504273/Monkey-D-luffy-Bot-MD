@@ -7,105 +7,111 @@ const newsletterName = '⏤͟͞ू⃪፝͜⁞⟡ 𝐌ᴏ𝐧ᴋ𝐞y 𝐃 𝐁�
 
 const handler = async (m, { conn, args, usedPrefix, command }) => {
   const name = conn.getName(m.sender);
-  
-  // 1. Validación de entrada
-  if (!args[0]) {
-    return conn.reply(m.chat, `☠️ *¡Hey ${name}!* ¿Qué canción o video buscas?\n\n*Ejemplo:* ${usedPrefix + command} Binks no Sake`, m);
-  }
 
-  const isMode = ["audio", "video"].includes(args[0].toLowerCase());
-  const query = isMode ? args.slice(1).join(" ") : args.join(" ");
-
-  // 2. Definir contexto visual (Se puede mejorar con URLs reales)
+  // Información de contexto
   const contextInfo = {
     mentionedJid: [m.sender],
-    forwardingScore: 999,
     isForwarded: true,
+    forwardingScore: 999,
     forwardedNewsletterMessageInfo: { newsletterJid, newsletterName, serverMessageId: -1 },
     externalAdReply: {
-      title: '🏴‍☠️ HUB DE DESCARGAS - ONE PIECE',
-      body: 'Reproduciendo tesoros musicales...',
-      thumbnailUrl: 'https://i.ibb.co/6R0pM8v/monkey-d-luffy.jpg', 
-      sourceUrl: 'https://github.com/tu-repo',
+      title: '¡El Rey de los Piratas te trae música! 🎶',
+      body: `¡Vamos a buscar eso, ${name}!`,
+      thumbnailUrl: 'https://telegra.ph/file/0c91039864d4b8f5d07f3.jpg', // Ajusta esto
+      sourceUrl: 'https://github.com', // Ajusta esto
       mediaType: 1,
-      showAdAttribution: true
+      renderLargerThumbnail: false
     }
   };
 
-  try {
-    // 3. Lógica de descarga directa si es URL + Modo
-    if (isMode && /youtube\.com|youtu\.be/i.test(query)) {
-      await m.react("⏳");
-      const mode = args[0].toLowerCase();
-      
-      const res = await fetch(`https://rest.apicausas.xyz/api/v1/descargas/youtube?url=${encodeURIComponent(query)}&type=${mode}&apikey=${CAUSA_API_KEY}`);
+  if (!args[0]) {
+    return conn.reply(m.chat, `☠️ *¡Hey ${name}!* ¿Qué buscas?\n\nEjemplo:\n${usedPrefix}play Binks no Sake`, m, { contextInfo });
+  }
+
+  const isMode = ["audio", "video"].includes(args[0].toLowerCase());
+  const queryOrUrl = isMode ? args.slice(1).join(" ") : args.join(" ");
+
+  // --- LÓGICA DE DESCARGA DIRECTA ---
+  if (isMode && /youtube\.com|youtu\.be/i.test(queryOrUrl)) {
+    const mode = args[0].toLowerCase();
+    await m.react("⏳");
+
+    try {
+      const apiUrl = `https://rest.apicausas.xyz/api/v1/descargas/youtube?url=${encodeURIComponent(queryOrUrl)}&type=${mode}&apikey=${CAUSA_API_KEY}`;
+      const res = await fetch(apiUrl);
       const json = await res.json();
 
-      if (!json.status || !json.data) throw new Error("API_ERROR");
+      if (!json.status || !json.data) throw new Error("La API no devolvió datos válidos.");
 
-      const { title, download, filesize } = json.data;
-      
-      // Validación de tamaño (Límite 50MB para evitar errores de Buffer)
-      if (parseInt(filesize) > 50000) {
-        return conn.reply(m.chat, `📁 *El archivo es demasiado pesado (${filesize} KB).* No puedo enviarlo por aquí, nakama.`, m);
-      }
+      const { title, download } = json.data;
+      const downloadUrl = download.url;
 
       if (mode === 'audio') {
+        // Enviar como audio (se puede cambiar a document si falla)
         await conn.sendMessage(m.chat, { 
-          audio: { url: download.url }, 
-          mimetype: 'audio/mp4', 
-          fileName: `${title}.mp3` 
+          audio: { url: downloadUrl }, 
+          mimetype: "audio/mp4", // MP4 es más compatible para audios de YT
+          fileName: `${title}.mp3`,
+          ptt: false // Cambia a true si quieres que sea nota de voz
         }, { quoted: m });
         await m.react("🎧");
       } else {
         await conn.sendMessage(m.chat, { 
-          video: { url: download.url }, 
-          caption: `✅ *Aquí tienes:* ${title}\n⚓ *Peso:* ${filesize} KB`,
-          mimetype: 'video/mp4'
+          video: { url: downloadUrl }, 
+          caption: `🎬 *Título:* ${title}`, 
+          mimetype: "video/mp4"
         }, { quoted: m });
         await m.react("📽️");
       }
       return;
+    } catch (e) {
+      console.error("Error en descarga:", e);
+      await m.react("❌");
+      return conn.reply(m.chat, `💔 *¡Rayos!* Hubo un problema al procesar el audio. Puede que el servidor esté saturado.`, m);
     }
+  }
 
-    // 4. Lógica de búsqueda (Si no hay modo o es solo texto)
-    await m.react("🔍");
-    const search = await yts(query);
-    const v = search.videos[0];
+  // --- LÓGICA DE BÚSQUEDA ---
+  await m.react("🔍");
+  try {
+    const search = await yts(queryOrUrl);
+    const video = search.videos[0];
 
-    if (!v) return conn.reply(m.chat, `😵 No encontré nada para: "${query}"`, m);
+    if (!video) return conn.reply(m.chat, `😵 No encontré nada con: "${queryOrUrl}"`, m);
 
-    const txt = `✨ *RESULTADOS PARA:* ${v.title}\n\n` +
-                `⚓ *Autor:* ${v.author.name}\n` +
-                `⏱️ *Duración:* ${v.timestamp}\n` +
-                `📅 *Subido:* ${v.ago}\n` +
-                `🔗 *Link:* ${v.url}\n\n` +
-                `> *Escribe:* _${usedPrefix + command} audio ${v.url}_ para música.\n` +
-                `> *Escribe:* _${usedPrefix + command} video ${v.url}_ para video.`;
+    const caption = `
+╭───🍖 *¡YOSHI! ${name}* ───
+│🍓 *Título:* ${video.title}
+│⏱️ *Duración:* ${video.timestamp}
+│👁️ *Vistas:* ${video.views.toLocaleString()}
+│🔗 *Link:* ${video.url}
+╰───────────────────────────`;
 
-    // Enviamos la miniatura con la info y botones
+    // IMPORTANTE: Los botones interactivos de WhatsApp Business API fallan en muchos mods/versiones.
+    // Si no funcionan, usa un mensaje de texto normal con las opciones.
+    const buttons = [
+      { buttonId: `${usedPrefix}${command} audio ${video.url}`, buttonText: { displayText: '🎵 Audio' }, type: 1 },
+      { buttonId: `${usedPrefix}${command} video ${video.url}`, buttonText: { displayText: '📹 Video' }, type: 1 }
+    ];
+
     await conn.sendMessage(m.chat, {
-      image: { url: v.thumbnail },
-      caption: txt,
-      footer: '⏤͟͞ू⃪፝͜⁞⟡ 𝐌ᴏ𝐧ᴋ𝐞y 𝐃 𝐁ᴏᴛ',
-      buttons: [
-        { buttonId: `${usedPrefix + command} audio ${v.url}`, buttonText: { displayText: '🎵 AUDIO' }, type: 1 },
-        { buttonId: `${usedPrefix + command} video ${v.url}`, buttonText: { displayText: '📹 VIDEO' }, type: 1 }
-      ],
+      image: { url: video.thumbnail },
+      caption,
+      footer: 'Selecciona una opción abajo, nakama',
+      buttons,
       headerType: 4,
       contextInfo
     }, { quoted: m });
 
-  } catch (error) {
-    console.error("DEBUG_ERROR:", error);
-    await m.react("❌");
-    conn.reply(m.chat, `🛠️ *ERROR CRÍTICO*\n\nEl servicio de descarga falló. Inténtalo de nuevo en unos minutos.`, m);
+  } catch (e) {
+    console.error("Error en búsqueda:", e);
+    conn.reply(m.chat, `💔 Error en la búsqueda.`, m);
   }
 };
 
-handler.help = ['play <búsqueda>'];
+handler.help = ['play <texto>'];
 handler.tags = ['descargas'];
-handler.command = /^(play|yt|musica)$/i;
+handler.command = ['play', 'yt'];
 handler.register = true;
 
 export default handler;
