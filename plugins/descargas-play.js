@@ -8,7 +8,6 @@ const newsletterName = '⏤͟͞ू⃪፝͜⁞⟡ 𝐌ᴏ𝐧ᴋ𝐞y 𝐃 𝐁�
 const handler = async (m, { conn, args, usedPrefix, command }) => {
   const name = conn.getName(m.sender);
 
-  // Información de contexto
   const contextInfo = {
     mentionedJid: [m.sender],
     isForwarded: true,
@@ -17,21 +16,21 @@ const handler = async (m, { conn, args, usedPrefix, command }) => {
     externalAdReply: {
       title: '¡El Rey de los Piratas te trae música! 🎶',
       body: `¡Vamos a buscar eso, ${name}!`,
-      thumbnailUrl: 'https://telegra.ph/file/0c91039864d4b8f5d07f3.jpg', // Ajusta esto
-      sourceUrl: 'https://github.com', // Ajusta esto
+      thumbnailUrl: 'https://i.ibb.co/6R0pM8v/monkey-d-luffy.jpg', 
+      sourceUrl: 'https://github.com',
       mediaType: 1,
       renderLargerThumbnail: false
     }
   };
 
   if (!args[0]) {
-    return conn.reply(m.chat, `☠️ *¡Hey ${name}!* ¿Qué buscas?\n\nEjemplo:\n${usedPrefix}play Binks no Sake`, m, { contextInfo });
+    return conn.reply(m.chat, `☠️ *¡Hey ${name}!* ¿Qué canción o video estás buscando?\n\nEjemplo:\n${usedPrefix}play Binks no Sake`, m, { contextInfo });
   }
 
   const isMode = ["audio", "video"].includes(args[0].toLowerCase());
   const queryOrUrl = isMode ? args.slice(1).join(" ") : args.join(" ");
 
-  // --- LÓGICA DE DESCARGA DIRECTA ---
+  // --- Lógica de Descarga (Cuando se presiona el botón) ---
   if (isMode && /youtube\.com|youtu\.be/i.test(queryOrUrl)) {
     const mode = args[0].toLowerCase();
     await m.react("⏳");
@@ -41,54 +40,60 @@ const handler = async (m, { conn, args, usedPrefix, command }) => {
       const res = await fetch(apiUrl);
       const json = await res.json();
 
-      if (!json.status || !json.data) throw new Error("La API no devolvió datos válidos.");
+      if (!json.status || !json.data) throw new Error("Error en la API");
 
       const { title, download } = json.data;
       const downloadUrl = download.url;
 
       if (mode === 'audio') {
-        // Enviar como audio (se puede cambiar a document si falla)
         await conn.sendMessage(m.chat, { 
           audio: { url: downloadUrl }, 
-          mimetype: "audio/mp4", // MP4 es más compatible para audios de YT
+          mimetype: "audio/mp4", // MP4 es más estable para audios de YT en WhatsApp
           fileName: `${title}.mp3`,
-          ptt: false // Cambia a true si quieres que sea nota de voz
+          contextInfo: {
+            externalAdReply: {
+              title: title,
+              body: 'Descarga Exitosa ✅',
+              mediaType: 2,
+              showAdAttribution: true
+            }
+          }
         }, { quoted: m });
         await m.react("🎧");
       } else {
         await conn.sendMessage(m.chat, { 
           video: { url: downloadUrl }, 
-          caption: `🎬 *Título:* ${title}`, 
+          caption: `🎬 *¡Ahí tienes tu video, ${name}!*\n🦴 *Título:* ${title}`, 
           mimetype: "video/mp4"
         }, { quoted: m });
         await m.react("📽️");
       }
       return;
     } catch (e) {
-      console.error("Error en descarga:", e);
+      console.error(e);
       await m.react("❌");
-      return conn.reply(m.chat, `💔 *¡Rayos!* Hubo un problema al procesar el audio. Puede que el servidor esté saturado.`, m);
+      return conn.reply(m.chat, `💔 *¡Rayos!* Hubo un problema al obtener el archivo.`, m);
     }
   }
 
-  // --- LÓGICA DE BÚSQUEDA ---
+  // --- Lógica de Búsqueda (Mensaje con Botones) ---
   await m.react("🔍");
   try {
     const search = await yts(queryOrUrl);
     const video = search.videos[0];
 
-    if (!video) return conn.reply(m.chat, `😵 No encontré nada con: "${queryOrUrl}"`, m);
+    if (!video) return conn.reply(m.chat, `😵 *¡Rayos! No encontré nada con:* "${queryOrUrl}"`, m, { contextInfo });
 
     const caption = `
-╭───🍖 *¡YOSHI! ${name}* ───
+╭───🍖 ¡YOSHI! ${name} ───
 │🍓 *Título:* ${video.title}
 │⏱️ *Duración:* ${video.timestamp}
 │👁️ *Vistas:* ${video.views.toLocaleString()}
 │🔗 *Link:* ${video.url}
-╰───────────────────────────`;
+╰───────────────────────────
 
-    // IMPORTANTE: Los botones interactivos de WhatsApp Business API fallan en muchos mods/versiones.
-    // Si no funcionan, usa un mensaje de texto normal con las opciones.
+Selecciona una opción abajo, nakama`;
+
     const buttons = [
       { buttonId: `${usedPrefix}${command} audio ${video.url}`, buttonText: { displayText: '🎵 Audio' }, type: 1 },
       { buttonId: `${usedPrefix}${command} video ${video.url}`, buttonText: { displayText: '📹 Video' }, type: 1 }
@@ -97,19 +102,19 @@ const handler = async (m, { conn, args, usedPrefix, command }) => {
     await conn.sendMessage(m.chat, {
       image: { url: video.thumbnail },
       caption,
-      footer: 'Selecciona una opción abajo, nakama',
+      footer: '⏤͟͞ू⃪፝͜⁞⟡ 𝐌ᴏ𝐧ᴋ𝐞y 𝐃 𝐁ᴏᴛ',
       buttons,
       headerType: 4,
       contextInfo
     }, { quoted: m });
 
   } catch (e) {
-    console.error("Error en búsqueda:", e);
-    conn.reply(m.chat, `💔 Error en la búsqueda.`, m);
+    console.error(e);
+    conn.reply(m.chat, `💔 *Error en la búsqueda.*`, m);
   }
 };
 
-handler.help = ['play <texto>'];
+handler.help = ['play'];
 handler.tags = ['descargas'];
 handler.command = ['play', 'yt'];
 handler.register = true;
