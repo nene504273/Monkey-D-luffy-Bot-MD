@@ -1,7 +1,7 @@
 import fetch from 'node-fetch';
 
 // --- Constantes y Configuración de Transmisión ---
-const ALYA_API_KEY = 'estellar-LarjcWHD'; // Tu nueva clave de API
+const CAUSA_API_KEY = 'causa-fa8b103258fb60fe'; // Tu clave de Causa API
 const newsletterJid  = '120363420846835529@newsletter';
 const newsletterName = '⏤͟͞ू⃪፝͜⁞⟡『 𝐓͢ᴇ𝙖፝ᴍ⃨ 𝘾𝒉꯭𝐚𝑛𝑛𝒆𝑙:🏴‍☠️MONKEY • D • L U F F Y🏴‍☠️』࿐⟡';
 
@@ -38,45 +38,41 @@ var handler = async (m, { conn, args, usedPrefix, command }) => {
   try {
     await conn.reply(
       m.chat,
-      `📌 *Procesando tu petición...*\nUn momento, senpai~ 🎧`,
+      `📌 *Procesando tu petición...*\nUn momento, senpai~ 🎧\n*(Usando Causa API)*`,
       m,
       { contextInfo, quoted: m }
     );
 
     const url = args[0];
 
-    // --- CAMBIO: Usando la API de AlyaBot ---
-    // Se construye la URL con los parámetros necesarios: url y apikey
-    const alyaApiUrl = `https://rest.alyabotpe.xyz/dl/ytmp3?url=${encodeURIComponent(url)}&apikey=${ALYA_API_KEY}`;
-    
-    const res = await fetch(alyaApiUrl);
+    // --- CAMBIO: Usando la API de Causa (Apicausas) ---
+    // Endpoint: /api/v1/descargas/youtube
+    // Parámetros: url, type (audio), apikey
+    const causaApiUrl = `https://rest.apicausas.xyz/api/v1/descargas/youtube?url=${encodeURIComponent(url)}&type=audio&apikey=${CAUSA_API_KEY}`;
+
+    const res = await fetch(causaApiUrl);
     const json = await res.json().catch(e => {
         console.error(`[ERROR] No se pudo parsear la respuesta JSON: ${e.message}`);
         return null;
     });
 
-    if (!json || !json.status) {
+    // Causa API devuelve { status: true, data: { title, download: { url } } }
+    if (!json || !json.status || !json.data) {
         return conn.reply(
             m.chat,
-            `❌ *¡Error!* La API no respondió correctamente o el enlace es inválido.`,
+            `❌ *¡Error!* La API de Causa no respondió correctamente o el enlace es inválido.`,
             m,
             { contextInfo, quoted: m }
         );
     }
 
-    // --- Adaptando la extracción de datos de AlyaBot ---
-    // Nota: Se asume que la API devuelve { status: true, result: { title, download_url, ... } }
-    const result = json.result;
-    const title = result.title || 'Audio de YouTube';
-    const downloadURL = result.download_url || result.url; // Ajustar según la respuesta real del JSON
-    const thumb = result.thumbnail || icons;
-
-    const caption = `
-╭───[ 𝚈𝚃𝙼𝙿𝟹 • 🎶 ]───⬣
-📌 *Título:* ${title}
-🎚️ *Calidad:* 128kbps
-🎧 *Enviando audio...*
-╰────────────────⬣`;
+    const data = json.data;
+    const title = data.title || 'Audio de YouTube';
+    const downloadURL = data.download?.url; 
+    
+    // Causa API a veces no devuelve thumbnail directamente en el objeto de descarga, 
+    // usamos la constante 'icons' como respaldo.
+    const thumb = icons;
 
     if (downloadURL) {
       // Enviar el archivo de audio
@@ -92,15 +88,15 @@ var handler = async (m, { conn, args, usedPrefix, command }) => {
             externalAdReply: {
                ...contextInfo.externalAdReply,
                title: title,
-               body: 'Descarga Completada',
-               thumbnail: await (await fetch(thumb)).buffer() 
+               body: 'Descarga Completada via Causa API',
+               thumbnail: thumb ? await (await fetch(thumb)).buffer() : null
             }
           }
         },
         { quoted: m }
       );
     } else {
-      throw new Error('No se encontró un enlace de descarga válido en la respuesta.');
+      throw new Error('No se encontró un enlace de descarga válido en la respuesta de Causa.');
     }
 
   } catch (e) {
