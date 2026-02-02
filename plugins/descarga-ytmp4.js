@@ -1,10 +1,7 @@
-//código creado por Dioneibi-rip
-//modificado por nevi-dev y actualizado para Alyabot API
-
 import fetch from 'node-fetch';
 
-// --- Constantes y Configuración de Transmisión ---
-const ALYA_API_KEY = 'stellar-LarjcWHD'; 
+// --- Constantes y Configuración ---
+const CAUSA_API_KEY = 'causa-fa8b103258fb60fe'; // Tu API Key de Causa
 const newsletterJid = '120363447935700207@newsletter'; 
 const newsletterName = '⏤͟͞ू⃪፝͜⁞⟡『 🏴‍☠️MONKEY • D • L U F F Y🏴‍☠️ 』࿐⟡';
 
@@ -25,8 +22,8 @@ var handler = async (m, { conn, args, usedPrefix, command }) => {
     externalAdReply: {
       title: namebotLuffy,
       body: devLuffy,
-      thumbnail: global.icons, // Asegúrate de que 'icons' esté definido
-      sourceUrl: global.redes,  // Asegúrate de que 'redes' esté definido
+      thumbnail: global.icons, 
+      sourceUrl: global.redes,  
       mediaType: 1,
       renderLargerThumbnail: false
     }
@@ -56,57 +53,53 @@ var handler = async (m, { conn, args, usedPrefix, command }) => {
 
     await conn.reply(
       m.chat,
-      `🍖 *¡Gomu Gomu no... Descarga!* (Usando Alya API)\n- 🏴‍☠️ ¡Trayendo el video del Grand Line!`,
+      `🍖 *¡Gomu Gomu no... Descarga!* (Usando Causa API)\n- 🏴‍☠️ ¡Buscando el tesoro en los servidores!`,
       m,
       { contextInfo, quoted: m }
     );
 
-    // *** CAMBIO: Nueva API de Alyabot ***
-    const alyaApiUrl = `https://rest.alyabotpe.xyz/dl/ytmp4?url=${encodeURIComponent(url)}&apikey=${ALYA_API_KEY}`;
-    
-    const res = await fetch(alyaApiUrl);
+    // *** CAMBIO: URL y Parámetros para Apicausas ***
+    // La API de Causa usa: type=video, url=URL, apikey=KEY
+    const causaApiUrl = `https://rest.apicausas.xyz/api/v1/descargas/youtube?url=${encodeURIComponent(url)}&type=video&apikey=${CAUSA_API_KEY}`;
+
+    const res = await fetch(causaApiUrl);
     const jsonResponse = await res.json().catch(() => null);
 
-    if (!jsonResponse || !jsonResponse.status) {
+    // Validación de estado de Causa API (usualmente devuelve { status: true, data: {...} })
+    if (!jsonResponse || !jsonResponse.status || !jsonResponse.data) {
       return conn.reply(
         m.chat,
-        `❌ *¡Rayos! La API no respondió correctamente, nakama.*`,
+        `❌ *¡Rayos! La API de Causa no respondió correctamente o el enlace falló.*`,
         m,
         { contextInfo, quoted: m }
       );
     }
 
-    // Adaptación a la estructura de Alyabot
-    // Nota: Alyabot suele devolver los datos dentro de un objeto 'data' o directamente
-    const data = jsonResponse.data || jsonResponse.result;
-    const downloadURL = data?.url || data?.download || data?.dl_url;
-    const { title, duration, author, views, thumbnail, quality } = data || {};
+    // Estructura de Causa API: jsonResponse.data contiene el título y el objeto download
+    const { title, download } = jsonResponse.data;
+    const downloadURL = download?.url; 
 
     if (!downloadURL) {
       return conn.reply(
         m.chat,
-        `❌ *Error:* No se encontró un enlace de descarga válido en la respuesta.`,
+        `❌ *Error:* No se obtuvo un enlace de descarga directo.`,
         m,
         { contextInfo, quoted: m }
       );
     }
-
-    const filename = `${title || 'video'}.mp4`;
 
     await conn.sendMessage(
       m.chat,
       {
         video: { url: downloadURL },
         caption: 
-`╭━━━━[ 🏴‍☠️ YTMP4 ALYA API 🏴‍☠️ ]━━━━⬣
-📹 *Título:* ${title || 'Desconocido'}
-🧑‍💻 *Canal:* ${author || 'Desconocido'}
-🕒 *Duración:* ${duration || 'Desconocida'}
-👁️ *Vistas:* ${views || 'Desconocidas'}
-🎞️ *Calidad:* ${quality || 'Auto'}
+`╭━━━━[ 🏴‍☠️ YTMP4 CAUSA API 🏴‍☠️ ]━━━━⬣
+📹 *Título:* ${title || 'Video de YouTube'}
+⚓ *Estado:* ¡Descargado con éxito!
+🏴‍☠️ *Bot:* ${namebotLuffy}
 ╰━━━━━━━━━━━━━━━━━━⬣`,
         mimetype: 'video/mp4',
-        fileName: filename
+        fileName: `${title || 'video'}.mp4`
       },
       { contextInfo, quoted: m }
     );
@@ -115,7 +108,7 @@ var handler = async (m, { conn, args, usedPrefix, command }) => {
     console.error(e);
     await conn.reply(
       m.chat,
-      `❌ *¡Error fatal!* ${e.message}`,
+      `❌ *¡Error fatal en el Grand Line!* ${e.message}`,
       m,
       { contextInfo, quoted: m }
     );
