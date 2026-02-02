@@ -38,7 +38,7 @@ var handler = async (m, { conn, args, usedPrefix, command }) => {
   try {
     await conn.reply(
       m.chat,
-      `📌 *Procesando tu petición...*\nUn momento, senpai~ 🎧\n*(Usando Causa API)*`,
+      `📌 *Procesando tu petición...*\nUn momento, senpai~ 🎧`,
       m,
       { contextInfo, quoted: m }
     );
