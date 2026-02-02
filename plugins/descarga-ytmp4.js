@@ -53,7 +53,7 @@ var handler = async (m, { conn, args, usedPrefix, command }) => {
 
     await conn.reply(
       m.chat,
-      `🍖 *¡Gomu Gomu no... Descarga!* (Usando Causa API)\n- 🏴‍☠️ ¡Buscando el tesoro en los servidores!`,
+      `🍖 *¡Gomu Gomu no... Descarga!*\n- 🏴‍☠️ ¡Buscando el tesoro en los servidores!`,
       m,
       { contextInfo, quoted: m }
     );
