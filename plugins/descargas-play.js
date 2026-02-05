@@ -1,7 +1,7 @@
 import fetch from "node-fetch";
 import yts from "yt-search";
 
-const CAUSA_API_KEY = 'causa-fa8b103258fb60fe';
+const CAUSA_API_KEY = 'causa-f8289f3a4ffa44bb';
 const newsletterJid = '120363420846835529@newsletter';
 const newsletterName = '⏤͟͞ू⃪፝͜⁞⟡ 𝐌ᴏ𝐧ᴋ𝐞y 𝐃 𝐁ᴏᴛ';
 
