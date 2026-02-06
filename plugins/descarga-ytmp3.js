@@ -1,117 +1,75 @@
 import fetch from 'node-fetch';
 
-// --- Constantes y Configuración ---
-const ALYA_API_KEY = 'stellar-LarjcWHD'; // Tu nueva clave de Alyabot API
-const newsletterJid  = '120363420846835529@newsletter';
-const newsletterName = '⏤͟͞ू⃪፝͜⁞⟡『 𝐓͢ᴇ𝙖፝ᴍ⃨ 𝘾𝒉꯭𝐚𝑛𝑛𝒆𝑙:🏴‍☠️MONKEY • D • L U F F Y🏴‍☠️』࿐⟡';
-
-var handler = async (m, { conn, args, usedPrefix, command }) => {
-  const emoji = '🎵';
-  const contextInfo = {
-    mentionedJid: [m.sender],
-    isForwarded: true,
-    forwardingScore: 999,
-    forwardedNewsletterMessageInfo: {
-      newsletterJid,
-      newsletterName,
-      serverMessageId: -1
-    },
-    externalAdReply: {
-      title: wm, 
-      body: dev, 
-      thumbnail: icons, 
-      sourceUrl: redes, 
-      mediaType: 1,
-      renderLargerThumbnail: false
-    }
-  };
-
-  if (!args[0]) {
-    return conn.reply(
-      m.chat,
-      `${emoji} *¡Oh no~!* pásame un enlace de YouTube para traer el audio.\n\nUso:\n\`${usedPrefix + command} https://youtu.be/KHgllosZ3kA\``,
-      m,
-      { contextInfo, quoted: m }
-    );
-  }
-
-  try {
-    await conn.reply(
-      m.chat,
-      `📌 *Procesando tu petición...*\nUn momento, senpai~ 🎧`,
-      m,
-      { contextInfo, quoted: m }
-    );
-
-    const url = args[0];
-
-    // --- CAMBIO: Usando la API de Alyabot ---
-    // Endpoint: /dl/ytmp3
-    // Parámetros: url, apikey
-    const alyaApiUrl = `https://rest.alyabotpe.xyz/dl/ytmp3?url=${encodeURIComponent(url)}&apikey=${ALYA_API_KEY}`;
-
-    const res = await fetch(alyaApiUrl);
-    const json = await res.json().catch(e => {
-        console.error(`[ERROR] No se pudo parsear la respuesta JSON: ${e.message}`);
-        return null;
-    });
-
-    // Alyabot API suele devolver { status: true, result: { title, download: { url }, thumbnail } }
-    if (!json || !json.status || !json.result) {
-        return conn.reply(
-            m.chat,
-            `❌ *¡Error!* La API de Alyabot no respondió correctamente o el enlace es inválido.`,
-            m,
-            { contextInfo, quoted: m }
-        );
+const handler = async (m, { conn, args, usedPrefix, command }) => {
+    // 1. Verificación de enlace
+    if (!args[0]) {
+        return conn.reply(m.chat, `🎵 *¡Falta el enlace!* \nUso: \`${usedPrefix + command} https://youtu.be/...\``, m);
     }
 
-    const data = json.result;
-    const title = data.title || 'Audio de YouTube';
-    const downloadURL = data.download?.url; 
-    const thumb = data.thumbnail || icons; // Usa el thumbnail de la API o el de respaldo
+    // 2. Configuración de la API
+    const apiKey = 'stellar-LarjcWHD';
+    const apiUrl = `https://rest.alyabotpe.xyz/dl/ytmp3?url=${encodeURIComponent(args[0])}&apikey=${apiKey}`;
 
-    if (downloadURL) {
-      // Enviar el archivo de audio
-      await conn.sendMessage(
-        m.chat,
-        {
-          audio: { url: downloadURL },
-          mimetype: 'audio/mpeg',
-          fileName: `${title}.mp3`,
-          ptt: false,
-          contextInfo: {
-            ...contextInfo,
-            externalAdReply: {
-               ...contextInfo.externalAdReply,
-               title: title,
-               body: 'Descarga Completada via Alyabot API',
-               thumbnail: thumb ? await (await fetch(thumb)).buffer() : null
+    try {
+        // Notificamos que estamos trabajando
+        await m.reply('⏳ *Procesando audio...* por favor espera.');
+
+        const response = await fetch(apiUrl, {
+            headers: { 'User-Agent': 'Mozilla/5.0' }
+        });
+
+        if (!response.ok) throw new Error('Servidor API fuera de línea.');
+
+        const res = await response.json();
+        
+        /* DEBUG: Si sigue fallando, quita las barras '//' de la línea de abajo 
+           para ver en la consola qué está respondiendo la API exactamente.
+        */
+        // console.log(JSON.stringify(res, null, 2));
+
+        // 3. Extracción dinámica de datos
+        // Intentamos obtener los datos del objeto 'result' (que es el estándar de Alyabot)
+        const data = res.result;
+
+        if (!res.status || !data) {
+            return m.reply('❌ La API no devolvió resultados. Verifica que el enlace sea de YouTube y sea público.');
+        }
+
+        // Buscamos la URL de descarga (algunas APIs la ponen en data.url y otras en data.download)
+        const downloadUrl = data.download || data.url || (data.download && data.download.url);
+        const title = data.title || 'Audio descargado';
+        const thumb = data.thumbnail || data.image || icons;
+
+        if (!downloadUrl) {
+            return m.reply('❌ No se encontró un enlace de descarga directo en la respuesta.');
+        }
+
+        // 4. Envío del Audio
+        await conn.sendMessage(m.chat, {
+            audio: { url: downloadUrl },
+            mimetype: 'audio/mpeg',
+            fileName: `${title}.mp3`,
+            contextInfo: {
+                externalAdReply: {
+                    title: title,
+                    body: 'Descarga exitosa',
+                    thumbnail: await (await fetch(thumb)).buffer(),
+                    sourceUrl: args[0],
+                    mediaType: 1,
+                    showAdAttribution: true
+                }
             }
-          }
-        },
-        { quoted: m }
-      );
-    } else {
-      throw new Error('No se encontró un enlace de descarga válido en la respuesta de Alyabot.');
-    }
+        }, { quoted: m });
 
-  } catch (e) {
-    console.error(e);
-    await conn.reply(
-      m.chat,
-      `❌ *Ocurrió un error al procesar el audio.*\nDetalles: ${e.message}`,
-      m,
-      { contextInfo, quoted: m }
-    );
-  }
+    } catch (e) {
+        console.error(e);
+        m.reply(`⚠️ *Error de conexión:* ${e.message}`);
+    }
 };
 
-handler.help = ['ytmp3'].map(v => v + ' <link>');
+handler.help = ['ytmp3'];
 handler.tags = ['descargas'];
-handler.command = ['ytmp3', 'ytaudio', 'mp3'];
-handler.register = true;
+handler.command = /^(ytmp3|ytaudio|mp3)$/i;
 handler.limit = true;
-handler.coin = 2;
 
 export default handler;
