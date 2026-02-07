@@ -12,7 +12,7 @@ const luffy = "🍖 ¡Soy Luffy! ¿Buscas la imagen más grande del mundo? ¡Gen
 
 // --- URLS DE LA API ---
 const VREDEN_API_URL = "https://api.vreden.my.id/api/v1/artificial/imglarger/upscale";
-const CATBOX_API_URL = "https://catbox.moe/user/api.php"; // El puerto seguro para dejar la carga
+const CATBOX_API_URL = "https://rest.alyabotpe.xyz/tools/upscale"; // El puerto seguro para dejar la carga
 
 function formatBytes(bytes) {
   if (bytes === 0) return "0 B";
