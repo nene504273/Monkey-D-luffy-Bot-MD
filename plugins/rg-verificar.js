@@ -66,7 +66,7 @@ let handler = async function (m, { conn, text }) {
 `
 
   // URL de la imagen de Luffy adjunta (MANTENIDA)
-  const imagenRegistroLuffy = 'https://files.catbox.moe/owqz49.jpg' 
+  const imagenRegistroLuffy = 'https://qu.ax/ueGRg' 
 
   await conn.sendMessage(m.chat, {
     text: regbot,
