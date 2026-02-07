@@ -3,154 +3,107 @@ import { FormData, Blob } from "formdata-node";
 import { fileTypeFromBuffer } from "file-type";
 
 // --- CONSTANTES ---
-// ¡Los colores de la aventura!
-const rwait = "🗺️"; // Mapa para empezar la búsqueda
-const done = "🎉"; // ¡Tesoro encontrado!
-const error = "🏴‍☠️"; // ¡Bandera de peligro!
-const emoji = "⚓"; // Ancla, ¡listos para zarpar!
-const luffy = "🍖 ¡Soy Luffy! ¿Buscas la imagen más grande del mundo? ¡Genial!";
+const rwait = "🗺️"; 
+const done = "🎉"; 
+const error = "🏴‍☠️"; 
+const emoji = "⚓"; 
+const luffy = "🍖 ¡Soy Luffy! ¿Quieres que esta imagen sea tan grande como el Gear 5? ¡VAMOS!";
 
-// --- URLS DE LA API ---
-const VREDEN_API_URL = "https://api.vreden.my.id/api/v1/artificial/imglarger/upscale";
-const CATBOX_API_URL = "https://rest.alyabotpe.xyz/tools/upscale"; // El puerto seguro para dejar la carga
+// --- CONFIGURACIÓN DE API ---
+const ALYA_API_URL = "https://rest.alyabotpe.xyz/tools/upscale";
+const ALYA_KEY = "LUFFY-GEAR5";
 
 function formatBytes(bytes) {
-  if (bytes === 0) return "0 B";
-  const sizes = ["B", "KB", "MB", "GB", "TB"];
-  const i = Math.floor(Math.log(bytes) / Math.log(1024));
-  // ¡Como las porciones de carne!
-  return `${(bytes / 1024 ** i).toFixed(2)} ${sizes[i]}`;
+  if (bytes === 0) return "0 B";
+  const sizes = ["B", "KB", "MB", "GB", "TB"];
+  const i = Math.floor(Math.log(bytes) / Math.log(1024));
+  return `${(bytes / 1024 ** i).toFixed(2)} ${sizes[i]}`;
 }
-
-// Función para subir imagen a Catbox para obtener URL pública (¡Dejándola en el puerto!)
-async function uploadToCatbox(buffer, mimeType, ext) {
-    const blob = new Blob([buffer], { type: mimeType }); 
-    const formData = new FormData();
-    formData.append("reqtype", "fileupload");
-    // ¡El nombre del archivo!
-    formData.append("fileToUpload", blob, `image.${ext}`);
-
-    try {
-        const response = await fetch(CATBOX_API_URL, {
-            method: "POST",
-            body: formData,
-        });
-
-        const result = await response.text();
-
-        if (result.startsWith("https://files.catbox.moe/")) {
-            return result; // ¡El mapa del tesoro!
-        }
-        // ¡Algo falló en el muelle!
-        throw new Error(`El barco de Catbox no zarpó bien. ¡Maldición, necesito un cocinero!`); 
-
-    } catch (e) {
-        throw new Error(`¡Fallo al cargar las provisiones! ${e.message}`);
-    }
-}
-
 
 let handler = async (m, { conn }) => {
-  let q = m.quoted ? m.quoted : null;
-  if (!q)
-    return conn.reply(
-      m.chat,
-      `${luffy}\n${emoji} ¡Oye! ¿Dónde está el tesoro? ¡Necesito una imagen para empezar la búsqueda! Responde a una.`,
-      m
-    );
-  let mime = (q.msg || q).mimetype || "";
-  if (!mime || !mime.startsWith("image/"))
-    return conn.reply(
-      m.chat,
-      `${luffy}\n${emoji} ¡Eh! ¡Eso no es un cofre! ¡Quiero una IMAGEN! Si no, me da hambre.`,
-      m
-    );
+  let q = m.quoted ? m.quoted : m;
+  let mime = (q.msg || q).mimetype || "";
 
-  await m.react(rwait); // ¡Zarpando!
-  const scaleFactor = 4; // ¡Multiplicamos la recompensa!
+  if (!/image\/(jpe?g|png)/.test(mime)) {
+    return conn.reply(
+      m.chat,
+      `${luffy}\n${emoji} ¡Oye! ¡Necesito una imagen (JPG/PNG) para usar el Gomu Gomu no Upscale!`,
+      m
+    );
+  }
 
-  try {
-    let media = await q.download();
-    if (!media || media.length === 0)
-      throw new Error("¡El cofre estaba vacío! ¡Qué decepción!");
+  await m.react(rwait);
 
-    const { ext, mime: fileMime } = (await fileTypeFromBuffer(media)) || {};
+  try {
+    // 1. Descargamos la imagen del chat
+    let media = await q.download();
+    if (!media) throw new Error("¡El cofre estaba vacío! No pude descargar la imagen.");
 
-    // ----------------------------------------------------
-    // [PASO 1] SUBIR IMAGEN A CATBOX (¡Dejamos la imagen en el barco de al lado!)
-    // ----------------------------------------------------
-    const publicImageUrl = await uploadToCatbox(media, fileMime, ext);
+    const { ext, mime: fileMime } = (await fileTypeFromBuffer(media)) || { ext: "jpg", mime: "image/jpeg" };
 
-    // ----------------------------------------------------
-    // [PASO 2] LLAMAR A LA API DE VREDEN (¡El Gran Capitán de la escala!)
-    // ----------------------------------------------------
-    const vredenUrl = `${VREDEN_API_URL}?url=${encodeURIComponent(publicImageUrl)}&scale=${scaleFactor}`;
+    // 2. Preparamos el FormData para la API de Alyabot
+    const formData = new FormData();
+    const blob = new Blob([media], { type: fileMime });
+    
+    formData.append("image", blob, `image.${ext}`);
+    // Nota: Si la API requiere la key por header o query, aquí la enviamos
+    // Según el estándar de Alyabot, suele ir como parámetro en la URL o en el Body
 
-    const upscaleResponse = await fetch(vredenUrl);
+    // 3. Llamada a la API
+    const response = await fetch(`${ALYA_API_URL}?apikey=${ALYA_KEY}`, {
+      method: "POST",
+      body: formData,
+    });
 
-    // ¡Problemas con la Marina!
-    if (!upscaleResponse.ok) {
-        throw new Error(`¡El Capitán Vreden nos atacó! HTTP ${upscaleResponse.status}.`);
-    }
+    if (!response.ok) throw new Error(`La Marina bloqueó el paso (HTTP ${response.status})`);
 
-    // Intentar parsear JSON (¡Leemos el cartel de recompensa!)
-    let upscaleData;
-    try {
-        upscaleData = await upscaleResponse.json();
-    } catch (e) {
-        // ¡El mapa se rompió!
-        throw new Error(`El Capitán Vreden escribió su respuesta con jeroglíficos raros.`);
-    }
+    const resJson = await response.json();
 
-    // Verificar el status de la API dentro del JSON (¡Chequeamos si es el tesoro real!)
-    if (upscaleData.status !== true || !upscaleData.result?.download) {
-        throw new Error(`¡No es el One Piece! El mensaje es: ${upscaleData.creator || "¡Error interno del mapa!"}`);
-    }
+    // 4. Verificamos la respuesta (Ajustado a la estructura común de Alyabot)
+    // Usualmente: { status: true, result: "url_de_la_imagen" }
+    const resultUrl = resJson.result || resJson.url || (resJson.data && resJson.data.url);
 
-    // ----------------------------------------------------
-    // [PASO 3] DESCARGAR IMAGEN ESCALADA (¡Tomamos el tesoro!)
-    // ----------------------------------------------------
-    const downloadUrl = upscaleData.result.download;
+    if (!resultUrl) {
+      throw new Error(resJson.message || "¡No encontré el tesoro en la respuesta de la API!");
+    }
 
-    const downloadResponse = await fetch(downloadUrl);
+    // 5. Descargamos el resultado final
+    const finalImageRes = await fetch(resultUrl);
+    if (!finalImageRes.ok) throw new Error("¡La imagen HD se perdió en el Grand Line!");
+    
+    const bufferHD = Buffer.from(await finalImageRes.arrayBuffer());
 
-    if (!downloadResponse.ok) {
-        throw new Error(`¡Fallo al agarrar el tesoro final! ¡Se cayó al mar! HTTP ${downloadResponse.status}.`);
-    }
+    let textoLuffy = `
+🎉 *¡GOMU GOMU NO... SUPER ESCALA!*
+> *Tamaño final:* ${formatBytes(bufferHD.length)}
+> ¡Tu imagen ahora tiene el poder de un Yonko! 
 
-    const bufferHD = Buffer.from(await downloadResponse.arrayBuffer());
-
-    let textoLuffy = `
-🎉 *¡El One Piece... digo, la imagen HD, es tuya!*
-> *Recompensa (Tamaño):* ${formatBytes(bufferHD.length)}
-> ¡Ahora es tan grande que podrías comerla! (Aunque no lo hagas, sabe a pixeles).
-
-🍖 *¡Ahora a celebrar con carne! ¡Shishishi!*
+🍖 *¡Shishishi! ¡A disfrutar del banquete visual!*
 `;
 
-    await conn.sendMessage(
-      m.chat,
-      {
-        image: bufferHD,
-        caption: textoLuffy.trim(),
-      },
-      { quoted: m }
-    );
+    await conn.sendMessage(
+      m.chat,
+      {
+        image: bufferHD,
+        caption: textoLuffy.trim(),
+      },
+      { quoted: m }
+    );
 
-    await m.react(done); // ¡Fiesta!
+    await m.react(done);
 
-  } catch (e) {
-    // ¡Alguien se comió mi carne o me dio un golpe!
-    await m.react(error);
-    return conn.reply(
-      m.chat,
-      `${luffy}\n⚠️ ¡Rayos! ¡La aventura se puso difícil! ¡Perdimos el mapa o algo así!\n\n*Error de la Marina:* ${e.message}`,
-      m
-    );
-  }
+  } catch (e) {
+    console.error(e);
+    await m.react(error);
+    return conn.reply(
+      m.chat,
+      `${luffy}\n⚠️ ¡Rayos! Algo salió mal en la travesía...\n\n*Error:* ${e.message}`,
+      m
+    );
+  }
 };
 
 handler.help = ["hd"];
 handler.tags = ["ai"];
-handler.command = ["hd"];
+handler.command = ["hd", "upscale", "remini"];
 export default handler;
