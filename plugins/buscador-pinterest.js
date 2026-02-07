@@ -33,7 +33,7 @@ async function sendAlbumMessage(conn, jid, medias, options = {}) {
     }
     return album;
 }
-const apikey = "stellar-LarjcWHD"
+const apikey = "LUFFY-GEAR5"
 const pinterest = async (m, { conn, text, usedPrefix, command }) => {
     if (!text) return conn.reply(m.chat, `✎ Uso Correcto: \n> ${usedPrefix + command} Goku`, m, global.rcanal);
     await m.react('⏳');
