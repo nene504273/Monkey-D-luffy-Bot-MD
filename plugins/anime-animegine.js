@@ -1,6 +1,6 @@
 import fetch from 'node-fetch';
 
-const ApiKey = 'stellar-LarjcWHD';
+const ApiKey = 'LUFFY-GEAR5';
 
 let handler = async (m, { conn, args }) => {
   const prompt = args.join(' ');
