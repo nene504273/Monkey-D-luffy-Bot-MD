@@ -37,14 +37,14 @@ let handler = async (m, { conn, usedPrefix }) => {
         });
     });
 
-    // --- DISEÑO DEL MENÚ ACTUALIZADO ---
+    // --- DISEÑO DEL MENÚ ---
     let menuText = `╔══════════════════╗\n`;
     menuText += `║   ⚓ *LUFFY - BOT* ⚓\n`;
     menuText += `╚══════════════════╝\n\n`;
 
     menuText += `┌───〔 *DATOS DEL NAVEGANTE* 〕───\n`;
     menuText += `│ 👤 *Usuario:* ${name}\n`;
-    menuText += `│ 👑 *Creador:* +58 424-4144821\n`; //
+    menuText += `│ 👑 *Creador:* +58 4244144821\n`;
     menuText += `│ 🎖️ *Alianza:* ${totalreg} Piratas\n`;
     menuText += `│ ⏳ *Activo:* ${uptime}\n`;
     menuText += `│ 🕒 *Hora:* ${venezuelaTime} (VZLA)\n`;
@@ -63,9 +63,9 @@ let handler = async (m, { conn, usedPrefix }) => {
 
     menuText += `> *“Si no arriesgas tu vida, no puedes crear un futuro.”*\n`;
     menuText += `_— Monkey D. Luffy_\n\n`;
-    menuText += `⚓ *Contacto:* wa.me/584244144821`; // <-- LINK CLICKABLE AL FINAL
+    menuText += `⚓ *Contacto:* wa.me/584244144821`;
 
-    // --- CONFIGURACIÓN CON CANAL Y COMPATIBILIDAD ---
+    // --- CONFIGURACIÓN OPTIMIZADA ---
     const contextInfo = {
         mentionedJid: [m.sender],
         isForwarded: true,
@@ -76,13 +76,13 @@ let handler = async (m, { conn, usedPrefix }) => {
             serverMessageId: -1
         },
         externalAdReply: {
-            title: '🏴‍☠️ PROPIEDAD DE: +58 424-4144821 🏴‍☠️',
-            body: 'Luffy-Gear5 Bot v2.0',
+            title: '🏴‍☠️ BY: +58 424-4144821 🏴‍☠️',
+            body: 'Luffy-Gear5 Bot',
             thumbnailUrl: randomThumbnail,
             sourceUrl: 'https://wa.me/584244144821',
             mediaType: 1,
-            showAdAttribution: true,
-            renderLargerThumbnail: true 
+            showAdAttribution: false,
+            renderLargerThumbnail: false // <--- IMAGEN PEQUEÑA HABILITADA
         }
     };
 
