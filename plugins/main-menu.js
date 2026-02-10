@@ -44,7 +44,7 @@ let handler = async (m, { conn, usedPrefix }) => {
 
     menuText += `┌───〔 *DATOS DEL NAVEGANTE* 〕───\n`;
     menuText += `│ 👤 *Usuario:* ${name}\n`;
-    menuText += `│ 👑 *Creador:* +58 424-4144821\n`; // <-- AQUÍ SE VERÁ TU NÚMERO
+    menuText += `│ 👑 *Creador:* +58 424-4144821\n`; //
     menuText += `│ 🎖️ *Alianza:* ${totalreg} Piratas\n`;
     menuText += `│ ⏳ *Activo:* ${uptime}\n`;
     menuText += `│ 🕒 *Hora:* ${venezuelaTime} (VZLA)\n`;
