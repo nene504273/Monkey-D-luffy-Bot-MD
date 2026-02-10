@@ -8,7 +8,7 @@ export async function before(m, { conn, participants, groupMetadata }) {
     // Obtener la cantidad actual de miembros
     const currentSize = (participants || []).length
     const groupName = groupMetadata?.subject || 'este grupo'
-    const defaultImg = 'https://files.catbox.moe/x4sc8b.jpg' 
+    const defaultImg = 'https://raw.githubusercontent.com/danielalejandrobasado-glitch/Yotsuba-MD-Premium/main/uploads/f3dec04bc1df5762.jpg' 
 
     const sendMsg = async (jid, text, user, title) => {
       let pp
