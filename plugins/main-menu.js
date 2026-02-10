@@ -37,6 +37,7 @@ let handler = async (m, { conn, usedPrefix }) => {
         });
     });
 
+    // --- DISEÑO DEL MENÚ ---
     let menuText = `╔══════════════════╗\n`;
     menuText += `║   ⚓ *LUFFY - BOT* ⚓\n`;
     menuText += `╚══════════════════╝\n\n`;
@@ -62,11 +63,16 @@ let handler = async (m, { conn, usedPrefix }) => {
     menuText += `> *“Si no arriesgas tu vida, no puedes crear un futuro.”*\n`;
     menuText += `_— Monkey D. Luffy_`;
 
-    // --- CONFIGURACIÓN DE COMPATIBILIDAD ---
+    // --- CONFIGURACIÓN CON CANAL Y COMPATIBILIDAD ---
     const contextInfo = {
         mentionedJid: [m.sender],
-        isForwarded: false, // Cambiado a false para evitar bloqueos de red en VZLA
-        forwardingScore: 0,  // Reducido para que parezca un mensaje normal
+        isForwarded: true,
+        forwardingScore: 1, // Score bajo para evitar que se oculte en redes lentas
+        forwardedNewsletterMessageInfo: {
+            newsletterJid,
+            newsletterName,
+            serverMessageId: -1
+        },
         externalAdReply: {
             title: '🏴‍☠️ GRAND LINE NAVIGATION 🏴‍☠️',
             body: 'Luffy-Gear5 Bot v2.0',
@@ -74,7 +80,7 @@ let handler = async (m, { conn, usedPrefix }) => {
             sourceUrl: 'https://wa.me/584244144821',
             mediaType: 1,
             showAdAttribution: false,
-            renderLargerThumbnail: false // CAMBIO AQUÍ: Imagen pequeña como pediste
+            renderLargerThumbnail: false // Imagen pequeña habilitada
         }
     };
 
