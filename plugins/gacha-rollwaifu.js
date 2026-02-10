@@ -86,16 +86,23 @@ let handler = async (m, { conn }) => {
 
         const mentions = randomCharacter.user ? [randomCharacter.user] : []
 
-        // --- 🌟 Envío del recurso CORREGIDO ---
+        // --- 🌟 Envío del recurso TOTALMENTE CORREGIDO ---
         if (resourceType === 'video') {
             const sendAsGif = Math.random() < 0.5
-            await conn.sendMessage(m.chat, { video: { url: resourceURL }, gifPlayback: sendAsGif, caption: message }, { quoted: m, mentions })
+            await conn.sendMessage(m.chat, { 
+                video: { url: resourceURL }, 
+                gifPlayback: sendAsGif, 
+                caption: message,
+                mentions: mentions
+            }, { quoted: m })
         } else {
-            // Se añade mimetype para evitar que se envíe como archivo .bin
-            await conn.sendFile(m.chat, resourceURL, `${randomCharacter.name}.png`, message, m, false, { 
-                mimetype: 'image/png', 
-                mentions 
-            })
+            // Usamos sendMessage con el objeto 'image' para forzar la visualización
+            await conn.sendMessage(m.chat, { 
+                image: { url: resourceURL }, 
+                caption: message,
+                mimetype: 'image/png',
+                mentions: mentions
+            }, { quoted: m })
         }
 
         cooldowns[userId] = now + COOLDOWN_TIME
