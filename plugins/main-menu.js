@@ -8,7 +8,6 @@ const newsletterName = '🏴‍☠️ luffy-gear5 🏴‍☠️';
 const packname = '🏴‍☠️ LUFFY-Bot  🏴‍☠️';
 
 let handler = async (m, { conn, usedPrefix }) => {
-    // --- Lectura de Base de Datos ---
     let mediaLinks;
     try {
         const dbPath = path.join(process.cwd(), 'src', 'database', 'db.json');
@@ -27,7 +26,6 @@ let handler = async (m, { conn, usedPrefix }) => {
     const gifVideo = mediaLinks.video[Math.floor(Math.random() * mediaLinks.video.length)];
     const randomThumbnail = mediaLinks.imagen[Math.floor(Math.random() * mediaLinks.imagen.length)];
 
-    // --- Filtrado de Comandos (Sin Repetidos) ---
     let groups = {};
     Object.values(global.plugins || {}).forEach(plugin => {
         if (!plugin.help || !plugin.tags) return;
@@ -41,47 +39,49 @@ let handler = async (m, { conn, usedPrefix }) => {
         });
     });
 
-    // --- Construcción del Menú ---
-    let menuText = `*┏━━━━━━━━━━━━━━━━━━━━┓*\n`;
-    menuText += `┃  🏴‍☠️ *MONKEY D LUFFY BOT* 🏴‍☠️\n`;
-    menuText += `*┣━━━━━━━━━━━━━━━━━━━━┛*\n`;
-    menuText += `┃ ⚓ *Capitán:* _${name}_\n`;
-    menuText += `┃ 👑 *Rey Pirata:* wa.me/584244144821\n`;
-    menuText += `┃ 👥 *Tripulación:* _${totalreg}_\n`;
-    menuText += `┃ 🧭 *Navegación:* _${uptime}_\n`;
-    menuText += `┃ 🕒 *Hora Local:* _${venezuelaTime}_\n`;
-    menuText += `*┗━━━━━━━━━━━━━━━━━━━━┛*\n\n`;
+    // --- DISEÑO RENOVADO: BITÁCORA DEL REY PIRATA ---
+    let menuText = `〆  *B I T Á C O R A  •  D E  •  V I A J E* 〆\n\n`;
+    
+    menuText += `〉*USUARIO:* ${name}\n`;
+    menuText += `〉*RECOMPENSA:* ${totalreg} Aliados\n`;
+    menuText += `〉*NAVEGACIÓN:* ${uptime}\n`;
+    menuText += `〉*HORA:* ${venezuelaTime}\n`;
+    menuText += `\n— — — — — — — — — — — — —\n\n`;
 
-    // Secciones de comandos organizadas
     const sortedTags = Object.keys(groups).sort();
     sortedTags.forEach(tag => {
-        menuText += `*╭┈─────── ⚓ ───────*\n`;
-        menuText += `*╰┈➤ 🌊 ${tag.toUpperCase()}*\n`;
+        // Título de sección más minimalista y estético
+        menuText += `  ⚓ *__${tag.toUpperCase()}__*\n`;
+        
         const sortedCommands = Array.from(groups[tag]).sort();
-        sortedCommands.forEach(cmd => {
-            menuText += `  *🍖* ${cmd.trim()}\n`; // Emoji solicitado
+        // Usamos un separador más fino para que no se vea saturado
+        menuText += `  │\n`;
+        sortedCommands.forEach((cmd, index) => {
+            const isLast = index === sortedCommands.length - 1;
+            menuText += `  ${isLast ? '╰' : '├'}─ 肉 ${cmd.trim()}\n`;
         });
         menuText += `\n`;
     });
 
-    menuText += `_🚢 ¡Hacia el Nuevo Mundo!_`;
+    menuText += `*“La pasión y los sueños son como el tiempo, nada puede detenerlos.”*\n`;
+    menuText += `_— Monkey D. Luffy_`;
 
     const contextInfo = {
         mentionedJid: [m.sender],
         isForwarded: true,
-        forwardingScore: 1,
+        forwardingScore: 999,
         forwardedNewsletterMessageInfo: {
             newsletterJid,
             newsletterName,
             serverMessageId: -1
         },
         externalAdReply: {
-            title: '🏴‍☠️ LUFFY PIRATA CREW 🏴‍☠️',
-            body: 'Menú de Comandos',
+            title: '⚓ M O N K E Y • D • L U F F Y ⚓',
+            body: 'Sistema de Navegación Pirata',
             thumbnailUrl: randomThumbnail,
-            sourceUrl: 'https://wa.me/584244144821', // Enlace al Rey Pirata también aquí
+            sourceUrl: 'https://wa.me/584244144821',
             mediaType: 1,
-            renderLargerThumbnail: false // Imagen pequeña confirmada
+            renderLargerThumbnail: false 
         }
     };
 
