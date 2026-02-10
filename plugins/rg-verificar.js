@@ -60,7 +60,7 @@ let handler = async function (m, { conn, text }) {
 `
 
   // URL de la imagen solicitada
-  const imagenRegistroLuffy = 'https://qu.ax/ueGRg' 
+  const imagenRegistroLuffy = 'https://raw.githubusercontent.com/danielalejandrobasado-glitch/Yotsuba-MD-Premium/main/uploads/f3dec04bc1df5762.jpg'
 
   await conn.sendMessage(m.chat, {
     text: regbot,
