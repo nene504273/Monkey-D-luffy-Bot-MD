@@ -37,11 +37,10 @@ let handler = async (m, { conn, usedPrefix }) => {
         });
     });
 
-    // --- DISEÑO ELITE: THOUSAND SUNNY UI ---
     let menuText = `╔══════════════════╗\n`;
     menuText += `║   ⚓ *LUFFY - BOT* ⚓\n`;
     menuText += `╚══════════════════╝\n\n`;
-    
+
     menuText += `┌───〔 *DATOS DEL NAVEGANTE* 〕───\n`;
     menuText += `│ 👤 *Usuario:* ${name}\n`;
     menuText += `│ 🎖️ *Alianza:* ${totalreg} Piratas\n`;
@@ -51,13 +50,10 @@ let handler = async (m, { conn, usedPrefix }) => {
 
     const sortedTags = Object.keys(groups).sort();
     sortedTags.forEach(tag => {
-        // Título de categoría con estilo de "Isla"
         menuText += `┏━━〔 *${tag.toUpperCase()}* 〕━━╼\n`;
-        
         const sortedCommands = Array.from(groups[tag]).sort();
         sortedCommands.forEach((cmd, index) => {
             const isLast = index === sortedCommands.length - 1;
-            // Estética de lista conectada
             menuText += `┃ ${isLast ? '╰' : '├'} 🍖 \`\`\`${cmd.trim()}\`\`\`\n`;
         });
         menuText += `┗━━━━━━━━━━━━━━━━━━╼\n\n`;
@@ -66,23 +62,19 @@ let handler = async (m, { conn, usedPrefix }) => {
     menuText += `> *“Si no arriesgas tu vida, no puedes crear un futuro.”*\n`;
     menuText += `_— Monkey D. Luffy_`;
 
+    // --- CONFIGURACIÓN DE COMPATIBILIDAD ---
     const contextInfo = {
         mentionedJid: [m.sender],
-        isForwarded: true,
-        forwardingScore: 999,
-        forwardedNewsletterMessageInfo: {
-            newsletterJid,
-            newsletterName,
-            serverMessageId: -1
-        },
+        isForwarded: false, // Cambiado a false para evitar bloqueos de red en VZLA
+        forwardingScore: 0,  // Reducido para que parezca un mensaje normal
         externalAdReply: {
             title: '🏴‍☠️ GRAND LINE NAVIGATION 🏴‍☠️',
             body: 'Luffy-Gear5 Bot v2.0',
             thumbnailUrl: randomThumbnail,
             sourceUrl: 'https://wa.me/584244144821',
             mediaType: 1,
-            showAdAttribution: true,
-            renderLargerThumbnail: true 
+            showAdAttribution: false,
+            renderLargerThumbnail: false // CAMBIO AQUÍ: Imagen pequeña como pediste
         }
     };
 
