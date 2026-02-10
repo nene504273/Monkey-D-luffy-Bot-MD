@@ -31,17 +31,6 @@ async function loadHarem() {
     }
 }
 
-// La función saveHarem no es necesaria en este handler, pero la dejo por completitud
-/*
-async function saveHarem(harem) {
-    try {
-        await fs.writeFile(haremFilePath, JSON.stringify(harem, null, 2), 'utf-8')
-    } catch (error) {
-        throw new Error('❀ No se pudo guardar el archivo harem.json.')
-    }
-}
-*/
-
 let handler = async (m, { conn }) => {
     const userId = m.sender
     const now = Date.now()
@@ -58,32 +47,26 @@ let handler = async (m, { conn }) => {
         const characters = await loadCharacters()
         const randomCharacter = characters[Math.floor(Math.random() * characters.length)]
 
-        // --- 🌟 LÓGICA MODIFICADA: Seleccionar entre Video o Imagen ---
         const hasVideos = randomCharacter.vid && randomCharacter.vid.length > 0
         const hasImages = randomCharacter.img && randomCharacter.img.length > 0
 
         let resourceURL
-        let resourceType // 'image' o 'video'
+        let resourceType
 
-        // Priorizar videos si están disponibles, si no, usar imágenes.
-        if (hasVideos && Math.random() < 0.6) { // 60% de probabilidad de usar video si hay
+        if (hasVideos && Math.random() < 0.6) {
             resourceURL = randomCharacter.vid[Math.floor(Math.random() * randomCharacter.vid.length)]
             resourceType = 'video'
         } else if (hasImages) {
             resourceURL = randomCharacter.img[Math.floor(Math.random() * randomCharacter.img.length)]
             resourceType = 'image'
-        } else if (hasVideos) { // Si solo hay videos y falló el primer Math.random
+        } else if (hasVideos) {
             resourceURL = randomCharacter.vid[Math.floor(Math.random() * randomCharacter.vid.length)]
             resourceType = 'video'
         } else {
-            // Manejar caso donde no hay ni img ni vid (aunque debe ser raro)
             throw new Error('El personaje no tiene imágenes ni videos asociados.')
         }
-        // -------------------------------------------------------------
 
         const harem = await loadHarem()
-        const userEntry = harem.find(entry => entry.characterId === randomCharacter.id)
-
         const statusMessage = randomCharacter.user
             ? `Reclamado por @${randomCharacter.user.split('@')[0]}`
             : 'Libre'
@@ -93,28 +76,28 @@ let handler = async (m, { conn }) => {
 ╚◠┅┅˙•⊹.⁀𖥓 ׅ╍╲۪ ⦙᷼͝🎠᷼͝⦙ ׅ╱ׅ╍𖥓 ◠˙⁀۪ׄ⊹˙╍┅◠╝
 
 ꥓໋╭࣭۬═ֽ̥࣪━᜔๋݈═𑂺ׄ︵ິּ֙᷼⌒݈᳹᪾̯ ⋮꥓ּ࣭ׄ🌹〪ິ᜔ּ໋࣭ׄ⋮⌒ໍּ֣ׄ═ᮣໍ࣭ׄ━𑂺᜔꥓໋┉꥓ׂ᷼━᜔࣭֙━๋݈═̥࣭۬╮
-> ᠙᳞✿̶᮫᮫ְְׅ᳝ׅ᳝᳞᳞࣪᪲࣪֘⣷ׅ᳝࣪ ࣪࣪𖡻ְְׅ᳝ׅׅ࣪࣪֘ᰰ🌵᮫ְׅ᳝࣪᪲⃞̶𝝸𝕝᮫ְ᳝᳝⃨۪۪۪ׅ᳝࣪࣪っְְׅ᳝۪⃨۪۪۪࣪:   𝙉𝘖𝘔𝘉𝘙𝘌: *${randomCharacter.name}*
-> ᠙᳞✿̶᮫᮫ְְׅ᳝ׅ᳝᳞᳞࣪᪲࣪֘⣷ׅ᳝࣪ ࣪࣪𖡻ְְׅ᳝ׅׅ࣪࣪֘ᰰ🍭᮫ְׅ᳝࣪᪲⃞̶𝝸𝕝᮫ְ᳝᳝⃨۪۪۪ׅ᳝࣪࣪っְְׅ᳝۪⃨۪۪۪࣪:  𝙂𝘌𝘕𝘌𝘙𝘖: *${randomCharacter.gender}*
-> ᠙᳞✿̶᮫᮫ְְׅ᳝ׅ᳝᳞᳞࣪᪲࣪֘⣷ׅ᳝࣪ ࣪࣪𖡻ְְׅ᳝ׅׅ࣪࣪֘ᰰ💰᮫ְׅ᳝࣪᪲⃞̶𝝸𝕝᮫ְ᳝᳝⃨۪۪۪ׅ᳝࣪࣪っְְׅ᳝۪⃨۪۪۪࣪:   𝙑𝘈𝘓𝘖𝘙: *${randomCharacter.value}*
-> ᠙᳞✿̶᮫᮫ְְׅ᳝ׅ᳝᳞᳞࣪᪲࣪֘⣷ׅ᳝࣪ ࣪࣪𖡻ְְׅ᳝ׅׅ࣪࣪֘ᰰ🪄᮫ְׅ᳝࣪᪲⃞̶𝝸𝕝᮫ְ᳝᳝⃨۪۪۪ׅ᳝࣪࣪っְְׅ᳝۪⃨۪۪۪࣪:   𝙀𝘚𝘛𝘈𝘋𝘖: ${statusMessage}
+> ᠙᳞✿̶᮫᮫ְְׅ᳝ׅ᳝᳞᳞࣪᪲࣪֘⣷ׅ᳝࣪ ࣪࣪𖡻ְְׅ᳝ׅׅ࣪࣪֘ᰰ🌵᮫ְׅ᳝࣪᪲⃞̶𝝸𝕝᮫ְ᳝᳝⃨۪۪۪ׅ᳝࣪࣪っְְׅ᳝۪⃨۪۪۪࣪:   𝙉𝙊𝙈𝘽𝙍𝙀: *${randomCharacter.name}*
+> ᠙᳞✿̶᮫᮫ְְׅ᳝ׅ᳝᳞᳞࣪᪲࣪֘⣷ׅ᳝࣪ ࣪࣪𖡻ְְׅ᳝ׅׅ࣪࣪֘ᰰ🍭᮫ְׅ᳝࣪᪲⃞̶𝝸𝕝᮫ְ᳝᳝⃨۪۪۪ׅ᳝࣪࣪っְְׅ᳝۪⃨۪۪۪࣪:  𝙂𝙀𝙉𝙀𝙍𝙊: *${randomCharacter.gender}*
+> ᠙᳞✿̶᮫᮫ְְׅ᳝ׅ᳝᳞᳞࣪᪲࣪֘⣷ׅ᳝࣪ ࣪࣪𖡻ְְׅ᳝ׅׅ࣪࣪֘ᰰ💰᮫ְׅ᳝࣪᪲⃞̶𝝸𝕝᮫ְ᳝᳝⃨۪۪۪ׅ᳝࣪࣪っְְׅ᳝۪⃨۪۪۪࣪:   𝙑𝘼𝙇𝙊𝙍: *${randomCharacter.value}*
+> ᠙᳞✿̶᮫᮫ְְׅ᳝ׅ᳝᳞᳞࣪᪲࣪֘⣷ׅ᳝࣪ ࣪࣪𖡻ְְׅ᳝ׅׅ࣪࣪֘ᰰ🪄᮫ְׅ᳝࣪᪲⃞̶𝝸𝕝᮫ְ᳝᳝⃨۪۪۪ׅ᳝࣪࣪っְְׅ᳝۪⃨۪۪۪࣪:   𝙀𝙎𝙏𝘼𝘿𝙊: ${statusMessage}
 > ᠙᳞✿̶᮫᮫ְְׅ᳝ׅ᳝᳞᳞࣪᪲࣪֘⣷ׅ᳝࣪ ࣪࣪𖡻ְְׅ᳝ׅׅ࣪࣪֘ᰰ📚᮫ְׅ᳝࣪᪲⃞̶𝝸𝕝᮫ְ᳝᳝⃨۪۪۪ׅ᳝࣪࣪っְְׅ᳝۪⃨۪۪۪࣪:   𝙁𝘜𝘌𝘕𝘛𝘌: *${randomCharacter.source}*
 > ᠙᳞✿̶᮫᮫ְְׅ᳝ׅ᳝᳞᳞࣪᪲࣪֘⣷ׅ᳝࣪ ࣪࣪𖡻ְְׅ᳝ׅׅ࣪࣪֘ᰰ🆔᮫ְׅ᳝࣪᪲⃞̶𝝸𝕝᮫ְ᳝᳝⃨۪۪۪ׅ᳝࣪࣪っְְׅ᳝۪⃨۪۪۪࣪:   𝙄𝘿: *${randomCharacter.id}*
 ꥓໋╰ׅ۬═ֽ̥࣪━᜔๋݈═𑂺ׄ︵ິּ֙᷼⌒݈᳹᪾̯ ⋮꥓ּ࣭ׄ🐦‍🔥⋮⌒ໍּ֣ׄ═ᮣໍ࣭ׄ━𑂺᜔꥓໋┉꥓ׂ᷼━᜔࣭֙━๋݈═̥࣭۬╯`
 
         const mentions = randomCharacter.user ? [randomCharacter.user] : []
 
-        // --- 🌟 Envío del recurso ---
+        // --- 🌟 Envío del recurso CORREGIDO ---
         if (resourceType === 'video') {
-             // 50% de probabilidad de enviarlo como GIF
             const sendAsGif = Math.random() < 0.5
-            conn.sendMessage(m.chat, { video: { url: resourceURL }, gifPlayback: sendAsGif, caption: message }, { quoted: m, mentions })
+            await conn.sendMessage(m.chat, { video: { url: resourceURL }, gifPlayback: sendAsGif, caption: message }, { quoted: m, mentions })
         } else {
-            // Envío de imagen
-            await conn.sendFile(m.chat, resourceURL, `${randomCharacter.name}.jpg`, message, m, { mentions })
+            // Se añade mimetype para evitar que se envíe como archivo .bin
+            await conn.sendFile(m.chat, resourceURL, `${randomCharacter.name}.png`, message, m, false, { 
+                mimetype: 'image/png', 
+                mentions 
+            })
         }
-        // -----------------------------
 
-        // Establecer el cooldown sin importar si es video o imagen
         cooldowns[userId] = now + COOLDOWN_TIME
 
     } catch (error) {
