@@ -1,11 +1,9 @@
 import fs from 'fs';
 import path from 'path';
 import moment from 'moment-timezone';
-import PhoneNumber from 'awesome-phonenumber';
 
 const newsletterJid = '120363420846835529@newsletter';
 const newsletterName = '🏴‍☠️ luffy-gear5 🏴‍☠️'; 
-const packname = '🏴‍☠️ LUFFY-Bot  🏴‍☠️';
 
 let handler = async (m, { conn, usedPrefix }) => {
     let mediaLinks;
@@ -13,7 +11,7 @@ let handler = async (m, { conn, usedPrefix }) => {
         const dbPath = path.join(process.cwd(), 'src', 'database', 'db.json');
         mediaLinks = JSON.parse(fs.readFileSync(dbPath)).links;
     } catch (e) {
-        return conn.reply(m.chat, '❌ Error al cargar los tesoros del barco.', m);
+        return conn.reply(m.chat, '❌ *Error en la bodega:* No se encontraron los tesoros.', m);
     }
 
     if (m.quoted?.id && m.quoted?.fromMe) return;
@@ -21,7 +19,7 @@ let handler = async (m, { conn, usedPrefix }) => {
     let name = await conn.getName(m.sender);
     const uptime = clockString(process.uptime() * 1000);
     const totalreg = Object.keys(global.db?.data?.users || {}).length;
-    const venezuelaTime = moment().tz('America/Caracas').format('h:mm A');
+    const venezuelaTime = moment().tz('America/Caracas').format('HH:mm:ss');
 
     const gifVideo = mediaLinks.video[Math.floor(Math.random() * mediaLinks.video.length)];
     const randomThumbnail = mediaLinks.imagen[Math.floor(Math.random() * mediaLinks.imagen.length)];
@@ -39,31 +37,33 @@ let handler = async (m, { conn, usedPrefix }) => {
         });
     });
 
-    // --- DISEÑO RENOVADO: BITÁCORA DEL REY PIRATA ---
-    let menuText = `〆  *B I T Á C O R A  •  D E  •  V I A J E* 〆\n\n`;
+    // --- DISEÑO ELITE: THOUSAND SUNNY UI ---
+    let menuText = `╔══════════════════╗\n`;
+    menuText += `║   ⚓ *LUFFY - BOT* ⚓\n`;
+    menuText += `╚══════════════════╝\n\n`;
     
-    menuText += `〉*USUARIO:* ${name}\n`;
-    menuText += `〉*RECOMPENSA:* ${totalreg} Aliados\n`;
-    menuText += `〉*NAVEGACIÓN:* ${uptime}\n`;
-    menuText += `〉*HORA:* ${venezuelaTime}\n`;
-    menuText += `\n— — — — — — — — — — — — —\n\n`;
+    menuText += `┌───〔 *DATOS DEL NAVEGANTE* 〕───\n`;
+    menuText += `│ 👤 *Usuario:* ${name}\n`;
+    menuText += `│ 🎖️ *Alianza:* ${totalreg} Piratas\n`;
+    menuText += `│ ⏳ *Activo:* ${uptime}\n`;
+    menuText += `│ 🕒 *Hora:* ${venezuelaTime} (VZLA)\n`;
+    menuText += `└─────────────────────────\n\n`;
 
     const sortedTags = Object.keys(groups).sort();
     sortedTags.forEach(tag => {
-        // Título de sección más minimalista y estético
-        menuText += `  ⚓ *__${tag.toUpperCase()}__*\n`;
+        // Título de categoría con estilo de "Isla"
+        menuText += `┏━━〔 *${tag.toUpperCase()}* 〕━━╼\n`;
         
         const sortedCommands = Array.from(groups[tag]).sort();
-        // Usamos un separador más fino para que no se vea saturado
-        menuText += `  │\n`;
         sortedCommands.forEach((cmd, index) => {
             const isLast = index === sortedCommands.length - 1;
-            menuText += `  ${isLast ? '╰' : '├'}─ 肉 ${cmd.trim()}\n`;
+            // Estética de lista conectada
+            menuText += `┃ ${isLast ? '╰' : '├'} 🍖 \`\`\`${cmd.trim()}\`\`\`\n`;
         });
-        menuText += `\n`;
+        menuText += `┗━━━━━━━━━━━━━━━━━━╼\n\n`;
     });
 
-    menuText += `*“La pasión y los sueños son como el tiempo, nada puede detenerlos.”*\n`;
+    menuText += `> *“Si no arriesgas tu vida, no puedes crear un futuro.”*\n`;
     menuText += `_— Monkey D. Luffy_`;
 
     const contextInfo = {
@@ -76,12 +76,13 @@ let handler = async (m, { conn, usedPrefix }) => {
             serverMessageId: -1
         },
         externalAdReply: {
-            title: '⚓ M O N K E Y • D • L U F F Y ⚓',
-            body: 'Sistema de Navegación Pirata',
+            title: '🏴‍☠️ GRAND LINE NAVIGATION 🏴‍☠️',
+            body: 'Luffy-Gear5 Bot v2.0',
             thumbnailUrl: randomThumbnail,
             sourceUrl: 'https://wa.me/584244144821',
             mediaType: 1,
-            renderLargerThumbnail: false 
+            showAdAttribution: true,
+            renderLargerThumbnail: true 
         }
     };
 
