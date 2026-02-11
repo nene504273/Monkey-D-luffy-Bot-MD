@@ -44,7 +44,7 @@ const pinterest = async (m, { conn, text, usedPrefix, command }) => {
     await m.react('⏳');
 
     try {
-        const apikey = "LUFFY-GEAR5";
+        const apikey = "Duarte-zz12";
         const apiUrl = `https://rest.alyabotpe.xyz/search/pinterest?query=${encodeURIComponent(text)}&key=${apikey}`;
         
         const response = await fetch(apiUrl);
