@@ -3,7 +3,7 @@ import path from 'path';
 import moment from 'moment-timezone';
 
 const newsletterJid = '120363420846835529@newsletter';
-const newsletterName = '🏴‍☠️ luffy-gear5 🏴‍☠️'; 
+const newsletterName = '⿻̸̷᮫̼̼፝͠🥨᪲ 𝐋̶𝗎𝖿𝖿𝗒 𝐆͢𝖾𝖺⃜𝗋 𝟧 ׅ ࿔𔗨̶🌊'; 
 
 let handler = async (m, { conn, usedPrefix }) => {
     let mediaLinks;
