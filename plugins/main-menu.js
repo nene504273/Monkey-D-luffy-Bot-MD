@@ -64,7 +64,7 @@ let handler = async (m, { conn, usedPrefix }) => {
         sortedCommands.forEach((cmd, index) => {
             menuText += `│ ᗢׁ̇ᰍ〪֙  ᳝ ׁ \`\`\`${cmd.trim()}\`\`\`\n`;
         });
-        menuText += ╰ׅ━ׁ┉ׅ─ׁ┉ׅ─ׁ┉ׅ─ׁ 𝆭˳ּ⚓ ׁ─ׅ┉ׁ─ׅ┉ׁ─ׅ┉ׁ━ִ╯`\n\n`;
+        menuText += `╰ׅ━ׁ┉ׅ─ׁ┉ׅ─ׁ┉ׅ─ׁ 𝆭⚓˳ּ ׁ─ׅ┉ׁ─ׅ┉ׁ─ׅ┉ׁ━ִ╯\n\n`;
     });
 
     menuText += `.   ╓᷼─ໍ۪┅֟፝─̥࣪:¨᜔⠣۟⠜¨᜔:࣪─࣮࣪͡┅ꊥ᜔۫👒ꊥ᜔┅࣮࣪͡─:࣪¨᜔⠣۟⠜¨᜔:࣪─̥፝֟┅۪─᷼ໍ╖\n`;
