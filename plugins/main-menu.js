@@ -58,7 +58,7 @@ let handler = async (m, { conn, usedPrefix }) => {
     const sortedTags = Object.keys(groups).sort();
     sortedTags.forEach(tag => {
         menuText += `✿ㅤ໋︵ּㅤׄ⏜ּㅤ֯✿ִㅤ⃞ׄ🧭⃞ㅤִ❀֯ㅤּ⏜ׄㅤּ︵  ✿\n`;
-        menuText += `𓂂ฺ✦〫ᜒ⫾߲̤ᜒ🍖〫ᜒฺ߲✿ฺ𑁯〫ᜒ۪𑁯ᜒฺ \`${tag.toUpperCase()}\` ╾ฺׁ⟡߲ᜒฺ✨ᜒ𝝸᜔ׁ〫⌒ᜒฺ߲⸙ᦃ\n`;
+        menuText += `┄ ֺ 〪ᨘ✿🥂 〫࣫〇ׁ┄ \`${tag.toUpperCase()}\` ┄〇ׁ🥂✿ ׅ ۬┄\n`;
         
         const sortedCommands = Array.from(groups[tag]).sort();
         sortedCommands.forEach((cmd, index) => {
