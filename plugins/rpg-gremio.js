@@ -50,7 +50,7 @@ let handler = async (m, { conn }) => {
     users[senderId].health -= evento.health;
   }
 
-  let img = 'https://qu.ax/EbuXZ';
+  let img = 'https://files.catbox.moe/07hss2.jpg';
   let info = `╭━〔 Gremio de Aventureros 〕\n` +
              `┃Misión: *${evento.nombre}*\n` +
              `┃Evento: ${evento.mensaje}\n` +
