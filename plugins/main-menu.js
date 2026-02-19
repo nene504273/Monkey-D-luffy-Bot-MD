@@ -37,32 +37,40 @@ let handler = async (m, { conn, usedPrefix }) => {
         });
     });
 
-    // --- DISEÑO DEL MENÚ ---
-    let menuText = `╔══════════════════╗\n`;
-    menuText += `║   ⚓ *LUFFY - BOT* ⚓\n`;
-    menuText += `╚══════════════════╝\n\n`;
+    // --- DISEÑO DEL MENÚ AESTHETIC ---
+    let menuText = `⏝ᩙ ׅ   ׄ᷼⏜֟፝᷼͡⏜͜   ׄ ░⃝ᩘ🏴‍☠️ᩙ ׄ  ͜⏜፝֟᷼͡⏜ׄ᷼   ׅ ⏝ᩙ\n\n`;
+    menuText += `     *⿻̸̷᮫̼̼፝͠🍖̸̷ᩙ᪶𔗨̶࿔:: 𝐁𝐢𝐞𝐧𝐯𝐞𝐧𝐢𝐝𝐨 𝐚 𝐛𝐨𝐫𝐝𝐨*\n`;
+    menuText += `             *𝐝𝐞𝐥 𝐦𝐞𝐣𝐨𝐫 𝐛𝐚𝐫𝐜𝐨 𝐩𝐢𝐫𝐚𝐭𝐚*\n`;
+    menuText += `                   *⚓ 𝐋𝐔𝐅𝐅𝐘 - 𝐁𝐎𝐓 ⚓*\n\n`;
+    menuText += `       ᡴꪫּ ᩿ 𝆬 ┤ ֵ𝆬 ꥓꥓۪۫⏝꥓̥𝆬︶۪ ׄ𖹭 ۪  ְ̊   ̥𝆬👒 ۪  ְ̊   ̥𝆬 𖹭꥓۪۫︶꥓۪⏝۪𝆬 ꥓\n\n`;
 
-    menuText += `┌───〔 *DATOS DEL NAVEGANTE* 〕───\n`;
-    menuText += `│ 👤 *Usuario:* ${name}\n`;
-    menuText += `│ 👑 *Creador:* +58 4244144821\n`;
-    menuText += `│ 🎖️ *Alianza:* ${totalreg} Piratas\n`;
-    menuText += `│ ⏳ *Activo:* ${uptime}\n`;
-    menuText += `│ 🕒 *Hora:* ${venezuelaTime} (VZLA)\n`;
-    menuText += `└─────────────────────────\n\n`;
+    menuText += `               ╭ׅ━ׁ┉ׅ─ׁ 𝆭˳ּ🌊 ׁ─ׅ┉ׁ━ִ╮\n`;
+    menuText += `*✿ֶׁ〪 🅓︩︪𝗮𝘁𝗼𝘀 𝗱𝗲𝗹 𝗡𝗮𝘃𝗲𝗴𝗮𝗻𝘁𝗲 ⠶*\n`;
+    menuText += `> ⌑ׄ👤〪𝆭݀₊ _Usuario:_ ${name}\n`;
+    menuText += `> ⌑ׄ👑〪𝆭݀₊ _Creador:_ +58 4244144821\n`;
+    menuText += `> ⌑ׄ🎖️〪𝆭݀₊ _Alianza:_ ${totalreg} Piratas\n`;
+    menuText += `> ⌑ׄ⏳〪𝆭݀₊ _Activo:_ ${uptime}\n`;
+    menuText += `> ⌑ׄ🕒〪𝆭݀₊ _Hora:_ ${venezuelaTime} (VZLA)\n`;
+    menuText += `               ╰ׅ━ׁ┉ׅ─ׁ 𝆭˳ּ🦋 ׁ─ׅ┉ׁ━ׅ╯\n\n`;
+
+    menuText += `* ˳࣪𫆪𫇭֦˚ּ ⠶ 𝗟𝗶𝘀𝘁𝗮 𝗱𝗲 𝗧𝗲𝘀𝗼𝗿𝗼𝘀 ᩡ\n\n`;
 
     const sortedTags = Object.keys(groups).sort();
     sortedTags.forEach(tag => {
-        menuText += `┏━━〔 *${tag.toUpperCase()}* 〕━━╼\n`;
+        menuText += `✿ㅤ໋︵ּㅤׄ⏜ּㅤ֯✿ִㅤ⃞ׄ🧭⃞ㅤִ❀֯ㅤּ⏜ׄㅤּ︵  ✿\n`;
+        menuText += `𓂂ฺ✦〫ᜒ⫾߲̤ᜒ🍖〫ᜒฺ߲✿ฺ𑁯〫ᜒ۪𑁯ᜒฺ *${tag.toUpperCase()}* ╾ฺׁ⟡߲ᜒฺ✨ᜒ𝝸᜔ׁ〫⌒ᜒฺ߲⸙ᦃ\n`;
+        
         const sortedCommands = Array.from(groups[tag]).sort();
         sortedCommands.forEach((cmd, index) => {
-            const isLast = index === sortedCommands.length - 1;
-            menuText += `┃ ${isLast ? '╰' : '├'} 🍖 \`\`\`${cmd.trim()}\`\`\`\n`;
+            menuText += `│ ᗢׁ̇ᰍ〪֙  ᳝ ׁ \`\`\`${cmd.trim()}\`\`\` ֺ  ۪🌊ֵᩧ𑪍 ׁꐑ֪\n`;
         });
-        menuText += `┗━━━━━━━━━━━━━━━━━━╼\n\n`;
+        menuText += `╰ׅ━ׁ┉ׅ─ׁ 𝆭˳ּ⚓ ׁ─ׅ┉ׁ━ִ╯\n\n`;
     });
 
+    menuText += `.   ╓᷼─ໍ۪┅֟፝─̥࣪:¨᜔⠣۟⠜¨᜔:࣪─࣮࣪͡┅ꊥ᜔۫👒ꊥ᜔┅࣮࣪͡─:࣪¨᜔⠣۟⠜¨᜔:࣪─̥፝֟┅۪─᷼ໍ╖\n`;
     menuText += `> *“Si no arriesgas tu vida, no puedes crear un futuro.”*\n`;
-    menuText += `_— Monkey D. Luffy_\n\n`;
+    menuText += `> _— Monkey D. Luffy_\n`;
+    menuText += `.   ╙᷼─ໍ۪┅֟፝─̥࣪:¨᜔⠣۟⠜¨᜔:࣪─࣮࣪͡┅ꊥ᜔۫⚓ꊥ᜔┅࣮࣪͡─:࣪¨᜔⠣۟⠜¨᜔:࣪─̥፝֟┅۪─᷼ໍ╜\n\n`;
     menuText += `⚓ *Contacto:* wa.me/584244144821`;
 
     // --- CONFIGURACIÓN OPTIMIZADA ---
@@ -82,7 +90,7 @@ let handler = async (m, { conn, usedPrefix }) => {
             sourceUrl: 'https://wa.me/584244144821',
             mediaType: 1,
             showAdAttribution: false,
-            renderLargerThumbnail: false // <--- IMAGEN PEQUEÑA HABILITADA
+            renderLargerThumbnail: false 
         }
     };
 
