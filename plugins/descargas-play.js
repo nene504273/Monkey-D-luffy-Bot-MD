@@ -1,121 +1,147 @@
-import axios from 'axios';
-import yts from "yt-search";
+import { ytmp3, ytmp4 } from "../lib/youtubedl.js"
+import yts from "yt-search"
+import fs from "fs"
+import { exec } from "child_process"
+import { join } from "path"
 
-const API_BASE = 'https://rest.apicausas.xyz/api/v1/descargas/youtube';
-const API_KEY = 'causa-ee5ee31dcfc79da4';
+const newsletterJid = '120363420846835529@newsletter'
+const newsletterName = '⏤͟͞ू⃪፝͜⁞⟡ 𝐌ᴏ𝐧ᴋ𝐞y 𝐃 𝐁ᴏᴛ'
 
-const newsletterJid = '120363418071540900@newsletter';
-const newsletterName = '🏴‍☠️ ¡EL PRÓXIMO REY DE LOS PIRATAS! 🍖';
-
-const handler = async (m, { conn, args, usedPrefix, command }) => {
-  const name = conn.getName(m.sender);
-  args = args.filter(v => v?.trim());
-
+const handler = async (m, { conn, args, usedPrefix, command, text }) => {
+const name = conn.getName(m.sender)
 const contextInfo = {
-    mentionedJid: [m.sender],
-    isForwarded: true,
-    forwardingScore: 999,
-    forwardingScore: 999,
-    forwardedNewsletterMessageInfo: {
-      newsletterJid,
-      newsletterName,
-      serverMessageId: -1
-    },
-    externalAdReply: {
-      title: '🍖 ¡THOUSAND SUNNY ADVENTURE!',
-      body: `¡Oye, ${name}! ¿Estás listo para la aventura?`,
-      thumbnail: icons, 
-      sourceUrl: redes, 
-      mediaType: 1,
-      renderLargerThumbnail: false
-    }
-  };
+mentionedJid: [m.sender],
+isForwarded: true,
+forwardingScore: 999,
+forwardedNewsletterMessageInfo: {
+newsletterJid,
+newsletterName,
+serverMessageId: -1
+},
+externalAdReply: {
+title: '¡El Rey de los Piratas te trae música! 🎶',
+body: `¡Vamos a buscar eso, ${name}!`,
+thumbnail: null,
+sourceUrl: null,
+mediaType: 1,
+renderLargerThumbnail: false
+}
+}
 
-  if (!args[0]) {
-    return conn.reply(m.chat, `*¡OE, ${name.toUpperCase()}!* 🍖\n¡No pusiste qué buscar! ¡Es como salir al mar sin carne!\n\n🎧 *Ejemplo:* \n${usedPrefix}play *We Are!*`, m, { contextInfo });
-  }
+if (!text) {
+return conn.reply(m.chat, `☠️ *¡Hey ${name}!* ¿Qué canción o video estás buscando?\n\nEjemplo:\n${usedPrefix + command} Binks no Sake`, m, { contextInfo })
+}
 
-  const isMode = ["audio", "video"].includes(args[0].toLowerCase());
-  const type = isMode ? args[0].toLowerCase() : null;
-  const query = isMode ? args.slice(1).join(" ") : args.join(" ");
+const isMode = ["audio", "video"].includes(args[0]?.toLowerCase())
+const queryOrUrl = isMode ? args.slice(1).join(" ") : text
+const youtubeRegexID = /(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/))([a-zA-Z0-9_-]{11})/
+const isInputUrl = youtubeRegexID.test(queryOrUrl)
 
-  // --- LÓGICA DE DESCARGA (AVENTURA EN EL SERVIDOR) ---
-  if (isMode) {
-    await m.react(type === 'audio' ? "🎶" : "🎬");
-    try {
-      const response = await axios.get(`${API_BASE}?url=${encodeURIComponent(query)}&type=${type}&apikey=${API_KEY}`);
-      const res = response.data;
+if (isMode && isInputUrl) {
+await m.react("⏳")
+const mode = args[0].toLowerCase()
+try {
+if (mode === 'audio') {
+const r = await ytmp3(queryOrUrl)
+if (!r?.status) throw new Error("Error en la librería (Audio)")
+if (!r?.download?.url) throw new Error("Link caído")
+await conn.sendMessage(m.chat, {
+audio: { url: r.download.url },
+fileName: `${r.metadata.title}.mp3`,
+mimetype: "audio/mpeg",
+ptt: false
+}, { quoted: m })
+await m.react("✅")
+} else if (mode === 'video') {
+const r = await ytmp4(queryOrUrl)
+if (!r?.status) throw new Error("Error en la librería (Video)")
+if (!r?.download?.url) throw new Error("Link caído")
+const videoUrl = r.download.url
+const title = r.metadata.title || "video"
+const tmpDir = join(process.cwd(), 'tmp')
+if (!fs.existsSync(tmpDir)) fs.mkdirSync(tmpDir)
+const fileName = join(tmpDir, `${Date.now()}.mp4`)
+await new Promise((resolve, reject) => {
+exec(`ffmpeg -i "${videoUrl}" -c:v copy -c:a aac -movflags +faststart "${fileName}"`, (err) => {
+if (err) reject(err)
+else resolve()
+})
+})
+if (!fs.existsSync(fileName)) throw new Error("Error en FFmpeg")
+await conn.sendMessage(m.chat, {
+video: fs.readFileSync(fileName),
+fileName: `${title}.mp4`,
+caption: `🎬 *¡Ahí tienes tu video, ${name}!*\n🦴 *Título:* ${title}`,
+mimetype: "video/mp4"
+}, { quoted: m })
+fs.unlinkSync(fileName)
+await m.react("✅")
+}
+} catch (error) {
+console.error(error)
+await m.react("❌")
+return conn.reply(m.chat, `💔 *¡Rayos!* Ocurrió un error al descargar.`, m)
+}
+return
+}
 
-      if (res.status && res.data.download.url) {
-        const title = res.data.title;
-        const downloadUrl = res.data.download.url;
+await m.react("🔍")
+let video
+try {
+const match = queryOrUrl.match(youtubeRegexID)
+if (match) {
+const s = await yts({ videoId: match[1] })
+video = s
+} else {
+const s = await yts(queryOrUrl)
+video = s.videos[0]
+}
+} catch (e) {
+await m.react("❌")
+return conn.reply(m.chat, `😵 *¡Rayos! No encontré nada con:* "${queryOrUrl}"`, m, { contextInfo })
+}
 
-        if (type === 'audio') {
-          await conn.sendMessage(m.chat, { 
-            audio: { url: downloadUrl }, 
-            mimetype: "audio/mpeg", 
-            fileName: `${title}.mp3` 
-          }, { quoted: m });
-          await m.react("🍖");
-        } else {
-          await conn.sendMessage(m.chat, { 
-            video: { url: downloadUrl }, 
-            caption: `*¡SHISHISHI!* ¡Aquí tienes tu tesoro! 🏴‍☠️\n\n⚓ *Nombre:* ${title}`, 
-            mimetype: "video/mp4" 
-          }, { quoted: m });
-          await m.react("🏴‍☠️");
-        }
-      } else {
-        throw new Error("¡El tesoro no está aquí!");
-      }
-      return;
-    } catch (error) {
-      console.error("Error API Causas:", error.response?.data || error.message);
-      await m.react("🛶");
-      return conn.reply(m.chat, `*¡GUMU GUMU NO...!* 💢\n¡Hubo un problema con el barco! Inténtalo de nuevo, ¡no te rindas!`, m);
-    }
-  }
+if (!video) return conn.reply(m.chat, `😵 No se encontraron resultados.`, m, { contextInfo })
 
-  // --- LÓGICA DE BÚSQUEDA ---
-  await m.react("🔭");
-  let video;
-  try {
-    const searchResult = await yts(query);
-    video = searchResult.videos?.[0];
-  } catch (e) { return conn.reply(m.chat, `*¡Zoro se perdió y yo también!* Error en la búsqueda.`, m); }
+const buttons = [
+{ buttonId: `${usedPrefix}play audio ${video.url}`, buttonText: { displayText: '🎵 ¡Solo el audio!' }, type: 1 },
+{ buttonId: `${usedPrefix}play video ${video.url}`, buttonText: { displayText: '📹 ¡Quiero ver eso!' }, type: 1 }
+]
 
-  if (!video) return conn.reply(m.chat, `*¡Oye!* ¡No encontré ninguna isla con ese nombre! (Sin resultados)`, m);
+const caption = `
+╭───🍖 *¡YOSHI! Encontré esto para ti, ${name}* 🍖───
+│🍓 *Título:* ${video.title}
+│⏱️ *Duración:* ${video.timestamp}
+│👁️ *Vistas:* ${video.views.toLocaleString()}
+│🎨 *Autor:* ${video.author.name}
+│🗓️ *Publicado:* ${video.ago}
+│🔗 *Enlace:* ${video.url}
+╰───────────────────────────────`
 
-  // --- MENÚ CON BOTONES (ESTILO LUFFY) ---
-  const buttons = [
-    { buttonId: `${usedPrefix}play audio ${video.url}`, buttonText: { displayText: '🎶 ¡MÚSICA, BROOK!' }, type: 1 },
-    { buttonId: `${usedPrefix}play video ${video.url}`, buttonText: { displayText: '🎬 ¡VÍDEO, FRANKY!' }, type: 1 }
-  ];
+let thumbBuffer = null
+try {
+const thumbData = await conn.getFile(video.thumbnail)
+thumbBuffer = thumbData?.data
+} catch (e) { console.log("Error thumb") }
 
-  const caption = `
-⚓ *¡NUEVO TESORO ENCONTRADO!* ⚓
-︶֟፝ᰳ࡛۪۪۪۪۪⏝̣ ͜͝ ۫۫۫۫۫۫︶    ︶֟፝ᰳ࡛۪۪۪۪۪⏝̣ ͜͝ ۫۫۫۫۫۫︶    
+contextInfo.externalAdReply.thumbnail = thumbBuffer
+contextInfo.externalAdReply.mediaUrl = video.url
+contextInfo.externalAdReply.sourceUrl = video.url
 
-> 🍖 *Tesoro:* ${video.title}
-> ⏱️ *Duración:* ${video.timestamp}
-> 👤 *Navegante:* ${video.author.name}
+await conn.sendMessage(m.chat, {
+image: { url: video.thumbnail },
+caption,
+footer: '¡Elige lo que quieres, nakama!',
+buttons,
+headerType: 4,
+contextInfo
+}, { quoted: m })
+await m.react("🏴‍☠️")
+}
 
-*— ¡Elige rápido! ¡Huelo carne cocinándose y no quiero que Sanji se la dé a otro!*
-🏴‍☠️🌊🏴‍☠️🌊🏴‍☠️🌊🏴‍☠️🌊🏴‍☠️`;
+handler.help = ['play'].map(v => v + ' <texto o URL>')
+handler.tags = ['descargas']
+handler.command = ['play']
+handler.register = true
 
-  await conn.sendMessage(m.chat, {
-    image: { url: video.thumbnail },
-    caption,
-    footer: '¡Hacia el Grand Line!',
-    buttons,
-    headerType: 4,
-    contextInfo
-  }, { quoted: m });
-};
-
-handler.help = ['play'].map(v => v + ' <búsqueda>');
-handler.tags = ['descargas'];
-handler.command = ['play'];
-handler.register = true;
-
-export default handler;
+export default handler
