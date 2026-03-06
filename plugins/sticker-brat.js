@@ -5,14 +5,17 @@ const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 const fetchSticker = async (text, attempt = 1) => {
     try {
+        // Usamos una URL que permite parámetros de estilo si el API lo soporta, 
+        // o simplemente el endpoint base que por defecto genera el estilo de la imagen.
         const response = await axios.get(`https://kepolu-brat.hf.space/brat`, {
             params: { q: text },
             responseType: 'arraybuffer',
+            timeout: 10000 // 10 segundos de timeout
         });
         return response.data;
     } catch (error) {
         if (error.response?.status === 429 && attempt <= 3) {
-            const retryAfter = error.response.headers['retry-after'] || 5;
+            const retryAfter = error.response.headers['retry-after'] || 2;
             await delay(retryAfter * 1000);
             return fetchSticker(text, attempt + 1);
         }
@@ -20,37 +23,42 @@ const fetchSticker = async (text, attempt = 1) => {
     }
 };
 
-let handler = async (m, { conn, text }) => {
-    if (!text) {
-        return conn.sendMessage(m.chat, {
-            text: `${emoji} Por favor ingresa el texto para hacer un sticker.`,
-        }, { quoted: m });
-    }
+let handler = async (m, { conn, text, usedPrefix, command }) => {
+    // Validamos que haya texto
+    if (!text) return conn.reply(m.chat, `*¿Qué texto quieres poner?*\n\nEjemplo: ${usedPrefix + command} Hola Mundo`, m);
 
     try {
+        // Enviamos una reacción o aviso de que se está procesando
+        await m.react('⏳');
+
         const buffer = await fetchSticker(text);
+        
+        // Obtenemos los metadatos del pack de stickers del usuario o del sistema
         let userId = m.sender;
-        let packstickers = global.db.data.users[userId] || {};
-        let texto1 = packstickers.text1 || global.packsticker;
-        let texto2 = packstickers.text2 || global.packsticker2;
-        
-        let stiker = await sticker(buffer, false, texto1, texto2);
-        
+        let userStats = global.db.data.users[userId] || {};
+        let packname = userStats.text1 || global.packname || 'Brat Bot';
+        let author = userStats.text2 || global.author || '@usuario';
+
+        // Convertimos el buffer de imagen a un sticker de WhatsApp (.webp)
+        // El segundo parámetro 'false' es para no mantener la proporción si quieres que sea cuadrado
+        let stiker = await sticker(buffer, false, packname, author);
+
         if (stiker) {
-            return conn.sendFile(m.chat, stiker, 'sticker.webp', '', m);
+            await conn.sendFile(m.chat, stiker, 'sticker.webp', '', m);
+            await m.react('✅');
         } else {
-            throw new Error("No se pudo generar el sticker.");
+            throw new Error("El conversor de sticker no devolvió nada.");
         }
+
     } catch (error) {
         console.error(error);
-        return conn.sendMessage(m.chat, {
-            text: `${msm} Ocurrió un error: ${error.message}`,
-        }, { quoted: m });
+        await m.react('❌');
+        return conn.reply(m.chat, `*Ocurrió un error:* ${error.message}`, m);
     }
 };
 
 handler.command = ['brat'];
 handler.tags = ['sticker'];
-handler.help = ['brat *<texto>*'];
+handler.help = ['brat <texto>'];
 
 export default handler;
