@@ -1,64 +1,76 @@
-import { sticker } from '../lib/sticker.js';
-import axios from 'axios';
+import axios from 'axios'
+import fs from 'fs'
 
-const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+/**
+ * Función de retraso para manejar el Rate Limit (429)
+ */
+const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms))
 
+/**
+ * Función para obtener el sticker desde la API de Brat
+ */
 const fetchSticker = async (text, attempt = 1) => {
-    try {
-        // Usamos una URL que permite parámetros de estilo si el API lo soporta, 
-        // o simplemente el endpoint base que por defecto genera el estilo de la imagen.
-        const response = await axios.get(`https://kepolu-brat.hf.space/brat`, {
-            params: { q: text },
-            responseType: 'arraybuffer',
-            timeout: 10000 // 10 segundos de timeout
-        });
-        return response.data;
-    } catch (error) {
-        if (error.response?.status === 429 && attempt <= 3) {
-            const retryAfter = error.response.headers['retry-after'] || 2;
-            await delay(retryAfter * 1000);
-            return fetchSticker(text, attempt + 1);
-        }
-        throw error;
+  try {
+    const response = await axios.get(`https://skyzxu-brat.hf.space/brat`, { 
+      params: { text }, 
+      responseType: 'arraybuffer' 
+    })
+    return response.data
+  } catch (error) {
+    if (error.response?.status === 429 && attempt <= 3) {
+      const retryAfter = error.response.headers['retry-after'] || 5
+      await delay(retryAfter * 1000)
+      return fetchSticker(text, attempt + 1)
     }
-};
+    throw error
+  }
+}
 
-let handler = async (m, { conn, text, usedPrefix, command }) => {
-    // Validamos que haya texto
-    if (!text) return conn.reply(m.chat, `*¿Qué texto quieres poner?*\n\nEjemplo: ${usedPrefix + command} Hola Mundo`, m);
+let handler = async (client, m, { conn, args, usedPrefix, command, text }) => {
+  try {
+    // Prioriza el texto citado, luego el argumento, luego nada
+    text = m.quoted?.text || text
+    if (!text) return client.reply(m.chat, '🍖 ¡Oye! Necesito un texto para crear el sticker. ¡No puedo ser el Rey de los Piratas sin instrucciones!', m)
 
-    try {
-        // Enviamos una reacción o aviso de que se está procesando
-        await m.react('⏳');
+    await m.react('🏴‍☠️') // Reacción temática de One Piece
 
-        const buffer = await fetchSticker(text);
-        
-        // Obtenemos los metadatos del pack de stickers del usuario o del sistema
-        let userId = m.sender;
-        let userStats = global.db.data.users[userId] || {};
-        let packname = userStats.text1 || global.packname || 'Brat Bot';
-        let author = userStats.text2 || global.author || '@usuario';
+    // Configuración de usuario y tiempo
+    let user = globalThis.db?.data?.users[m.sender] || {}
+    const userName = m.pushName || m.sender.split('@')[0]
+    const botName = 'Luffy Bot' // Puedes cambiar esto al nombre real de tu bot
+    
+    // Formateo de fecha y hora
+    const date = new Date().toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' })
+    const time = new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })
 
-        // Convertimos el buffer de imagen a un sticker de WhatsApp (.webp)
-        // El segundo parámetro 'false' es para no mantener la proporción si quieres que sea cuadrado
-        let stiker = await sticker(buffer, false, packname, author);
+    // Estilo del Sticker (Packname y Author)
+    let packname = `🏴‍☠️ Monkey D. Luffy - Nakama: ${userName}`
+    let author = `🚢 ${botName} | ${date} • ${time}`
 
-        if (stiker) {
-            await conn.sendFile(m.chat, stiker, 'sticker.webp', '', m);
-            await m.react('✅');
-        } else {
-            throw new Error("El conversor de sticker no devolvió nada.");
-        }
+    // Obtención del buffer de imagen
+    const buffer = await fetchSticker(text)
+    const tmpFile = `./tmp-${Date.now()}.webp`
+    
+    // Escritura y envío
+    fs.writeFileSync(tmpFile, buffer)
+    await client.sendImageAsSticker(m.chat, tmpFile, m, { 
+      packname: packname, 
+      author: author 
+    })
 
-    } catch (error) {
-        console.error(error);
-        await m.react('❌');
-        return conn.reply(m.chat, `*Ocurrió un error:* ${error.message}`, m);
-    }
-};
+    // Limpieza
+    fs.unlinkSync(tmpFile)
+    await m.react('🍖')
 
-handler.command = ['brat'];
-handler.tags = ['sticker'];
-handler.help = ['brat <texto>'];
+  } catch (e) {
+    console.error(e)
+    await m.react('✖️')
+    return m.reply(`🏴‍☠️ ¡Un error ha hundido el barco! Inténtalo de nuevo, Nakama.\n> [Error: *${e.message}*]`)
+  }
+}
 
-export default handler;
+handler.command = ['brat', 'luffy']
+handler.help = ['brat <texto>']
+handler.tags = ['sticker']
+
+export default handler
