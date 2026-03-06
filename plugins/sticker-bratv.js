@@ -1,33 +1,54 @@
 import axios from 'axios'
 import fs from 'fs'
+import { join } from 'path'
 
-const fetchStickerVideo = async (text) => {
-  const response = await axios.get(`https://skyzxu-brat.hf.space/brat-animated`, { params: { text }, responseType: 'arraybuffer' })
-  if (!response.data) throw new Error('Error al obtener el video de la API.')
-  return response.data
-}
-
-export default {
-  command: ['bratv'],
-  category: 'sticker',
-  run: async (client, m, args, usedPrefix, command, text) => {
-    try {
-      text = m.quoted?.text || text
-      if (!text) return client.reply(m.chat, '💙 Por favor, responde a un mensaje o ingresa un texto para crear el Sticker.', m, global.miku)
-      await m.react('🕒')
-      let user = globalThis.db.data.users[m.sender] || {}
-      const name = user.name || m.sender.split('@')[0]
-      let texto1 = user.metadatos || `Hatsune miku la diva del futuro`
-      let texto2 = user.metadatos2 || `@${name}`
-      const videoBuffer = await fetchStickerVideo(text)
-      const tmpFile = `./tmp-${Date.now()}.mp4`
-      await fs.writeFileSync(tmpFile, videoBuffer)
-      await client.sendVideoAsSticker(m.chat, tmpFile, m, { packname: texto1, author: texto2 })
-      await fs.unlinkSync(tmpFile)
-      await m.react('✔️')
-    } catch (e) {
-      await m.react('✖️')
-      return m.reply(`💙 An unexpected error occurred while executing command *${usedPrefix + command}*. Please try again or contact support if the issue persists.\n> [Error: *${e.message}*]`)
+const handler = async (m, { conn, args, usedPrefix, command, text }) => {
+    // Detectar texto de mensaje citado o argumentos
+    text = text || m.quoted?.text 
+    
+    if (!text) {
+        return conn.reply(m.chat, '🍖 ¡Oi! Necesito un texto para crear tu sticker de Brat. Úsalo así:\n' + `> *${usedPrefix + command}* Hola Mundo`, m)
     }
-  }
+
+    try {
+        await m.react('🍖') // Reacción de carne (Luffy)
+        
+        // Configuración de metadatos del sticker (Personalizable)
+        let user = global.db.data.users[m.sender] || {}
+        let packname = user.metadatos || 'Luffy - Monkey D. Luffy 🏴‍☠️'
+        let author = user.metadatos2 || `@${m.pushName || 'Pirata'}`
+
+        // Llamada a la API
+        const response = await axios.get(`https://skyzxu-brat.hf.space/brat-animated`, { 
+            params: { text }, 
+            responseType: 'arraybuffer' 
+        })
+
+        if (!response.data) throw new Error('No se recibió data de la API')
+
+        // Manejo de archivo temporal
+        const tmpFile = join(process.cwd(), `./tmp/brat_${Date.now()}.mp4`)
+        await fs.promises.writeFile(tmpFile, response.data)
+
+        // Envío del sticker
+        await conn.sendVideoAsSticker(m.chat, tmpFile, m, { 
+            packname: packname, 
+            author: author 
+        })
+
+        // Limpieza y confirmación
+        await fs.promises.unlink(tmpFile)
+        await m.react('🏴‍☠️')
+
+    } catch (e) {
+        console.error(e)
+        await m.react('❌')
+        m.reply(`🏴‍☠️ ¡Rayos! Algo salió mal en el barco:\n> *${e.message}*`)
+    }
 }
+
+handler.help = ['bratv']
+handler.tags = ['sticker']
+handler.command = /^(bratv|bratvideo)$/i
+
+export default handler
