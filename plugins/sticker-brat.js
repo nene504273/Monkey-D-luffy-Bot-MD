@@ -1,6 +1,6 @@
 import axios from 'axios'
+import { sticker } from '../lib/sticker.js' // Verifica que la ruta a lib/sticker.js sea correcta
 
-// Eliminamos fs para hacerlo todo en memoria (más rápido y limpio)
 const fetchSticker = async (text, attempt = 1) => {
   try {
     const response = await axios.get(`https://skyzxu-brat.hf.space/brat`, { 
@@ -18,30 +18,30 @@ const fetchSticker = async (text, attempt = 1) => {
 }
 
 let handler = async (m, { conn, text, usedPrefix, command }) => {
-  // 1. Validación de texto (Prioriza citado)
   let txt = m.quoted ? m.quoted.text : text
   if (!txt) return conn.reply(m.chat, `🏴‍☠️ ¡Oye! Necesito un texto.\nEjemplo: *${usedPrefix + command}* hola`, m)
 
   await m.react('🏴‍☠️')
 
   try {
-    // 2. Metadatos del sticker
     const userName = m.pushName || 'Nakama'
     const date = new Date().toLocaleDateString('es-ES')
     let packname = `🏴‍☠️ Luffy Bot - ${userName}`
     let author = `🚢 Generado el: ${date}`
 
-    // 3. Obtener el Buffer directamente
+    // 1. Obtenemos la imagen (Buffer)
     const buffer = await fetchSticker(txt)
 
-    // 4. Envío usando la función nativa de tu framework (conn.sendFile o conn.sendImageAsSticker)
-    // Nota: En la mayoría de bots tipo "Luffy", la función es conn.sendImageAsSticker
-    await conn.sendImageAsSticker(m.chat, buffer, m, { 
-      packname: packname, 
-      author: author 
-    })
+    // 2. Convertimos el buffer en un sticker con metadatos
+    const stiker = await sticker(buffer, false, packname, author)
 
-    await m.react('🍖')
+    // 3. Enviamos el sticker usando el método estándar de Baileys
+    if (stiker) {
+      await conn.sendFile(m.chat, stiker, 'sticker.webp', '', m)
+      await m.react('🍖')
+    } else {
+      throw new Error('No se pudo procesar el sticker')
+    }
 
   } catch (e) {
     console.error(e)
