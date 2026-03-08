@@ -8,11 +8,12 @@ const __dirname = dirname(fileURLToPath(import.meta.url))
 const require = createRequire(__dirname)
 
 let handler = async (m, _2) => {
-  let { conn, usedPrefix, noPrefix, args, groupMetadata } = _2
-//if (!isOwner) return;
+  let { conn, isOwner, usedPrefix, noPrefix, args, groupMetadata } = _2
+  if (!isOwner) return;
   let _return
   let _syntax = ''
-  let _text = (/^=/.test(usedPrefix) ? 'return ' : '') + noPrefix
+  let _body = args.join(' ')
+  let _text = (/^=/.test(usedPrefix) || /^return\s/.test(_body) ? '' : 'return ') + _body
   let old = m.exp * 1
   try {
     let i = 15
@@ -34,15 +35,14 @@ let handler = async (m, _2) => {
     if (err) _syntax = '```' + err + '```\n\n'
     _return = e
   } finally {
-    conn.reply(m.chat, _syntax + format(_return), m)
+   conn.reply(m.chat, _syntax + format(_return), m)
     m.exp = old
   }
 }
-handler.help = ['> ', '=> ']
+handler.help = ['eval']
 handler.tags = ['owner']
-handler.customPrefix = /^=?> /
-handler.command = /(?:)/i
-handler.rowner = true
+handler.command = ['e']
+handler.owner = true
 
 export default handler
 
