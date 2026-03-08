@@ -1,4 +1,4 @@
-/* Plugin modificado por DuarteXV
+/* Código modificado por DuarteXV
  * github: https://github.com/Danielalejandrobasado-glitch */
 
 import fetch from 'node-fetch'
