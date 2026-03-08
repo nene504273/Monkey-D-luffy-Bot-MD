@@ -139,7 +139,8 @@ async function askGemini(prompt, previousId = null) {
         try {
             const cookie = await getAnonCookie()
             const xsrf = await getXsrfToken(cookie)
-            const payload = [[prompt.trim()], ['en-US'], resumeArray]
+            const cleanPrompt = prompt.trim().replace(/'/g, "'").replace(/"/g, '\"')
+    const payload = [[cleanPrompt], ['en-US'], resumeArray]
             const params = { 'f.req': JSON.stringify([null, JSON.stringify(payload)]) }
             if (xsrf) params.at = xsrf
             const response = await fetch(
