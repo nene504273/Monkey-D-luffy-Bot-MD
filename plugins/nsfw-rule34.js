@@ -17,9 +17,17 @@ const handler = async (m, { conn, args, usedPrefix, command }) => {
         await m.react('🔍')
         
         const response = await fetch(url)
-        const json = await response.json()
+        const text = await response.text() // Leemos como texto primero para evitar errores de parseo
         
-        if (!json.status || !json.data.results || json.data.results.length === 0) {
+        let json
+        try {
+            json = JSON.parse(text)
+        } catch (e) {
+            await m.react('❌')
+            return m.reply(`${emoji2} La API no devolvió un JSON válido. Revisa tu consola.`)
+        }
+        
+        if (!json.status || !json.data || !json.data.results || json.data.results.length === 0) {
             await m.react('❌')
             return m.reply(`${emoji2} No hubo resultados para *${tag}*`)
         }
@@ -37,9 +45,9 @@ const handler = async (m, { conn, args, usedPrefix, command }) => {
         await m.react('✅')
 
     } catch (error) {
-        console.error(error)
+        console.error("ERROR EN R34:", error)
         await m.react('❌')
-        await m.reply(`${emoji} Ocurrió un error al procesar la solicitud.`)
+        await m.reply(`${emoji} Error: ${error.message}`)
     }
 }
 
