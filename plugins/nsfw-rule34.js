@@ -17,17 +17,20 @@ const handler = async (m, { conn, args, usedPrefix, command }) => {
         await m.react('🔍')
         
         const response = await fetch(url)
+        const json = await response.json()
         
-        if (!response.ok) {
+        if (!json.status || !json.data.results || json.data.results.length === 0) {
             await m.react('❌')
             return m.reply(`${emoji2} No hubo resultados para *${tag}*`)
         }
 
-        const buffer = await response.buffer()
+        const results = json.data.results
+        const randomImage = results[Math.floor(Math.random() * results.length)]
+        const imageUrl = randomImage.file_url
 
         await conn.sendMessage(m.chat, { 
-            image: buffer, 
-            caption: `${emoji} Resultados para » *${tag}*`, 
+            image: { url: imageUrl }, 
+            caption: `${emoji} Resultados para » *${tag}*\n> ${json.msg}`, 
             mentions: [m.sender] 
         }, { quoted: m })
 
