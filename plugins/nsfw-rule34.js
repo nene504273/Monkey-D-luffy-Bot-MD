@@ -30,7 +30,7 @@ const handler = async (m, { conn, args, usedPrefix, command }) => {
 
         await conn.sendMessage(m.chat, { 
             image: { url: imageUrl }, 
-            caption: `${emoji} Resultados para » *${tag}*\n> ${json.msg}`, 
+            caption: `${emoji} Resultados para » *${tag}*`, 
             mentions: [m.sender] 
         }, { quoted: m })
 
