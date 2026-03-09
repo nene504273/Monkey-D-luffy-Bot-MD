@@ -11,23 +11,15 @@ const handler = async (m, { conn, args, usedPrefix, command }) => {
 
     const tag = args.join(' ')
     const apikey = "causa-f8289f3a4ffa44bb"
-    const url = `https://api.rest.apicausas.xyz/api/v1/nsfw/descargas/rule34?apikey=${apikey}&tags=${encodeURIComponent(tag)}`
+    const url = `https://rest.apicausas.xyz/api/v1/nsfw/descargas/rule34?apikey=${apikey}&tags=${encodeURIComponent(tag)}`
 
     try {
         await m.react('🔍')
         
         const response = await fetch(url)
-        const text = await response.text() // Leemos como texto primero para evitar errores de parseo
+        const json = await response.json()
         
-        let json
-        try {
-            json = JSON.parse(text)
-        } catch (e) {
-            await m.react('❌')
-            return m.reply(`${emoji2} La API no devolvió un JSON válido. Revisa tu consola.`)
-        }
-        
-        if (!json.status || !json.data || !json.data.results || json.data.results.length === 0) {
+        if (!json.status || !json.data?.results?.length) {
             await m.react('❌')
             return m.reply(`${emoji2} No hubo resultados para *${tag}*`)
         }
@@ -45,9 +37,9 @@ const handler = async (m, { conn, args, usedPrefix, command }) => {
         await m.react('✅')
 
     } catch (error) {
-        console.error("ERROR EN R34:", error)
+        console.error(error)
         await m.react('❌')
-        await m.reply(`${emoji} Error: ${error.message}`)
+        await m.reply(`${emoji} Ocurrió un error al procesar la solicitud.`)
     }
 }
 
