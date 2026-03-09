@@ -15,7 +15,7 @@ let handler = async (m, { conn, command }) => {
             return `⬡ *Comando* : *${name}*\n⬡ *Usos* : ${total}`
         }).join('\n\n')
 
-        conn.reply(m.chat, `📊 *Top 10 Comandos Más Usados*\n\n${handlers}`, m, global.rcanal)
+        conn.reply(m.chat, `📊 *Top 10 Comandos Más Usados*\n\n${handlers}`, m)
     }
 
     if (command == 'database' || command == 'usuarios' || command == 'user') {
