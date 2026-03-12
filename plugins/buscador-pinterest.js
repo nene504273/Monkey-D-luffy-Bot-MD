@@ -1,91 +1,38 @@
-import axios from 'axios';
+import axios from 'axios'
 
-/**
- * Scraper optimizado de Pinterest
- */
-async function pinterestScraper(query) {
-    // Es recomendable rotar el User-Agent o usar uno más reciente
-    const userAgents = [
-        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36',
-        'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/118.0.0.0 Safari/537.36'
-    ];
-
-    const url = `https://www.pinterest.com/resource/BaseSearchResource/get/`;
-    const params = {
-        source_url: `/search/pins/?q=${encodeURIComponent(query)}`,
-        data: JSON.stringify({
-            options: {
-                query: query,
-                scope: "pins",
-                rs: "typed"
-            },
-            context: {}
-        })
-    };
+let handler = async (m, { conn, text, usedPrefix, command }) => {
+    // Verificamos que el usuario haya ingresado un término de búsqueda
+    if (!text) throw `*⚓ ¡Capitán! Indique qué buscar.*\n\n*Ejemplo:* ${usedPrefix + command} Nami aesthetic`
 
     try {
-        const { data } = await axios.get(url, { 
-            params,
-            headers: {
-                'user-agent': userAgents[Math.floor(Math.random() * userAgents.length)],
-                'referer': 'https://www.pinterest.com/',
-                'x-requested-with': 'XMLHttpRequest'
-            }
-        });
+        // Llamada a la API con tu Key
+        let response = await axios.get(`https://api.causas.xyz/api/v1/buscadores/pinterest?apikey=causa-f8289f3a4ffa44bb&q=${encodeURIComponent(text)}`)
+        let res = response.data
 
-        const results = data.resource_response?.data?.results || [];
-        
-        return results.map(pin => ({
-            title: pin.grid_title || pin.title || 'Pinterest Image',
-            url: pin.images.orig?.url || pin.images['736x']?.url
-        })).filter(p => p.url);
+        if (!res.status || !res.data || res.data.length === 0) throw '❌ No encontré ningún tesoro con ese nombre.'
+
+        // Seleccionamos un resultado al azar de la lista
+        let image = res.data[Math.floor(Math.random() * res.data.length)]
+
+        let caption = `
+✨ *P I N T E R E S T* ✨
+──────────────────
+🌊 *Búsqueda:* ${text}
+📌 *Título:* ${image.title || 'Imagen de Pinterest'}
+──────────────────
+*Monkey D. Luffy Bot MD* 🏴‍☠️`.trim()
+
+        // Enviamos la imagen con el diseño estilizado
+        await conn.sendFile(m.chat, image.image, 'pinterest.jpg', caption, m)
+
     } catch (e) {
-        console.error("Error en Pinterest Scraper:", e.message);
-        return [];
+        console.error(e)
+        m.reply('❌ Hubo un error al navegar por los mares de Pinterest.')
     }
 }
 
-let handler = async (m, { conn, text, usedPrefix, command }) => {
-    if (!text) throw `*¡Falta el texto!* 🔍\nEjemplo: ${usedPrefix + command} paisajes aesthetic`;
+handler.help = ['pin <texto>', 'pinterest <texto>']
+handler.tags = ['buscadores']
+handler.command = /^(pin|pinterest)$/i
 
-    try {
-        await m.react('🕒');
-        
-        // Obtenemos hasta 6 imágenes para no saturar
-        const images = await pinterestScraper(text);
-        const limit = images.slice(0, 6); 
-
-        if (limit.length === 0) {
-            await m.react('❌');
-            return m.reply('No se encontraron resultados para tu búsqueda.');
-        }
-
-        // Enviamos la primera con descripción
-        await conn.sendMessage(m.chat, { 
-            image: { url: limit[0].url }, 
-            caption: `📌 *Búsqueda:* ${text}\n🖼️ *Cantidad:* ${limit.length} imágenes.` 
-        }, { quoted: m });
-
-        // Enviamos el resto (Sin caption para que WhatsApp intente agrupar)
-        // Usamos un pequeño delay para evitar bloqueos
-        for (let i = 1; i < limit.length; i++) {
-            await new Promise(resolve => setTimeout(resolve, 500)); // 500ms de espera
-            await conn.sendMessage(m.chat, { 
-                image: { url: limit[i].url }
-            }, { quoted: m });
-        }
-
-        await m.react('✅');
-
-    } catch (error) {
-        console.error(error);
-        await m.react('✖️');
-        m.reply('Hubo un fallo técnico. Intenta más tarde.');
-    }
-};
-
-handler.help = ['pinterest <texto>', 'pin <texto>'];
-handler.tags = ['buscadores'];
-handler.command = /^(pinterest|pin)$/i;
-
-export default handler;
+export default handler
