@@ -47,7 +47,6 @@ const handler = async (client, m, text, { command, prefix }) => {
                 await client.sendMessage(m.from, media, { caption });
                 enviadas++;
 
-                // Pequeña pausa entre imágenes
                 if (i < maxImages - 1) await new Promise(res => setTimeout(res, 2000));
 
             } catch (err) {
@@ -66,11 +65,9 @@ const handler = async (client, m, text, { command, prefix }) => {
     }
 };
 
-// Configuración del comando al final para el Handler
-handler.name = 'pinterest';
-handler.alias = ['pin', 'pint'];
-handler.desc = 'Buscar imágenes en Pinterest';
+// --- ESTO ES LO QUE NECESITA TU HANDLER ---
+handler.help = ['pinterest <búsqueda>', 'pin <búsqueda>'];
+handler.command = ['pinterest', 'pin', 'pint']; // Aquí se definen los disparadores
 handler.category = 'search';
-handler.usage = '!pinterest <búsqueda>';
 
 module.exports = handler;
