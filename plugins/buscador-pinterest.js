@@ -1,100 +1,58 @@
-// powered by Ander & Gemini
-import fetch from 'node-fetch';
-import baileys from '@whiskeysockets/baileys';
+import axios from 'axios';
 
-async function sendAlbumMessage(conn, jid, medias, options = {}) {
-    const { generateWAMessageFromContent, generateWAMessage, delay } = baileys;
+// Función Scraper Limpia
+async function pinterestScraper(query, count = 10) {
+    const url = `https://id.pinterest.com/resource/BaseSearchResource/get/?source_url=%2Fsearch%2Fpins%2F%3Fq%3D${encodeURIComponent(query)}&data=%7B%22options%22%3A%7B%22query%22%3A%22${encodeURIComponent(query)}%22%2C%22scope%22%3A%22pins%22%7D%2C%22context%22%3A%7B%7D%7D`;
     
-    // Generar el mensaje contenedor del álbum
-    const album = await generateWAMessageFromContent(
-        jid,
-        { 
-            messageContextInfo: {}, 
-            albumMessage: { expectedImageCount: medias.length } 
-        },
-        options.quoted ? { quoted: options.quoted } : {}
-    );
-
-    await conn.relayMessage(jid, album.message, { messageId: album.key.id });
-
-    for (let i = 0; i < medias.length; i++) {
-        const { type, data } = medias[i];
-        const img = await generateWAMessage(
-            jid,
-            { [type]: data, ...(i === 0 ? { caption: options.caption || "" } : {}) },
-            { upload: conn.waUploadToServer }
-        );
-        
-        img.message.messageContextInfo = {
-            messageAssociation: { 
-                associationType: 1, 
-                parentMessageKey: album.key 
-            },
-        };
-
-        await conn.relayMessage(jid, img.message, { messageId: img.key.id });
-        await new Promise(resolve => setTimeout(resolve, options.delay || 500));
-    }
-    return album;
-}
-
-const pinterest = async (m, { conn, text, usedPrefix, command }) => {
-    if (!text) return conn.reply(m.chat, `✎ *Uso Correcto:*\n> ${usedPrefix + command} Goku`, m);
-
-    await m.react('⏳');
+    const headers = {
+        'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36'
+    };
 
     try {
-        const apikey = "Duarte-zz12";
-        const apiUrl = `https://rest.alyabotpe.xyz/search/pinterest?query=${encodeURIComponent(text)}&key=${apikey}`;
+        const response = await axios.get(url, { headers });
+        const results = response.data?.resource_response?.data?.results || [];
         
-        const response = await fetch(apiUrl);
-        const res = await response.json();
-
-        // Extracción segura del array de imágenes
-        // Intentamos: res.data, res.result o el objeto raíz si es array
-        const rawData = res.data || res.result || (Array.isArray(res) ? res : null);
-
-        if (!rawData || !Array.isArray(rawData) || rawData.length === 0) {
-            await m.react('❌');
-            return conn.reply(m.chat, '✎ No encontré resultados para tu búsqueda.', m);
-        }
-
-        // Mapeo y filtrado estricto: solo tomamos lo que sea una URL válida
-        const images = rawData
-            .map(item => {
-                const url = typeof item === 'string' ? item : (item.hd || item.url || item.image);
-                return url ? { type: 'image', data: { url } } : null;
-            })
-            .filter(item => item !== null)
-            .slice(0, 10); // Máximo 10 para no saturar
-
-        if (images.length < 2) {
-            // Si hay 1 sola, la enviamos normal para que el comando "sirva" sí o sí
-            if (images.length === 1) {
-                await conn.sendMessage(m.chat, { image: images[0].data, caption: `✎ *Resultado único para:* ${text}` }, { quoted: m });
-                return await m.react('✅');
-            }
-            throw new Error("No hay suficientes imágenes válidas");
-        }
-
-        // Enviar el álbum
-        await sendAlbumMessage(conn, m.chat, images, { 
-            caption: `✎ *Resultados para:* ${text}`, 
-            quoted: m 
-        });
-        
-        await m.react('✅');
-
+        return results.map(pin => ({
+            title: pin.grid_title || pin.title || 'Sin título',
+            url: pin.images.orig?.url || null
+        })).filter(p => p.url).slice(0, count);
     } catch (e) {
-        console.error("Error en Pinterest Command:", e);
-        await m.react('❌');
-        conn.reply(m.chat, '✎ Ocurrió un error al procesar el álbum.', m);
+        return [];
+    }
+}
+
+let handler = async (m, { conn, text, usedPrefix, command }) => {
+    // Si no hay texto, avisar
+    if (!text) return m.reply(`(*∩_∩*) ¡Escribe lo que buscas!\nEjemplo: *${usedPrefix + command}* anime`);
+
+    try {
+        await m.react('🕒');
+        const res = await pinterestScraper(text, 10); 
+
+        if (!res.length) return m.reply('No encontré nada, intenta con otra palabra.');
+
+        // Enviamos las 10 fotos. 
+        // Al enviarlas rápido y sin caption a partir de la segunda, 
+        // WhatsApp las agrupa automáticamente en un álbum de cuadrícula.
+        for (let i = 0; i < res.length; i++) {
+            await conn.sendMessage(m.chat, { 
+                image: { url: res[i].url }, 
+                caption: i === 0 ? `📌 *Resultados para:* ${text}\n✨ *Total:* ${res.length} imágenes` : null 
+            }, { quoted: m });
+        }
+
+        await m.react('✅');
+    } catch (e) {
+        await m.react('✖️');
+        console.error(e);
     }
 };
 
-pinterest.help = ['pinterest <query>'];
-pinterest.tags = ['buscador'];
-pinterest.command = ['pinterest', 'pin'];
-pinterest.register = true;
+// ATRIBUTOS DEL COMANDO
+handler.help = ['pin <texto>', 'pinterest <texto>'];
+handler.tags = ['descargas'];
+// Aquí agregamos 'pin' para que no tengas que escribir todo el nombre
+handler.command = ['pin', 'pinterest']; 
+handler.group = true;
 
-export default pinterest;
+export default handler;
