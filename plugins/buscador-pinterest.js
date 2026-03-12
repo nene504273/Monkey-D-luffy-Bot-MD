@@ -1,47 +1,79 @@
-import axios from 'axios'
+const axios = require('axios');
+const { MessageMedia } = require('whatsapp-web.js');
 
-let handler = async (m, { conn, text, usedPrefix, command }) => {
-    // Verificamos que el usuario escriba algo para buscar
-    if (!text) throw `*⚓ ¡Capitán! Escriba qué desea buscar en Pinterest.*\n\n*Ejemplo:* ${usedPrefix + command} Luffy Gear 5`
+const PINTEREST_API_KEY = 'causa-f8289f3a4ffa44bb';
+const PINTEREST_API_URL = 'https://api.causas.com/api/v1/buscadores/pinterest';
 
-    try {
-        // Configuración de la API (Separada para evitar errores)
-        const endpoint = 'https://api.causas.xyz/api/v1/buscadores/pinterest'
-        const apiKey = 'causa-f8289f3a4ffa44bb'
-        
-        // Realizamos la consulta
-        const response = await axios.get(`${endpoint}?apikey=${apiKey}&q=${encodeURIComponent(text)}`)
-        const res = response.data
+module.exports = {
+    name: 'pinterest',
+    alias: ['pin', 'pint'],
+    desc: 'Buscar imágenes en Pinterest',
+    category: 'search',
+    usage: '!pinterest <búsqueda>',
+    async exec(client, m, text, { command, prefix }) {
+        try {
+            if (!text) {
+                return m.reply(`❌ *Error:* Ingresa lo que quieres buscar\n\n💡 *Ejemplo:*\n${prefix}${command} Nami One Piece`);
+            }
 
-        // Validación de datos recibidos
-        if (!res.status || !res.data || res.data.length === 0) {
-            return m.reply('❌ No se encontraron imágenes para esta búsqueda.')
+            // Mensaje de búsqueda
+            await m.reply(`🔍 *Buscando:* "${text}"...\n\n⏳ Un momento...`);
+
+            // Llamada a la API
+            const apiUrl = `${PINTEREST_API_URL}?apikey=${PINTEREST_API_KEY}&q=${encodeURIComponent(text)}`;
+            const { data } = await axios.get(apiUrl);
+
+            if (!data.status || !data.data || data.total === 0) {
+                return m.reply('❌ *Error:* No se encontraron resultados o la API está sin conexión.');
+            }
+
+            const total = data.total;
+            const resultados = data.data;
+
+            await m.reply(`✅ *Resultados:* ${total}\n\n📌 Enviando imágenes...`);
+
+            // Enviar hasta 5 imágenes
+            const maxImages = Math.min(total, 5);
+            let enviadas = 0;
+
+            for (let i = 0; i < maxImages; i++) {
+                const item = resultados[i];
+                
+                try {
+                    // Descargar imagen
+                    const response = await axios.get(item.image.trim(), {
+                        responseType: 'arraybuffer',
+                        headers: {
+                            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+                        }
+                    });
+
+                    const base64 = Buffer.from(response.data).toString('base64');
+                    const mimeType = response.headers['content-type'];
+                    const media = new MessageMedia(mimeType, base64, 'pinterest.jpg');
+
+                    const caption = `📌 *${item.title || 'Pinterest'}*\n\n🔗 ${item.link}\n\n✨ ${i + 1}/${maxImages}`;
+                    
+                    await client.sendMessage(m.from, media, { caption });
+                    enviadas++;
+
+                    // Esperar 2 segundos entre imágenes
+                    await new Promise(resolve => setTimeout(resolve, 2000));
+                    
+                } catch (err) {
+                    console.error(`Error imagen ${i + 1}:`, err.message);
+                    // Enviar solo el link si falla
+                    await m.reply(`📎 *Imagen ${i + 1}:*\n${item.link}`);
+                }
+            }
+
+            if (enviadas > 0) {
+                await m.reply(`✅ *¡Listo!* Se enviaron ${enviadas} imágenes.\n\n💡 Usa: ${prefix}${command} <búsqueda>`);
+            }
+
+        } catch (error) {
+            console.error('Error en Pinterest:', error);
+            m.reply('❌ *Error:* Ocurrió un problema al buscar en Pinterest.');
         }
-
-        // Seleccionamos una imagen aleatoria del array de resultados
-        const pin = res.data[Math.floor(Math.random() * res.data.length)]
-
-        // Diseño Aesthetic / One Piece
-        let caption = `
-✨ *P I N T E R E S T* ✨
-──────────────────
-🌊 *Búsqueda:* ${text}
-📌 *Título:* ${pin.title || 'Sin Título'}
-──────────────────
-*Monkey D. Luffy Bot MD* 🏴‍☠️`.trim()
-
-        // Enviamos el archivo
-        await conn.sendFile(m.chat, pin.image, 'pinterest.jpg', caption, m)
-
-    } catch (e) {
-        console.error(e)
-        // Si hay un error, lo notificamos de forma más específica en consola para ti
-        m.reply('❌ ¡Error! Los mares están agitados y no pude obtener la imagen. Reintente en un momento.')
     }
-}
-
-handler.help = ['pin <texto>']
-handler.tags = ['buscadores']
-handler.command = /^(pin|pinterest)$/i
-
-export default handler
+};
