@@ -1,53 +1,49 @@
 export async function before(m) {
-  // 1. Validaciones básicas
-  if (!m.text || !global.prefix.test(m.text) || !m.isGroup) {
-    return;
-  }
+  // 1. Validaciones de entrada (Early return)
+  if (!m.text || !global.prefix.test(m.text) || !m.isGroup) return;
 
   // --- LÓGICA DE CONTROL DE BOT PRIMARIO ---
   let chat = global.db.data.chats[m.chat];
   let selfJid = this.user.jid.replace(/:.*@/, '@');
 
-  // Si hay un bot primario asignado y no soy yo, me ignoro por completo
-  if (chat && chat.primaryBot && chat.primaryBot !== selfJid) {
-    return; 
-  }
+  // Si hay un bot primario asignado y no soy yo, salimos silenciosamente
+  if (chat?.primaryBot && chat.primaryBot !== selfJid) return;
   // ------------------------------------------
 
   const usedPrefix = global.prefix.exec(m.text)[0];
-  const command = m.text.slice(usedPrefix.length).trim().split(' ')[0].toLowerCase();
+  const textTrim = m.text.slice(usedPrefix.length).trim();
+  const command = textTrim.split(' ')[0].toLowerCase();
 
-  const validCommand = (command, plugins) => {
-    for (let plugin of Object.values(plugins)) {
-      if (plugin.command && (Array.isArray(plugin.command) ? plugin.command : [plugin.command]).includes(command)) {
-        return true;
-      }
-    }
-    return false;
-  };
+  // Salir si no hay comando o si es el comando base "bot"
+  if (!command || command === "bot") return;
 
-  if (!command) return;
+  // Verificación eficiente de comandos existentes
+  const isPluginCommand = Object.values(global.plugins).some(plugin => 
+    plugin.command && (Array.isArray(plugin.command) ? plugin.command.includes(command) : plugin.command === command)
+  );
 
-  if (command === "bot") {
-    return;
-  }
-
-  if (validCommand(command, global.plugins)) {
+  if (isPluginCommand) {
     let user = global.db.data.users[m.sender];
 
-    if (chat.isBanned) {
-      const avisoDesactivado = `《✦》El bot *${botname}* está desactivado en este grupo.\n\n> ✦ Un *administrador* puede activarlo con el comando:\n> » *${usedPrefix}bot on*`;
-      await m.reply(avisoDesactivado);
-      return;
+    // Verificación de estado del chat
+    if (chat?.isBanned) {
+      let aviso = `*───〔 ⚠ ESTADO: OFF 〕───*\n\n`;
+      aviso += `> ◈ El bot *${botname}* está desactivado.\n`;
+      aviso += `> ◈ Solicita a un *Admin* activarlo con:\n`;
+      aviso += `> ✦ \`${usedPrefix}bot on\``;
+      
+      return await conn.reply(m.chat, aviso, m);
     }
 
-    if (!user.commands) {
-      user.commands = 0;
-    }
-    user.commands += 1;
+    // Contador de comandos
+    user.commands = (user.commands || 0) + 1;
+
   } else {
-    // Esto es lo que más lag/spam causa si hay muchos bots, ahora solo lo enviará el primario
-    const comando = m.text.trim().split(' ')[0];
-    await m.reply(`《✦》El comando *${comando}* no existe.\nPara ver la lista de comandos usa:\n» *#help*`);
+    // Respuesta para comandos inexistentes (Solo si es el bot primario)
+    let noExiste = `*───〔 ℹ️ INFO 〕───*\n\n`;
+    noExiste += `> ◈ El comando \`${usedPrefix + command}\` no fue hallado.\n`;
+    noExiste += `> ◈ Usa *${usedPrefix}menu* para ver la lista.`;
+    
+    await conn.reply(m.chat, noExiste, m);
   }
 }
