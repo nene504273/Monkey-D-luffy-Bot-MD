@@ -8,8 +8,7 @@ const apiBaseUrl = 'https://apicausas.xyz/api/v1/descargas/youtube'
 
 const handler = async (m, { conn, args, usedPrefix, command, text }) => {
     const name = conn.getName(m.sender)
-    
-    // Configuración visual del mensaje (ContextInfo)
+
     const contextInfo = {
         mentionedJid: [m.sender],
         isForwarded: true,
@@ -33,25 +32,47 @@ const handler = async (m, { conn, args, usedPrefix, command, text }) => {
         return conn.reply(m.chat, `☠️ *¡Hey ${name}!* ¿Qué canción o video estás buscando?\n\nEjemplo:\n${usedPrefix + command} Binks no Sake`, m, { contextInfo })
     }
 
-    // Detectar si venimos de un botón (modo + URL)
-    const isMode = ["audio", "video"].includes(args[0]?.toLowerCase())
-    const queryOrUrl = isMode ? args.slice(1).join(" ") : text
     const youtubeRegexID = /(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/))([a-zA-Z0-9_-]{11})/
+
+    // Detectar modo desde botón
+    const mode = args[0]?.toLowerCase()
+    const isMode = ["audio", "video"].includes(mode)
+
+    // La URL puede venir partida en args si tiene parámetros (?v=xxx)
+    // Hay que unir todo desde args[1] en adelante
+    const queryOrUrl = isMode ? args.slice(1).join(" ") : text
     const isInputUrl = youtubeRegexID.test(queryOrUrl)
 
+    // --- MODO DESCARGA (viene del botón) ---
     if (isMode && isInputUrl) {
         await m.react("⏳")
-        const mode = args[0].toLowerCase() 
-        
-        try {
-            // Construcción de la URL de la API según tu endpoint
-            const apiUrl = `${apiBaseUrl}?apikey=${apikey}&url=${encodeURIComponent(queryOrUrl)}&type=${mode}`
-            const response = await fetch(apiUrl)
-            const result = await response.json()
 
-            // Validación basada en el JSON que me mostraste
+        try {
+            // Extraer el video ID para mayor seguridad
+            const videoIdMatch = queryOrUrl.match(youtubeRegexID)
+            const videoId = videoIdMatch?.[1]
+            
+            // Usar el video ID directamente en la URL de la API
+            const cleanUrl = videoId 
+                ? `https://www.youtube.com/watch?v=${videoId}` 
+                : queryOrUrl
+
+            const apiUrl = `${apiBaseUrl}?apikey=${apikey}&url=${encodeURIComponent(cleanUrl)}&type=${mode}`
+            
+            console.log("API URL:", apiUrl) // Para debug
+            
+            const response = await fetch(apiUrl)
+            
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+            }
+            
+            const result = await response.json()
+            
+            console.log("API Result:", JSON.stringify(result, null, 2)) // Para debug
+
             if (!result.status || !result.data?.download?.url) {
-                throw new Error(result.msg || "Error en la descarga")
+                throw new Error(result.msg || result.message || "Sin URL de descarga en la respuesta")
             }
 
             const { url: downloadUrl } = result.data.download
@@ -75,10 +96,11 @@ const handler = async (m, { conn, args, usedPrefix, command, text }) => {
                 }, { quoted: m })
                 await m.react("✅")
             }
+
         } catch (error) {
-            console.error("Error API:", error)
+            console.error("Error API completo:", error)
             await m.react("❌")
-            return conn.reply(m.chat, `💔 *¡Rayos!* No pude obtener el archivo. Puede que la API esté saturada o el link sea inválido.`, m)
+            return conn.reply(m.chat, `💔 *¡Rayos!* Error: ${error.message}`, m)
         }
         return
     }
@@ -87,22 +109,20 @@ const handler = async (m, { conn, args, usedPrefix, command, text }) => {
     await m.react("🔍")
     let video
     try {
-        const match = queryOrUrl.match(youtubeRegexID)
+        const match = text.match(youtubeRegexID)
         if (match) {
-            const s = await yts({ videoId: match[1] })
-            video = s
+            video = await yts({ videoId: match[1] })
         } else {
-            const s = await yts(queryOrUrl)
+            const s = await yts(text)
             video = s.videos[0]
         }
     } catch (e) {
         await m.react("❌")
-        return conn.reply(m.chat, `😵 *¡Rayos! No encontré nada con:* "${queryOrUrl}"`, m, { contextInfo })
+        return conn.reply(m.chat, `😵 *¡Rayos! No encontré nada con:* "${text}"`, m, { contextInfo })
     }
 
     if (!video) return conn.reply(m.chat, `😵 No se encontraron resultados.`, m, { contextInfo })
 
-    // Botones para elegir formato
     const buttons = [
         { buttonId: `${usedPrefix}${command} audio ${video.url}`, buttonText: { displayText: '🎵 MP3 (Audio)' }, type: 1 },
         { buttonId: `${usedPrefix}${command} video ${video.url}`, buttonText: { displayText: '📹 MP4 (Video)' }, type: 1 }
@@ -117,7 +137,6 @@ const handler = async (m, { conn, args, usedPrefix, command, text }) => {
 │🗓️ *Publicado:* ${video.ago}
 ╰───────────────────────────────`
 
-    // Intentar obtener el buffer de la miniatura para el AdReply
     let thumbBuffer = null
     try {
         const thumbData = await conn.getFile(video.thumbnail)
