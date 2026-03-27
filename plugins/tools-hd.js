@@ -1,135 +1,84 @@
 import fetch from "node-fetch";
-import { FormData, Blob } from "form-data-node";
+import crypto from "crypto";
+import { FormData, Blob } from "formdata-node";
 import { fileTypeFromBuffer } from "file-type";
 
-// --- CONSTANTES ---
-const rwait = "⌛";
-const done = "🍖";
-const error = "☠️";
-const emoji = "✨";
-const luffy = "*🏴‍☠️ ¡Yo soy Luffy, el hombre que se convertirá en el Rey de los Piratas!*";
+const handler = async (m, { conn }) => {
+  let q = m.quoted ? m.quoted : m;
+  let mime = (q.msg || q).mimetype || '';
 
-// --- URLS DE LA API ---
-const VREDEN_API_URL = "https://api.vreden.my.id/api/v1/artificial/imglarger/upscale";
-const CATBOX_API_URL = "https://catbox.moe/user/api.php"; 
+  // Validación de archivo
+  if (!mime || !/image\/(png|jpe?g)/.test(mime)) {
+    return conn.reply(m.chat, `❌ Por favor, responde a una *imagen válida* (png o jpg).`, m);
+  }
 
-function formatBytes(bytes) {
-  if (bytes === 0) return "0 B";
-  const sizes = ["B", "KB", "MB", "GB", "TB"];
-  const i = Math.floor(Math.log(bytes) / Math.log(1024));
-  return `${(bytes / 1024 ** i).toFixed(2)} ${sizes[i]}`;
-}
-
-async function uploadToCatbox(buffer, mimeType, ext) {
-    const blob = new Blob([buffer], { type: mimeType }); 
-    const formData = new FormData();
-    formData.append("reqtype", "fileupload");
-    formData.append("fileToUpload", blob, `image.${ext}`);
-
-    try {
-        const response = await fetch(CATBOX_API_URL, {
-            method: "POST",
-            body: formData,
-        });
-        const result = await response.text();
-        if (result.startsWith("https://files.catbox.moe/")) {
-            return result;
-        }
-        throw new Error(`¡El cofre de Catbox está vacío! No pude subir la imagen.`); 
-    } catch (e) {
-        throw new Error(`¡Hubo un problema en el barco!: ${e.message}`);
-    }
-}
-
-let handler = async (m, { conn }) => {
-  let q = m.quoted ? m.quoted : null;
-  if (!q)
-    return conn.reply(
-      m.chat,
-      `${luffy}\n${emoji} ¡Oye! Necesito que me des una imagen para mejorarla. ¡No puedo estirarme sin ver qué hay!`,
-      m
-    );
-    
-  let mime = (q.msg || q).mimetype || "";
-  if (!mime || !mime.startsWith("image/"))
-    return conn.reply(
-      m.chat,
-      `${luffy}\n${emoji} ¡Eso no es un tesoro! Por favor, responde a una imagen de verdad.`,
-      m
-    );
-
-  await m.react(rwait);
-  const scaleFactor = 4;
+  await m.react("⏳"); // Espera inicial
 
   try {
+    // Descarga de la imagen
     let media = await q.download();
-    if (!media || media.length === 0)
-      throw new Error("¡No pude atrapar la imagen, se escapó!");
 
-    const { ext, mime: fileMime } = (await fileTypeFromBuffer(media)) || {};
+    if (!media) throw new Error("No se pudo descargar la imagen.");
 
-    // [PASO 1] SUBIR IMAGEN A CATBOX
-    const publicImageUrl = await uploadToCatbox(media, fileMime, ext);
+    // Subida a Catbox
+    let link = await catbox(media);
 
-    // [PASO 2] LLAMAR A LA API DE VREDEN
-    const vredenUrl = `${VREDEN_API_URL}?url=${encodeURIComponent(publicImageUrl)}&scale=${scaleFactor}`;
-    const upscaleResponse = await fetch(vredenUrl);
-
-    if (!upscaleResponse.ok) {
-        throw new Error(`¡La Marina bloqueó el paso! (Error HTTP ${upscaleResponse.status})`);
+    if (!link || !link.startsWith("http")) {
+      throw new Error("Error al subir la imagen a Catbox.");
     }
 
-    let upscaleData;
-    try {
-        upscaleData = await upscaleResponse.json();
-    } catch (e) {
-        throw new Error(`¡La respuesta de la API parece un mapa roto!`);
+    // Procesando con API upscale
+    let upscaleApi = `https://api.siputzx.my.id/api/iloveimg/upscale?image=${encodeURIComponent(link)}&scale=2`;
+    let res = await fetch(upscaleApi);
+    let data = await res.json();
+
+    if (!data.status || !data.result) {
+      throw new Error(data.message || "La API de upscale no devolvió un resultado válido.");
     }
 
-    if (upscaleData.status !== true || !upscaleData.result?.download) {
-        throw new Error(`¡No pudimos mejorar la imagen! Algo salió mal en el Grand Line.`);
-    }
+    // Aviso de procesamiento exitoso
+    await conn.reply(m.chat, `✅ *Procesando tu imagen en HD...*`, m);
 
-    // [PASO 3] DESCARGAR IMAGEN ESCALADA
-    const downloadUrl = upscaleData.result.download;
-    const downloadResponse = await fetch(downloadUrl);
+    // Envío de imagen mejorada
+    await conn.sendMessage(m.chat, {
+      image: { url: data.result },
+      caption: `✅ *Imagen mejorada con éxito* \n\n🔗 *Enlace HD:* ${data.result}`
+    }, { quoted: m });
 
-    if (!downloadResponse.ok) {
-        throw new Error(`¡No pude recoger el botín final! HTTP ${downloadResponse.status}.`);
-    }
-
-    const bufferHD = Buffer.from(await downloadResponse.arrayBuffer());
-
-    let textoLuffy = `
-🌟 *¡Gomu Gomu no... HD!*
-> *Escala:* ${scaleFactor}x
-> *Peso del tesoro:* ${formatBytes(bufferHD.length)}
-
-🔥 ¡Mira qué increíble se ve ahora! ¡Vamos por más aventuras! 🍖
-`;
-
-    await conn.sendMessage(
-      m.chat,
-      {
-        image: bufferHD,
-        caption: textoLuffy.trim(),
-      },
-      { quoted: m }
-    );
-
-    await m.react(done);
+    await m.react("✅"); // Reacción de éxito
 
   } catch (e) {
-    await m.react(error);
-    return conn.reply(
-      m.chat,
-      `${luffy}\n⚠️ ¡Uf! Algo salió muy mal... ¡seguro fue culpa de Buggy!\n\n*Error:* ${e.message}`,
-      m
-    );
+    console.error(e);
+    await m.react("❌");
+    return conn.reply(m.chat, `❌ *Error al procesar la imagen:*\n\`\`\`${e.message}\`\`\``, m);
   }
 };
 
-handler.help = ["hd"];
-handler.tags = ["ai"];
-handler.command = ["hd"];
+handler.help = ['hd', 'upscale'];
+handler.tags = ['herramientas'];
+handler.command = ['hd', 'upscale', 'mejorarimagen']; 
+handler.register = true;
+handler.limit = true;
+
 export default handler;
+
+// ─── Funciones auxiliares ───
+async function catbox(content) {
+  const { ext, mime } = (await fileTypeFromBuffer(content)) || {};
+  const blob = new Blob([content.toArrayBuffer()], { type: mime });
+  const formData = new FormData();
+  const randomBytes = crypto.randomBytes(5).toString("hex");
+  formData.append("reqtype", "fileupload");
+  formData.append("fileToUpload", blob, randomBytes + "." + ext);
+
+  const response = await fetch("https://catbox.moe/user/api.php", {
+    method: "POST",
+    body: formData,
+    headers: {
+      "User-Agent":
+        "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/44.0.2403.157 Safari/537.36",
+    },
+  });
+
+  return await response.text();
+}
