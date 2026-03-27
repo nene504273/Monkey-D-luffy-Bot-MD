@@ -4,10 +4,12 @@ import fetch from "node-fetch"
 const newsletterJid = '120363420846835529@newsletter'
 const newsletterName = '⏤͟͞ू⃪፝͜⁞⟡ 𝐌ᴏ𝐧ᴋ𝐞y 𝐃 𝐁ᴏᴛ'
 const apikey = 'causa-f8289f3a4ffa44bb'
-const apiBaseUrl = 'https://apicausas.xyz'
+const apiBaseUrl = 'https://apicausas.xyz/api/v1/descargas/youtube'
 
 const handler = async (m, { conn, args, usedPrefix, command, text }) => {
     const name = conn.getName(m.sender)
+    
+    // Configuración visual del mensaje (ContextInfo)
     const contextInfo = {
         mentionedJid: [m.sender],
         isForwarded: true,
@@ -31,6 +33,7 @@ const handler = async (m, { conn, args, usedPrefix, command, text }) => {
         return conn.reply(m.chat, `☠️ *¡Hey ${name}!* ¿Qué canción o video estás buscando?\n\nEjemplo:\n${usedPrefix + command} Binks no Sake`, m, { contextInfo })
     }
 
+    // Detectar si venimos de un botón (modo + URL)
     const isMode = ["audio", "video"].includes(args[0]?.toLowerCase())
     const queryOrUrl = isMode ? args.slice(1).join(" ") : text
     const youtubeRegexID = /(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/))([a-zA-Z0-9_-]{11})/
@@ -41,17 +44,18 @@ const handler = async (m, { conn, args, usedPrefix, command, text }) => {
         const mode = args[0].toLowerCase() 
         
         try {
-            // Petición a la API con tu Key
-            const apiUrl = `${apiBaseUrl}/api/v1/descargas/youtube?apikey=${apikey}&url=${encodeURIComponent(queryOrUrl)}&type=${mode}`
+            // Construcción de la URL de la API según tu endpoint
+            const apiUrl = `${apiBaseUrl}?apikey=${apikey}&url=${encodeURIComponent(queryOrUrl)}&type=${mode}`
             const response = await fetch(apiUrl)
             const result = await response.json()
 
-            if (!result.status || !result.data || !result.data.download) {
-                throw new Error("Error en la API")
+            // Validación basada en el JSON que me mostraste
+            if (!result.status || !result.data?.download?.url) {
+                throw new Error(result.msg || "Error en la descarga")
             }
 
-            const downloadUrl = result.data.download.url
-            const title = result.data.title || "Multimedia"
+            const { url: downloadUrl } = result.data.download
+            const title = result.data.title || "Monkey D. Bot Download"
 
             if (mode === 'audio') {
                 await conn.sendMessage(m.chat, {
@@ -66,19 +70,20 @@ const handler = async (m, { conn, args, usedPrefix, command, text }) => {
                 await conn.sendMessage(m.chat, {
                     video: { url: downloadUrl },
                     fileName: `${title}.mp4`,
-                    caption: `🎬 *¡Ahí tienes tu video, ${name}!*\n🦴 *Título:* ${title}`,
+                    caption: `🎬 *¡Aquí tienes, nakama!*\n🦴 *Título:* ${title}`,
                     mimetype: "video/mp4"
                 }, { quoted: m })
                 await m.react("✅")
             }
         } catch (error) {
-            console.error(error)
+            console.error("Error API:", error)
             await m.react("❌")
-            return conn.reply(m.chat, `💔 *¡Rayos!* Hubo un problema al obtener el archivo de la API.`, m)
+            return conn.reply(m.chat, `💔 *¡Rayos!* No pude obtener el archivo. Puede que la API esté saturada o el link sea inválido.`, m)
         }
         return
     }
 
+    // --- BÚSQUEDA INICIAL ---
     await m.react("🔍")
     let video
     try {
@@ -97,26 +102,27 @@ const handler = async (m, { conn, args, usedPrefix, command, text }) => {
 
     if (!video) return conn.reply(m.chat, `😵 No se encontraron resultados.`, m, { contextInfo })
 
+    // Botones para elegir formato
     const buttons = [
-        { buttonId: `${usedPrefix}play audio ${video.url}`, buttonText: { displayText: '🎵 ¡Solo el audio!' }, type: 1 },
-        { buttonId: `${usedPrefix}play video ${video.url}`, buttonText: { displayText: '📹 ¡Quiero ver eso!' }, type: 1 }
+        { buttonId: `${usedPrefix}${command} audio ${video.url}`, buttonText: { displayText: '🎵 MP3 (Audio)' }, type: 1 },
+        { buttonId: `${usedPrefix}${command} video ${video.url}`, buttonText: { displayText: '📹 MP4 (Video)' }, type: 1 }
     ]
 
     const caption = `
-╭───🍖 *¡YOSHI! Encontré esto para ti, ${name}* 🍖───
+╭───🍖 *¡LO ENCONTRÉ, ${name.toUpperCase()}!* 🍖───
 │🍓 *Título:* ${video.title}
 │⏱️ *Duración:* ${video.timestamp}
 │👁️ *Vistas:* ${video.views.toLocaleString()}
 │🎨 *Autor:* ${video.author.name}
 │🗓️ *Publicado:* ${video.ago}
-│🔗 *Enlace:* ${video.url}
 ╰───────────────────────────────`
 
+    // Intentar obtener el buffer de la miniatura para el AdReply
     let thumbBuffer = null
     try {
         const thumbData = await conn.getFile(video.thumbnail)
         thumbBuffer = thumbData?.data
-    } catch (e) { console.log("Error thumb") }
+    } catch (e) { console.log("Error al cargar miniatura") }
 
     contextInfo.externalAdReply.thumbnail = thumbBuffer
     contextInfo.externalAdReply.mediaUrl = video.url
@@ -125,7 +131,7 @@ const handler = async (m, { conn, args, usedPrefix, command, text }) => {
     await conn.sendMessage(m.chat, {
         image: { url: video.thumbnail },
         caption,
-        footer: '¡Elige lo que quieres, nakama!',
+        footer: '¿Cómo quieres que te lo entregue, nakama?',
         buttons,
         headerType: 4,
         contextInfo
