@@ -1,84 +1,75 @@
-import fetch from "node-fetch";
-import crypto from "crypto";
-import { FormData, Blob } from "formdata-node";
-import { fileTypeFromBuffer } from "file-type";
+import fetch from 'node-fetch';
+import FormData from 'form-data';
 
-const handler = async (m, { conn }) => {
+const handler = async (m, { conn, usedPrefix, command }) => {
   let q = m.quoted ? m.quoted : m;
   let mime = (q.msg || q).mimetype || '';
 
-  // Validación de archivo
-  if (!mime || !/image\/(png|jpe?g)/.test(mime)) {
-    return conn.reply(m.chat, `❌ Por favor, responde a una *imagen válida* (png o jpg).`, m);
+  // Validación de la imagen
+  if (!mime) {
+    return conn.reply(m.chat, `🍒 Envía una *imagen* junto al *comando* ${usedPrefix + command}`, m);
+  }
+  if (!/image\/(jpe?g|png)/.test(mime)) {
+    return conn.reply(m.chat, `🌾 El formato *${mime}* no es compatible`, m);
   }
 
-  await m.react("⏳"); // Espera inicial
+  await m.react("⏳"); // Reacción de espera inicial
 
   try {
-    // Descarga de la imagen
-    let media = await q.download();
+    // 1. Descarga de la imagen
+    const buffer = await q.download();
+    if (!buffer) throw new Error("No se pudo descargar la imagen original.");
 
-    if (!media) throw new Error("No se pudo descargar la imagen.");
-
-    // Subida a Catbox
-    let link = await catbox(media);
-
-    if (!link || !link.startsWith("http")) {
-      throw new Error("Error al subir la imagen a Catbox.");
+    // 2. Subida a Uguu para obtener una URL pública
+    const uploadedUrl = await uploadToUguu(buffer);
+    if (!uploadedUrl) {
+      return conn.reply(m.chat, '🌱 No se pudo *subir* la imagen al servidor.', m);
     }
 
-    // Procesando con API upscale
-    let upscaleApi = `https://api.siputzx.my.id/api/iloveimg/upscale?image=${encodeURIComponent(link)}&scale=2`;
+    // 3. Procesamiento con la API de Siputzx
+    let upscaleApi = `https://api.siputzx.my.id/api/iloveimg/upscale?image=${encodeURIComponent(uploadedUrl)}&scale=2`;
     let res = await fetch(upscaleApi);
     let data = await res.json();
 
     if (!data.status || !data.result) {
-      throw new Error(data.message || "La API de upscale no devolvió un resultado válido.");
+      throw new Error(data.message || "La API no pudo mejorar la imagen.");
     }
 
-    // Aviso de procesamiento exitoso
-    await conn.reply(m.chat, `✅ *Procesando tu imagen en HD...*`, m);
-
-    // Envío de imagen mejorada
-    await conn.sendMessage(m.chat, {
-      image: { url: data.result },
-      caption: `✅ *Imagen mejorada con éxito* \n\n🔗 *Enlace HD:* ${data.result}`
+    // 4. Enviar el resultado final
+    await conn.sendMessage(m.chat, { 
+      image: { url: data.result }, 
+      caption: '✅ *Imagen mejorada con éxito*\n\n🔗 *Enlace:* ' + data.result
     }, { quoted: m });
-
+    
     await m.react("✅"); // Reacción de éxito
 
-  } catch (e) {
-    console.error(e);
+  } catch (err) {
+    console.error(err);
     await m.react("❌");
-    return conn.reply(m.chat, `❌ *Error al procesar la imagen:*\n\`\`\`${e.message}\`\`\``, m);
+    return conn.reply(m.chat, `❌ *Error:* ${err.message}`, m);
   }
 };
 
+// ─── Configuración del Plugin ───
 handler.help = ['hd', 'upscale'];
-handler.tags = ['herramientas'];
-handler.command = ['hd', 'upscale', 'mejorarimagen']; 
+handler.tags = ['utils'];
+handler.command = ['hd', 'mejorar', 'upscale']; 
 handler.register = true;
 handler.limit = true;
 
 export default handler;
 
 // ─── Funciones auxiliares ───
-async function catbox(content) {
-  const { ext, mime } = (await fileTypeFromBuffer(content)) || {};
-  const blob = new Blob([content.toArrayBuffer()], { type: mime });
-  const formData = new FormData();
-  const randomBytes = crypto.randomBytes(5).toString("hex");
-  formData.append("reqtype", "fileupload");
-  formData.append("fileToUpload", blob, randomBytes + "." + ext);
+async function uploadToUguu(buffer) {
+  const body = new FormData();
+  body.append('files[]', buffer, 'image.jpg');
 
-  const response = await fetch("https://catbox.moe/user/api.php", {
-    method: "POST",
-    body: formData,
-    headers: {
-      "User-Agent":
-        "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/44.0.2403.157 Safari/537.36",
-    },
+  const res = await fetch('https://uguu.se/upload.php', {
+    method: 'POST',
+    body,
+    headers: body.getHeaders(),
   });
 
-  return await response.text();
+  const json = await res.json();
+  return json.files?.[0]?.url;
 }
