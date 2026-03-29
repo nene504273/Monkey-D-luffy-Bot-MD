@@ -1,46 +1,61 @@
-import uploadFile from '../lib/uploadFile.js'
-import uploadImage from '../lib/uploadImage.js'
-import fetch from 'node-fetch'
+import fetch from "node-fetch";
+import { FormData, Blob } from "formdata-node";
+import { fileTypeFromBuffer } from "file-type";
 
-let handler = async (m) => {
-  let q = m.quoted ? m.quoted : m
-  let mime = (q.msg || q).mimetype || ''
-  if (!mime) return conn.reply(m.chat, `${emoji} Por favor, responda a una *Imagen* o *Vídeo.*`, m)
-  await m.react(rwait)
-  try {
-  let media = await q.download()
-  let isTele = /image\/(png|jpe?g|gif)|video\/mp4/.test(mime)
-  let link = await (isTele ? uploadImage : uploadFile)(media)
-  let img = await (await fetch(`${link}`)).buffer()
-  let txt = `乂  *L I N K - E N L A C E*  乂\n\n`
-      txt += `*» Enlace* : ${link}\n`
-      txt += `*» Acortado* : ${await shortUrl(link)}\n`
-      txt += `*» Tamaño* : ${formatBytes(media.length)}\n`
-      txt += `*» Expiración* : ${isTele ? 'No expira' : 'Desconocido'}\n\n`
-      txt += `> *${dev}*`
+const uploadCommand = {
+    name: 'upload',
+    alias: ['tourl', 'img'],
+    category: 'tools',
+    run: async (m, { conn, command }) => {
+        let q = m.quoted ? m.quoted : m;
+        let mime = (q.msg || q).mimetype || '';
 
-await conn.sendFile(m.chat, img, 'thumbnail.jpg', txt, m, fkontak)
-await m.react(done)
-} catch {
-await m.react(error)
-}}
-handler.help = ['tourl']
-handler.tags = ['transformador']
-handler.register = true
-handler.command = ['tourl', 'upload']
+        if (!mime || !/image/.test(mime)) {
+            return m.reply(`> ✰⋆͙̈ Responde a una imagen con el comando ➠ *${command}*`);
+        }
 
-export default handler
+        await m.react('🕒');
 
-function formatBytes(bytes) {
-  if (bytes === 0) {
-    return '0 B';
-  }
-  const sizes = ['B', 'KB', 'MB', 'GB', 'TB']
-  const i = Math.floor(Math.log(bytes) / Math.log(1024))
-  return `${(bytes / 1024 ** i).toFixed(2)} ${sizes[i]}`;
-}
+        try {
+            let buffer = await q.download();
+            if (!buffer) return m.reply("> ⚔ Error al obtener el buffer.");
 
-async function shortUrl(url) {
-        let res = await fetch(`https://tinyurl.com/api-create.php?url=${url}`)
-        return await res.text()
-}
+            const type = await fileTypeFromBuffer(buffer);
+            const fileName = `img_${Date.now()}.${type?.ext || 'jpg'}`;
+
+            const formData = new FormData();
+            const blob = new Blob([buffer], { type: mime });
+            formData.append('file', blob, fileName);
+
+            const response = await fetch('https://api.dix.lat/upload1', {
+                method: 'POST',
+                body: formData,
+                headers: { 'User-Agent': 'Drive-Client' }
+            });
+
+            const json = await response.json();
+
+            if (json.status && json.data) {
+                let result = json.data;
+                let txt = `*── 「 DIX.LAT DRIVE 」 ──*\n\n`;
+                txt += `▢ *ID:* ${result.id}\n`;
+                txt += `▢ *NAME:* ${fileName}\n`;
+                txt += `▢ *URL:* ${result.url}\n`;
+                txt += `▢ *PESO:* ${result.size}\n`;
+                txt += `▢ *MIME:* ${result.mime}\n\n`;
+                txt += `> *Powered by Voker Systems*`;
+
+                await conn.sendMessage(m.chat, { text: txt }, { quoted: m });
+                await m.react('✅');
+            } else {
+                await m.react('❌');
+                m.reply("> ⚔ Error en la respuesta del servidor.");
+            }
+        } catch (e) {
+            await m.react('❌');
+            m.reply(`> ⚔ Error: ${e.message}`);
+        }
+    }
+};
+
+export default uploadCommand;
