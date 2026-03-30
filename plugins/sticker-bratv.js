@@ -36,6 +36,6 @@ const handler = async (m, { conn, text, usedPrefix, command }) => {
 
 handler.help = ['bratv']
 handler.tags = ['bratv']
-handler.command = /^(bratv|bratvideo)$/i
+handler.command = ['bratv']
 
 export default handler
