@@ -35,7 +35,7 @@ const handler = async (m, { conn, text, usedPrefix, command }) => {
 }
 
 handler.help = ['bratv']
-handler.tags = ['sticker']
+handler.tags = ['bratv']
 handler.command = /^(bratv|bratvideo)$/i
 
 export default handler
