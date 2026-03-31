@@ -27,14 +27,13 @@ let handler = async (m, { conn, text, usedPrefix, command }) => {
     const fecha = new Date().toLocaleDateString('es-ES')
     const hora = new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })
     
-    // Diseño ajustado para máxima simetría en WhatsApp
+    // Diseño ajustado para que se vea centrado y parejo
     let packname = `—͟͟͞͞🏴‍☠️ ✢ ✧ ✦ ✧ ✦ ✢ 🏴‍☠️`
-    let author = `✧ —————— 🏴‍☠️ —————— ✧
-☼ Usuario: ${name}
-☼ Bot: Lᴜғғʏ-Bᴏᴛ-MD 🍖
-☼ Fecha: ${fecha}
-☼ Hora: ${hora}
-✧ ——— Sombrero de Paja ——— ✧`
+    let author = `   ｡ ﾟ ﾟ･  ✧  ･ ﾟ ﾟ ｡
+   ☼ Usuario: ${name}
+ ☼ Bot: —͟͟͞͞🍖 Lᴜғғʏ-Bᴏᴛ-MD 🏴‍☠️
+   ☼ Fecha: ${fecha}
+ ☼ ${hora} • —͟͟͞͞✧ Sombrero de Paja`
 
     const buffer = await fetchSticker(txt)
 
