@@ -26,8 +26,13 @@ let handler = async (m, { conn, text, usedPrefix, command }) => {
   try {
     const userName = m.pushName || 'Nakama'
     const date = new Date().toLocaleDateString('es-ES')
-    let packname = `🏴‍☠️ Luffy Bot - ${userName}`
-    let author = `🚢 Generado el: ${date}`
+    let packname = ``—͟͟͞͞🏴‍☠️ ✢ ✧ ✦ ✧ ✦ ✢ 🏴‍☠️
+   ｡ ﾟ ﾟ･       ･ ﾟ ﾟ ｡
+☼ Usuario: ${name}
+☼ Bot: —͟͟͞͞🍖 '‧˚꒰🏴‍☠️꒱ ፝͜⁞ M͢ᴏɴᴋᴇʏ D L͢ᴜғғʏ-𝘉𝘰𝘵-𝑴𝑫✰⃔⃝'
+☼ Fecha: ${fecha}
+☼ ${hora} • —͟͟͞͞✧ Sombrero de Paja ✧ ͟͟͞͞—``
+  
 
     // 1. Obtenemos la imagen (Buffer)
     const buffer = await fetchSticker(txt)
