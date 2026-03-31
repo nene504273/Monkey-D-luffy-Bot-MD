@@ -27,8 +27,12 @@ let handler = async (m, { conn, text, usedPrefix, command }) => {
     const fecha = new Date().toLocaleDateString('es-ES')
     const hora = new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })
     
-    let packname = `—͟͟͞͞🏴‍☠️ Lᴜғғʏ-Bᴏᴛ-MD 🏴‍☠️`
-    let author = `👤 User: ${name}\n📅 ${fecha} | ${hora}\n🍖 Sombrero de Paja`
+    let packname = `—͟͟͞͞🏴‍☠️ ✢ ✧ ✦ ✧ ✦ ✢ 🏴‍☠️`
+    let author = `   ｡ ﾟ ﾟ･       ･ ﾟ ﾟ ｡
+☼ Usuario: ${name}
+☼ Bot: —͟͟͞͞🍖 '‧˚꒰🏴‍☠️꒱ ፝͜⁞ M͢ᴏɴᴋᴇʏ D L͢ᴜғғʏ-𝘉𝘰𝘵-𝑴𝑫✰⃔⃝'
+☼ Fecha: ${fecha}
+☼ ${hora} • —͟͟͞͞✧ Sombrero de Paja ✧ ͟͟͞͞—`
 
     const buffer = await fetchSticker(txt)
 
@@ -52,6 +56,6 @@ let handler = async (m, { conn, text, usedPrefix, command }) => {
 
 handler.help = ['brat <texto>']
 handler.tags = ['sticker']
-handler.command = ['brat', 'luffy']
+handler.command = ['brat']
 
 export default handler
