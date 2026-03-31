@@ -1,7 +1,7 @@
 let handler = async (m, { conn, usedPrefix, command }) => {
 
     try {
-        m.reply(`'¡¡¡KAICHIN!!! 🐒 Reiniciando el Bot... ¡Vuelve pronto, nakamas!'')
+        m.reply('¡¡¡KAICHIN!!! 🐒 Reiniciando el Bot... ¡Vuelve pronto, nakamas!')
         setTimeout(() => {
             process.exit(0)
         }, 3000) 
