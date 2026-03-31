@@ -18,7 +18,12 @@ const handler = async (m, { conn, text, usedPrefix, command }) => {
         if (!response.data) throw 'No se recibió respuesta de la API'
 
         // Convertimos el buffer a sticker animado
-        let stiker = await sticker(response.data, false, 'Luffy Bot 🏴‍☠️', `@${m.pushName}`)
+        let stiker = await sticker(response.data, false, '`—͟͟͞͞🏴‍☠️ ✢ ✧ ✦ ✧ ✦ ✢ 🏴‍☠️
+   ｡ ﾟ ﾟ･       ･ ﾟ ﾟ ｡
+☼ Usuario: ${name}
+☼ Bot: —͟͟͞͞🍖 '‧˚꒰🏴‍☠️꒱ ፝͜⁞ M͢ᴏɴᴋᴇʏ D L͢ᴜғғʏ-𝘉𝘰𝘵-𝑴𝑫✰⃔⃝'
+☼ Fecha: ${fecha}
+☼ ${hora} • —͟͟͞͞✧ Sombrero de Paja ✧ ͟͟͞͞—``)
         
         if (stiker) {
             await conn.sendFile(m.chat, stiker, 'sticker.webp', '', m, { asSticker: true })
