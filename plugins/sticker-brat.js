@@ -23,17 +23,18 @@ let handler = async (m, { conn, text, usedPrefix, command }) => {
   await m.react('🏴‍☠️')
 
   try {
-    const name = m.pushName || 'Nakama'
+    const nombre = m.pushName || 'Nakama'
     const fecha = new Date().toLocaleDateString('es-ES')
-    const hora = new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })
+    const tiempo = new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })
+    const botname = "Lᴜғғʏ-Bᴏᴛ-MD"
+
+    let packname = `⏤͟͞ू⃪ ✙ ✧ ✙ ✧ ✙ ✧ ✙
+ ｡･ﾟﾟ･　　･ﾟﾟ･｡`
     
-    // Diseño ajustado para que se vea centrado y parejo
-    let packname = `—͟͟͞͞🏴‍☠️ ✢ ✧ ✦ ✧ ✦ ✢ 🏴‍☠️`
-    let author = `   ｡ ﾟ ﾟ･  ✧  ･ ﾟ ﾟ ｡
-   ☼ Usuario: ${name}
- ☼ Bot: —͟͟͞͞🍖 Lᴜғғʏ-Bᴏᴛ-MD 🏴‍☠️
-   ☼ Fecha: ${fecha}
- ☼ ${hora} • —͟͟͞͞✧ Sombrero de Paja`
+    let author = `𖤓 Usuario: ${nombre}
+𖤓 Bot: —͞ू⃪🍖 ${botname} ◖🏴‍☠️
+𖤓 Fecha: ${fecha}
+𖤓 ${tiempo} • ⏤͟͞ू⃪✧ Sombrero de Paja`
 
     const buffer = await fetchSticker(txt)
 
