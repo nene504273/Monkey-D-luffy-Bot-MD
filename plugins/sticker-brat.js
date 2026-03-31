@@ -16,41 +16,41 @@ const fetchSticker = async (text, attempt = 1) => {
 }
 
 let handler = async (m, { conn, text, usedPrefix, command }) => {
-  let txt = text ? text : (m.quoted && m.quoted.text ? m.quoted.text : null)
-  
-  if (!txt) return conn.reply(m.chat, `🏴‍☠️ ¡Oye! Necesito un texto.\nEjemplo: *${usedPrefix + command}* hola`, m)
+  const txt = text?.trim() || (m.quoted?.text?.trim()) || null
+
+  if (!txt) return m.reply(`🏴‍☠️ ¡Oye! Necesita un texto.\nEjemplo: *${usedPrefix + command}* hola`)
 
   await m.react('🏴‍☠️')
 
   try {
     const nombre = m.pushName || 'Nakama'
-    const fecha = new Date().toLocaleDateString('es-ES')
-    const tiempo = new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })
-    const botname = "Lᴜғғʏ-Bᴏᴛ-MD"
+    const fecha = new Date().toLocaleDateString('es-CO', {
+      day: '2-digit', month: 'numeric', year: 'numeric'
+    })
+    const tiempo = new Date().toLocaleTimeString('es-CO', {
+      hour: '2-digit', minute: '2-digit'
+    })
 
-    let packname = `⏤͟͞ू⃪ ✙ ✧ ✙ ✧ ✙ ✧ ✙
- ｡･ﾟﾟ･　　･ﾟﾟ･｡`
-    
-    let author = `𖤓 Usuario: ${nombre}
-𖤓 Bot: —͞ू⃪🍖 ${botname} ◖🏴‍☠️
-𖤓 Fecha: ${fecha}
-𖤓 ${tiempo} • ⏤͟͞ू⃪✧ Sombrero de Paja`
+    const packname = `—͞ू⃪✙ ✧ ✙ ✧ ✙ ✧ ✙\n ｡･ﾟﾟ･ ･ﾟﾟ･｡`
+
+    const author = [
+      `𖤓 Usuario: ${nombre}`,
+      `𖤓 Bot: —͞ू⃪🍖 Lᴜғғʏ-Bᴏᴛ-MD ◖🏴‍☠️`,
+      `𖤓 Fecha: ${fecha}`,
+      `𖤓 ${tiempo} • —͞ू⃪✧ Sombrero de Paja`
+    ].join('\n')
 
     const buffer = await fetchSticker(txt)
+    if (!buffer) throw new Error('Sin respuesta de la API')
 
-    if (!buffer) throw new Error('Error de API')
+    const stickerBuf = await sticker(buffer, false, packname, author)
+    if (!stickerBuf) throw new Error('Error al procesar el sticker')
 
-    const stiker = await sticker(buffer, false, packname, author)
-
-    if (stiker) {
-      await conn.sendFile(m.chat, stiker, 'sticker.webp', '', m)
-      await m.react('🍖')
-    } else {
-      throw new Error('Error al procesar sticker')
-    }
+    await conn.sendFile(m.chat, stickerBuf, 'sticker.webp', '', m)
+    await m.react('🍖')
 
   } catch (e) {
-    console.error(e)
+    console.error('[brat]', e)
     await m.react('✖️')
     m.reply(`❌ Error: ${e.message}`)
   }
@@ -59,5 +59,6 @@ let handler = async (m, { conn, text, usedPrefix, command }) => {
 handler.help = ['brat <texto>']
 handler.tags = ['sticker']
 handler.command = ['brat', 'luffy']
+handler.register = true
 
 export default handler
