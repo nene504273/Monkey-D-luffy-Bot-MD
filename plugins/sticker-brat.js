@@ -31,7 +31,7 @@ let handler = async (m, { conn, text, usedPrefix, command }) => {
       hour: '2-digit', minute: '2-digit'
     })
 
-    const packname = `—͞ू⃪✙ ✧ ✙ ✧ ✙ ✧ ✙`
+    const packname = ``
 
     const author = [
       `𖤓 Usuario: ${nombre}`,
