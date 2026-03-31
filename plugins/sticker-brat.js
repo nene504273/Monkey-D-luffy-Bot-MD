@@ -28,12 +28,11 @@ let handler = async (m, { conn, text, usedPrefix, command }) => {
     const hora = new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })
     
     let packname = `—͟͟͞͞🏴‍☠️ ✢ ✧ ✦ ✧ ✦ ✢ 🏴‍☠️`
-    let author = `｡ ﾟ ﾟ･  —͟͟͞͞✧  ･ ﾟ ﾟ ｡
+    let author = `｡ﾟﾟ･   —͟͟͞͞✧   ･ﾟﾟ｡
 ☼ Usuario: ${name}
-☼ Bot: M͢ᴏɴᴋᴇʏ D L͢ᴜғғʏ-Bᴏᴛ-MD
+☼ Bot: —͟͟͞͞🍖 '‧˚꒰🏴‍☠️꒱ ፝͜⁞ M͢ᴏɴᴋᴇʏ D L͢ᴜғғʏ-𝘉𝘰𝘵-𝑴𝑫✰⃔⃝'
 ☼ Fecha: ${fecha}
-☼ Hora: ${hora}
-—͟͟͞͞  Sombrero de Paja  ✧ ͟͟͞͞—`
+☼ ${hora} • —͟͟͞͞✧ Sombrero de Paja ✧ ͟͟͞͞—`
 
     const buffer = await fetchSticker(txt)
 
