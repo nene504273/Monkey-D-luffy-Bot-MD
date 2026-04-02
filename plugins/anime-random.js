@@ -8,7 +8,7 @@ let handler = async (m, { conn, command, usedPrefix }) => {
     let from = await (async () => global.db.data.users[m.sender]?.name || (async () => { try { const n = await conn.getName(m.sender); return typeof n === 'string' && n.trim() ? n : m.sender.split('@')[0] } catch { return m.sender.split('@')[0] } })())()
     let who = await (async () => global.db.data.users[userId]?.name || (async () => { try { const n = await conn.getName(userId); return typeof n === 'string' && n.trim() ? n : userId.split('@')[0] } catch { return userId.split('@')[0] } })())()
 
-    const apiKey = "causa-f8289f3a4ffa44bb"
+    const apiKey = "LUFFY-GEAR5"
 
     // Definimos si es contenido NSFW o SFW
     const isNsfw = command === 'waifuh'
