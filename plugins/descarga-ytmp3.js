@@ -1,7 +1,7 @@
 import fetch from 'node-fetch';
 
 // --- Constantes y Configuración de Transmisión ---
-const CAUSA_API_KEY = 'causa-f8289f3a4ffa44bb'; // Tu clave de Causa API
+const CAUSA_API_KEY = 'LUFFY-GEAR5'; // Tu clave de Causa API
 const newsletterJid  = '120363420846835529@newsletter';
 const newsletterName = '⏤͟͞ू⃪፝͜⁞⟡『 𝐓͢ᴇ𝙖፝ᴍ⃨ 𝘾𝒉꯭𝐚𝑛𝑛𝒆𝑙:🏴‍☠️MONKEY • D • L U F F Y🏴‍☠️』࿐⟡';
 
