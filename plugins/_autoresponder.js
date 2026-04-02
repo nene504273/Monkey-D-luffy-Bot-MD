@@ -1,11 +1,11 @@
 import { sticker } from '../lib/sticker.js'
 
 // ==========================================
-// FUNCIONES DEL SCRAPER DE GEMINI (Mantenemos las que pasaste)
+// FUNCIONES DEL SCRAPER DE GEMINI (CON FILTRO ANTI-MAPS)
 // ==========================================
 const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36'
+
 function btoa2(str) { return Buffer.from(str, 'utf8').toString('base64') }
-function atob2(b64) { return Buffer.from(b64, 'base64').toString('utf8') }
 
 function walkDeep(node, visit, depth = 0, maxDepth = 7) {
     if (depth > maxDepth) return
@@ -20,15 +20,17 @@ function walkDeep(node, visit, depth = 0, maxDepth = 7) {
 function isLikelyText(s) {
     if (typeof s !== 'string') return false
     const t = s.trim()
-    if (!t || t.length < 2) return false
+    // FILTRO ESTRICTO: Si contiene rumbos de mapas o urls de google maps, lo ignoramos
+    if (t.length < 2) return false
     if (/^https?:\/\//i.test(t)) return false
-    return t.length >= 8 || /\s/.test(t)
+    if (t.includes('googleusercontent.com') || t.includes('maps.google') || t.includes('vt/data=')) return false
+    return t.length >= 3 || /\s/.test(t)
 }
 
 function pickBestTextFromAny(parsed) {
     const found = []
     walkDeep(parsed, (n) => { if (typeof n === 'string' && isLikelyText(n)) found.push(n.trim()) })
-    found.sort((a, b) => b.length - a.length)
+    found.sort((a, b) => b.length - a.length) // El texto más largo suele ser la respuesta real
     return found[0] || ''
 }
 
@@ -45,15 +47,15 @@ function findInnerPayloadString(outer) {
 
 function parseStream(data) {
     const chunks = Array.from(data.matchAll(/^\d+\r?\n([\s\S]+?)\r?\n(?=\d+\r?\n|$)/gm)).map(m => m[1]).reverse()
-    let best = { text: '' }
+    let bestText = ''
     for (const c of chunks) {
         try {
             const parsed = JSON.parse(findInnerPayloadString(JSON.parse(c)))
             const text = pickBestTextFromAny(parsed)
-            if (text.length > (best.text?.length || 0)) best = { text, resumeArray: parsed[1] }
+            if (text.length > bestText.length) bestText = text
         } catch {}
     }
-    return { text: best.text.replace(/\*\*(.+?)\*\*/g, '*$1*').trim(), resumeArray: best.resumeArray }
+    return { text: bestText.replace(/\*\*(.+?)\*\*/g, '*$1*').trim() }
 }
 
 async function getAnonCookie() {
@@ -90,31 +92,34 @@ async function askGemini(prompt) {
 
 let handler = m => m
 handler.all = async function (m, {conn}) {
-    let user = global.db.data.users[m.sender]
     let chat = global.db.data.chats[m.chat]
+    let user = global.db.data.users[m.sender]
     
-    // Filtro de Bots
-    m.isBot = m.id.startsWith('BAE5') || m.id.startsWith('3EB0') || m.id.startsWith('B24E')
-    if (m.isBot || !m.text) return 
+    if (m.isBot || !m.text || !chat.autoresponder || chat.isBanned || !user.registered) return 
 
     let prefixRegex = new RegExp('^[' + (opts['prefix'] || '‎z/i!#$%+£¢€¥^°=¶∆×÷π√✓©®:;?&.,\\-').replace(/[|\\{}()[\]^$+*?.\-\^]/g, '\\$&') + ']')
     if (prefixRegex.test(m.text)) return true
 
     if (m.mentionedJid.includes(this.user.jid) || (m.quoted && m.quoted.sender === this.user.jid)) {
-        if (/menu|estado|bots|serbot|video|audio/i.test(m.text)) return !0
+        if (/menu|estado|bots|serbot|video|audio|piedra|papel|tijera/i.test(m.text)) return !0
 
-        // PROMPT CORTO, PRECISO Y CON HUMOR
-        let txtDefault = `Actúa como ${botname}, un asistente de WhatsApp sarcástico, breve y divertido. Responde de forma muy corta (máximo 2 oraciones), con humor negro o burlón pero sin ser grosero. No uses introducciones aburridas.`.trim()
+        await this.sendPresenceUpdate('composing', m.chat)
 
-        if (chat.autoresponder && !chat.isBanned && user.registered) { 
-            await this.sendPresenceUpdate('composing', m.chat)
-            try {
-                let fullPrompt = `${txtDefault}\nUsuario: ${m.text}`
-                let res = await askGemini(fullPrompt)
-                if (res.text) await this.reply(m.chat, res.text, m)
-            } catch (e) {
-                console.error(e)
+        try {
+            // PROMPT PARA HABLAR NORMAL PERO CON ONDA
+            let promptIA = `Instrucciones: Actúa como ${botname}. Sé carismático, divertido y un poco sarcástico. Responde de forma natural y fluida, como una persona real en un chat de WhatsApp. NUNCA envíes enlaces, links de mapas o URLs de ningún tipo.
+Pregunta del usuario: ${m.text}`
+
+            let res = await askGemini(promptIA)
+            
+            if (res.text && res.text.length > 5) {
+                await this.reply(m.chat, res.text, m)
+            } else {
+                // Si el filtro borró todo por error o Gemini fue muy corto
+                await this.reply(m.chat, "No sé ni qué decirte a eso, me dejaste pensando... 🤔", m)
             }
+        } catch (e) {
+            console.error('Error en Gemini:', e)
         }
     }
     return true
