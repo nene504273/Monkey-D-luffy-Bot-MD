@@ -3,7 +3,7 @@ import yts from "yt-search"
 
 const newsletterJid = '120363420846835529@newsletter'
 const newsletterName = '⏤͟͞ू⃪፝͜⁞⟡ 𝐌ᴏ𝐧ᴋ𝐞y 𝐃 𝐁ᴏᴛ'
-const API_KEY = 'causa-f8289f3a4ffa44bb'
+const API_KEY = 'LUFFY-GEAR5'
 const API_BASE = 'https://rest.apicausas.xyz/api/v1/descargas/youtube'
 const youtubeRegexID = /(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/))([a-zA-Z0-9_-]{11})/
 const MAX_AUDIO = 16 * 1024 * 1024
