@@ -41,7 +41,7 @@ let handler = async (m, { conn, text, usedPrefix, command }) => {
 
         const fullText = `${SYSTEM_PROMPT}\n\nPregunta de mi nakama: ${query}`;
 
-        const apiUrl = `https://rest.alyabotpe.xyz/ai/copilot?text=${encodeURIComponent(fullText)}&key=Alyabot`;
+        const apiUrl = `https://api.alyacore.xyz/ai/copilot?text=${encodeURIComponent(fullText)}&key=Alyabot`;
 
         const response = await fetch(apiUrl);
         const res = await response.json();
