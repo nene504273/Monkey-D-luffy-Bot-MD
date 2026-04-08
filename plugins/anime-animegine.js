@@ -1,6 +1,6 @@
 import fetch from 'node-fetch';
 
-const ApiKey = 'LUFFY-GEAR5';
+const ApiKey = 'LUFFY-GEAR4';
 
 let handler = async (m, { conn, args }) => {
   const prompt = args.join(' ');
