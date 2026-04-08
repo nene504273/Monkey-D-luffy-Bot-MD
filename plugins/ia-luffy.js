@@ -1,7 +1,7 @@
 import fetch from 'node-fetch'
 
 // --- CONFIGURACIÓN ---
-const BOT_NAME = 'Duarte-zz12'; 
+const BOT_NAME = 'LUFFY-GEAR4'; 
 
 const SYSTEM_PROMPT = `Actúa como Monkey D. Luffy de One Piece. 
 Tu personalidad es alegre, impulsiva, simple y con una determinación inquebrantable. 
