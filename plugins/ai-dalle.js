@@ -23,7 +23,7 @@ const handler = async (m, { conn, args }) => {
     }
 };
 
-handler.command = ['dalle'];
+handler.command = ['img'];
 handler.help = ['dalle'];
 handler.tags = ['tools'];
 
