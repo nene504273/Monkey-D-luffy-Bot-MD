@@ -81,7 +81,7 @@ ${dev}`
       if (['play', 'yta', 'ytmp3', 'playaudio'].includes(command)) {
         try {
           const api = await (await fetch(
-            `https://api.alyacore.xyz/dl/ytmp3?url=${encodeURIComponent(url)}&key=${LUFFY-GEAR4}`
+            `https://api.alyacore.xyz/dl/ytmp3?url=${encodeURIComponent(url)}&key=${apikey}`
           )).json()
 
           if (!api.status) throw new Error(api.message || 'La API no devolvió status=true')
@@ -108,7 +108,7 @@ ${dev}`
 
         try {
           const api = await (await fetch(
-            `https://api.alyacore.xyz/dl/ytmp4?url=${encodeURIComponent(url)}&quality=480&key=${apikey}`
+            `https://api.alyacore.xyz/dl/ytmp4?url=${encodeURIComponent(url)}&quality=480&key=${) LUFFY-GEAR4}`
           )).json()
 
           if (!api.status) {
