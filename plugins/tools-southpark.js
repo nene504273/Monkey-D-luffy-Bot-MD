@@ -1,53 +1,71 @@
 import fetch from 'node-fetch';
 
 let handler = async (m, { conn, text, usedPrefix, command }) => {
-    // Verificamos que el usuario haya escrito un país
     if (!text) return m.reply(`🍖 ¡Oye! Necesito el nombre de algún país.\nEjemplo: ${usedPrefix + command} Peru`);
 
-    // Mensaje de espera con estilo Luffy
     await conn.sendMessage(m.chat, { 
         text: `🏴‍☠️ ¡Zarpando a buscar información de *${text}*!\n\n⏳ Navegando por el Grand Line de datos...\n🍖 Espera un momento, nakama...` 
     }, { quoted: m });
 
     try {
-        // Limpiamos acentos (ej. Perú -> Peru) para evitar errores en la API
+        // Limpiar acentos
         let query = text.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 
-        // Usamos tu Key: LUFFY-GEAR4
         let api = `https://api.alyacore.xyz/tools/country?text=${encodeURIComponent(query)}&apikey=LUFFY-GEAR4`;
-
         let response = await fetch(api);
 
-        // Si la respuesta no es 200 OK, lanzamos error
-        if (!response.ok) throw new Error('Error en la respuesta de la API');
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
         let json = await response.json();
 
-        // Validamos la estructura del resultado
+        // Validación de respuesta
         if (!json.status || !json.result) {
             return m.reply(`❌ ¡Maldición! No encontré la isla "${text}". Verifica que el nombre esté bien escrito en el mapa.`);
         }
 
         let pais = json.result;
 
-        // Formateamos variables seguras (por si la API no devuelve algún dato)
-        let moneda = pais.currencies && pais.currencies.length > 0 
-            ? `${pais.currencies[0].name} (${pais.currencies[0].symbol || ''})` 
-            : 'No disponible';
-            
-        let idiomas = pais.languages ? pais.languages : 'No disponible';
-        let fronteras = pais.borders ? pais.borders : 'Ninguna';
-        let tld = pais.tld ? pais.tld : 'N/A';
-        let timezones = pais.timezones ? pais.timezones : 'N/A';
+        // --- PROCESAMIENTO ROBUSTO DE CAMPOS ---
 
-        // Diseño detallado con temática de Luffy
+        // Monedas: puede ser objeto { USD: {...} } o array
+        let moneda = 'No disponible';
+        if (pais.currencies) {
+            if (Array.isArray(pais.currencies)) {
+                moneda = pais.currencies.map(c => `${c.name} (${c.symbol || ''})`).join(', ');
+            } else {
+                let values = Object.values(pais.currencies);
+                moneda = values.map(c => `${c.name} (${c.symbol || ''})`).join(', ');
+            }
+        }
+
+        // Idiomas: objeto { spa: "Spanish", eng: "English" } -> string
+        let idiomas = pais.languages 
+            ? (Array.isArray(pais.languages) ? pais.languages.join(', ') : Object.values(pais.languages).join(', '))
+            : 'No disponible';
+
+        // Fronteras: array -> string
+        let fronteras = pais.borders ? (Array.isArray(pais.borders) ? pais.borders.join(', ') : pais.borders) : 'Ninguna';
+
+        // Zonas horarias: array -> string
+        let timezones = pais.timezones ? (Array.isArray(pais.timezones) ? pais.timezones.join(', ') : pais.timezones) : 'N/A';
+
+        // TLD: array o string
+        let tld = pais.tld ? (Array.isArray(pais.tld) ? pais.tld.join(', ') : pais.tld) : 'N/A';
+
+        // Continentes: array -> string
+        let continentes = pais.continents ? (Array.isArray(pais.continents) ? pais.continents.join(', ') : pais.continents) : 'N/A';
+
+        // Imagen de bandera: probar varias propiedades posibles
+        let banderaUrl = pais.flagImage || pais.flag_url || pais.flags?.png || pais.flags?.svg || '';
+
+        // --- CONSTRUCCIÓN DEL MENSAJE ---
         let textoInfo = `🏴‍☠️ *INFORMACIÓN DE PAÍS* 👒\n\n` +
             `- *País:* ${pais.flag || '🏳️'} ${pais.name || 'N/A'}\n` +
             `- *Nombre Oficial:* ${pais.officialName || 'N/A'}\n` +
             `- *Capital:* ${pais.capital || 'N/A'}\n` +
             `- *Región:* ${pais.region || 'N/A'}\n` +
             `- *Subregión:* ${pais.subregion || 'N/A'}\n` +
-            `- *Continente:* ${pais.continents || 'N/A'}\n\n` +
+            `- *Continente:* ${continentes}\n\n` +
             `👥 *TRIPULACIÓN Y DEMOGRAFÍA* 🍖\n\n` +
             `- *Población:* ${pais.population ? pais.population.toLocaleString('es-ES') : 'N/A'} habitantes\n` +
             `- *Área:* ${pais.area ? pais.area.toLocaleString('es-ES') : 'N/A'} km²\n` +
@@ -73,11 +91,16 @@ let handler = async (m, { conn, text, usedPrefix, command }) => {
             `🗺️ *Ver en mapa:* ${pais.googleMaps || 'N/A'}\n\n` +
             `> _Procesado por *AlyaCore Api* - Gear 4_ 👊🏽💨`;
 
-        // Enviamos con la imagen de la bandera
-        await conn.sendMessage(m.chat, { 
-            image: { url: pais.flagImage || pais.flag_url }, 
-            caption: textoInfo 
-        }, { quoted: m });
+        // Enviar con imagen de bandera si existe
+        if (banderaUrl) {
+            await conn.sendMessage(m.chat, { 
+                image: { url: banderaUrl }, 
+                caption: textoInfo 
+            }, { quoted: m });
+        } else {
+            // Si no hay imagen, enviamos solo texto
+            await conn.sendMessage(m.chat, { text: textoInfo }, { quoted: m });
+        }
 
     } catch (e) {
         console.error(e);
