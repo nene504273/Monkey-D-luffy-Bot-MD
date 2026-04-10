@@ -1,114 +1,145 @@
-import fetch from 'node-fetch';
+import fetch from 'node-fetch'
 
-let handler = async (m, { conn, text, usedPrefix, command }) => {
-    if (!text) return m.reply(`🍖 ¡Oye! Necesito el nombre de algún país.\nEjemplo: ${usedPrefix + command} Peru`);
+const API_KEY = 'LUFFY-GEAR4'
+const API_URL = 'https://api.alyacore.xyz/tools/country'
 
-    await conn.sendMessage(m.chat, { 
-        text: `🏴‍☠️ ¡Zarpando a buscar información de *${text}*!\n\n⏳ Navegando por el Grand Line de datos...\n🍖 Espera un momento, nakama...` 
-    }, { quoted: m });
+const handler = async (m, { conn, text, usedPrefix, command }) => {
+  try {
+    if (!text) {
+      return m.reply(`
+📭 *SOLICITUD INCOMPLETA* 📭
 
-    try {
-        // Limpiar acentos
-        let query = text.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+Debes indicar el nombre de una nación para continuar.
 
-        let api = `https://api.alyacore.xyz/tools/country?text=${encodeURIComponent(query)}&apikey=LUFFY-GEAR4`;
-        let response = await fetch(api);
+*Forma de uso:* ${usedPrefix + command} [nombre del país]
+*Caso práctico:* ${usedPrefix + command} Noruega
 
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
-
-        let json = await response.json();
-
-        // Validación de respuesta
-        if (!json.status || !json.result) {
-            return m.reply(`❌ ¡Maldición! No encontré la isla "${text}". Verifica que el nombre esté bien escrito en el mapa.`);
-        }
-
-        let pais = json.result;
-
-        // --- PROCESAMIENTO ROBUSTO DE CAMPOS ---
-
-        // Monedas: puede ser objeto { USD: {...} } o array
-        let moneda = 'No disponible';
-        if (pais.currencies) {
-            if (Array.isArray(pais.currencies)) {
-                moneda = pais.currencies.map(c => `${c.name} (${c.symbol || ''})`).join(', ');
-            } else {
-                let values = Object.values(pais.currencies);
-                moneda = values.map(c => `${c.name} (${c.symbol || ''})`).join(', ');
-            }
-        }
-
-        // Idiomas: objeto { spa: "Spanish", eng: "English" } -> string
-        let idiomas = pais.languages 
-            ? (Array.isArray(pais.languages) ? pais.languages.join(', ') : Object.values(pais.languages).join(', '))
-            : 'No disponible';
-
-        // Fronteras: array -> string
-        let fronteras = pais.borders ? (Array.isArray(pais.borders) ? pais.borders.join(', ') : pais.borders) : 'Ninguna';
-
-        // Zonas horarias: array -> string
-        let timezones = pais.timezones ? (Array.isArray(pais.timezones) ? pais.timezones.join(', ') : pais.timezones) : 'N/A';
-
-        // TLD: array o string
-        let tld = pais.tld ? (Array.isArray(pais.tld) ? pais.tld.join(', ') : pais.tld) : 'N/A';
-
-        // Continentes: array -> string
-        let continentes = pais.continents ? (Array.isArray(pais.continents) ? pais.continents.join(', ') : pais.continents) : 'N/A';
-
-        // Imagen de bandera: probar varias propiedades posibles
-        let banderaUrl = pais.flagImage || pais.flag_url || pais.flags?.png || pais.flags?.svg || '';
-
-        // --- CONSTRUCCIÓN DEL MENSAJE ---
-        let textoInfo = `🏴‍☠️ *INFORMACIÓN DE PAÍS* 👒\n\n` +
-            `- *País:* ${pais.flag || '🏳️'} ${pais.name || 'N/A'}\n` +
-            `- *Nombre Oficial:* ${pais.officialName || 'N/A'}\n` +
-            `- *Capital:* ${pais.capital || 'N/A'}\n` +
-            `- *Región:* ${pais.region || 'N/A'}\n` +
-            `- *Subregión:* ${pais.subregion || 'N/A'}\n` +
-            `- *Continente:* ${continentes}\n\n` +
-            `👥 *TRIPULACIÓN Y DEMOGRAFÍA* 🍖\n\n` +
-            `- *Población:* ${pais.population ? pais.population.toLocaleString('es-ES') : 'N/A'} habitantes\n` +
-            `- *Área:* ${pais.area ? pais.area.toLocaleString('es-ES') : 'N/A'} km²\n` +
-            `- *Idiomas:* ${idiomas}\n\n` +
-            `💰 *TESOROS Y ECONOMÍA* 🪙\n\n` +
-            `- *Moneda:* ${moneda}\n` +
-            `- *Índice Gini:* ${pais.gini || 'No registrado'}\n\n` +
-            `📍 *COORDENADAS DEL LOG POSE* 🧭\n\n` +
-            `- *Sin salida al mar:* ${pais.landlocked ? 'Sí' : 'No'}\n` +
-            `- *Fronteras con:* ${fronteras}\n\n` +
-            `📞 *CÓDIGOS Y DEN DEN MUSHI* 🐌\n\n` +
-            `- *Código telefónico:* ${pais.phone || 'N/A'}\n` +
-            `- *TLD:* ${tld}\n` +
-            `- *Código ISO (2):* ${pais.cca2 || 'N/A'}\n` +
-            `- *Código ISO (3):* ${pais.cca3 || 'N/A'}\n\n` +
-            `🚢 *BARCOS Y TRANSPORTE* ⚓\n\n` +
-            `- *Lado de conducción:* ${pais.drivingSide === 'right' ? 'Derecha' : pais.drivingSide === 'left' ? 'Izquierda' : 'N/A'}\n\n` +
-            `📜 *DATOS DE LA BITÁCORA* 📝\n\n` +
-            `- *Independiente:* ${pais.independent ? 'Sí' : 'No'}\n` +
-            `- *Miembro ONU:* ${pais.unMember ? 'Sí' : 'No'}\n` +
-            `- *Zonas Horarias:* ${timezones}\n` +
-            `- *Inicio de semana:* ${pais.startOfWeek || 'N/A'}\n\n` +
-            `🗺️ *Ver en mapa:* ${pais.googleMaps || 'N/A'}\n\n` +
-            `> _Procesado por *AlyaCore Api* - Gear 4_ 👊🏽💨`;
-
-        // Enviar con imagen de bandera si existe
-        if (banderaUrl) {
-            await conn.sendMessage(m.chat, { 
-                image: { url: banderaUrl }, 
-                caption: textoInfo 
-            }, { quoted: m });
-        } else {
-            // Si no hay imagen, enviamos solo texto
-            await conn.sendMessage(m.chat, { text: textoInfo }, { quoted: m });
-        }
-
-    } catch (e) {
-        console.error(e);
-        m.reply(`❌ ¡Rayos! El barco chocó con un error: ${e.message}`);
-        if (m.react) m.react('✖️');
+_El atlas permanece cerrado hasta que proporciones un destino._
+`.trim())
     }
-};
 
-handler.command = ['paisinfo', 'flag', 'pais'];
+    await m.react('🌍')
+    
+    const nombreOperador = m.pushName || 'explorador anónimo'
+    await m.reply(`📡 *INICIANDO CONEXIÓN CON LA RED GLOBAL...*\n🌐 Recabando información acerca de *${text}*\n⏳ Un instante, ${nombreOperador}, los datos están en camino...`)
 
-export default handler;
+    const respuesta = await fetch(`${API_URL}?name=${encodeURIComponent(text)}&key=${API_KEY}`, {
+      method: 'GET',
+      timeout: 15000
+    })
+
+    if (!respuesta.ok) {
+      throw new Error('No se encontró ningún país con ese identificador')
+    }
+
+    const datos = await respuesta.json()
+    
+    if (!datos.status || !datos.result) {
+      throw new Error(datos.message || 'Los registros consultados no están disponibles en este momento')
+    }
+
+    const p = datos.result
+
+    const poblacionFormateada = p.population ? p.population.toLocaleString('es-ES') : 'desconocida'
+    const superficieFormateada = p.area ? `${p.area.toLocaleString('es-ES')} km²` : 'sin datos'
+    const monedasTexto = p.currencies && p.currencies.length > 0 
+      ? p.currencies.map(m => `${m.name} (${m.symbol})`).join(' · ') 
+      : 'información no registrada'
+    const fronterasTexto = p.borders && p.borders.length > 0 
+      ? p.borders.join(' ↔ ') 
+      : 'ninguna (territorio insular o sin vecinos directos)'
+    const coordenadasTexto = p.latlng && p.latlng.length === 2
+      ? `${p.latlng[0]}°, ${p.latlng[1]}°`
+      : 'coordenadas reservadas'
+
+    const informe = `
+🗂️ *DOSSIER DE TERRITORIO* 🗂️
+*CONSULTA REALIZADA POR:* ${nombreOperador.toUpperCase()}
+
+${p.flag} *${p.name.toUpperCase()}* ${p.flag}
+_Denominación oficial:_ ${p.officialName}
+
+📍 *POSICIÓN GEOGRÁFICA*
+▸ Capital: ${p.capital}
+▸ Continente: ${p.region} · Subregión: ${p.subregion}
+▸ Latitud / Longitud: ${coordenadasTexto}
+▸ Naciones limítrofes: ${fronterasTexto}
+
+👥 *PERFIL DEMOGRÁFICO*
+▸ Habitantes estimados: ${poblacionFormateada}
+▸ Extensión territorial: ${superficieFormateada}
+▸ Gentilicio: ${p.demonyms.male} (masc.) / ${p.demonyms.female} (fem.)
+▸ Lenguas oficiales: ${p.languages}
+
+💰 *PANORAMA ECONÓMICO*
+▸ Moneda(s) en circulación: ${monedasTexto}
+▸ Índice Gini (desigualdad): ${p.gini ? Object.values(p.gini)[0] + ' (último registro)' : 'No especificado'}
+
+📞 *CÓDIGOS DE IDENTIFICACIÓN*
+▸ Prefijo telefónico: +${p.phone}
+▸ Dominio internet: ${p.tld}
+▸ Matrícula vehicular: ${p.carSigns}
+▸ Código ISO: ${p.cca2} / ${p.cca3}
+
+⚖️ *ESTATUS POLÍTICO*
+▸ Estado soberano: ${p.independent ? 'Sí' : 'No'}
+▸ Miembro de Naciones Unidas: ${p.unMember ? 'Afirmativo' : 'Negativo'}
+▸ Sentido de circulación: ${p.carSide === 'right' ? 'derecha' : 'izquierda'}
+
+🗺️ *CARTOGRAFÍA DIGITAL*: ${p.googleMaps}
+
+> 📌 Información extraída del repositorio de *AlyaCore*
+> 🕰️ Esta consulta quedará registrada en la bitácora del explorador.
+`.trim()
+
+    if (p.flagImage) {
+      try {
+        await conn.sendMessage(m.chat, {
+          image: { url: p.flagImage },
+          caption: informe
+        }, { quoted: m })
+      } catch (falloImagen) {
+        console.error('No se pudo enviar la bandera:', falloImagen)
+        await conn.reply(m.chat, informe, m)
+      }
+    } else {
+      await conn.reply(m.chat, informe, m)
+    }
+
+    if (p.coatOfArms) {
+      try {
+        await conn.sendMessage(m.chat, {
+          image: { url: p.coatOfArms },
+          caption: `🛡️ *EMBLEMA HERÁLDICO DE ${p.name.toUpperCase()}* ${p.flag}`
+        }, { quoted: m })
+      } catch (falloEscudo) {
+        console.error('No se pudo enviar el escudo:', falloEscudo)
+      }
+    }
+
+    await m.react('✅')
+
+  } catch (error) {
+    console.error('Error durante la consulta de país:', error)
+    await m.react('❌')
+    
+    await conn.reply(m.chat, `
+⚠️ *CONSULTA FALLIDA* ⚠️
+
+Causa del error: ${error.message}
+
+*Posibles soluciones:*
+- Verifica que el nombre del país esté bien escrito.
+- Prueba con el nombre en inglés (ej: Germany, Japan, Brazil).
+- Ejemplo válido: ${usedPrefix}${command} Francia
+
+_El servicio de cartografía está disponible, inténtalo de nuevo._
+`.trim(), m)
+  }
+}
+
+handler.help = ['country']
+handler.tags = ['tools']
+handler.command = ['country', 'pais', 'paisinfo', 'countryinfo', 'intel']
+
+export default handler
