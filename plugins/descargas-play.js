@@ -1,158 +1,149 @@
 import fetch from "node-fetch"
-import yts from "yt-search"
+import yts from 'yt-search'
 
-const newsletterJid = '120363420846835529@newsletter'
-const newsletterName = '⏤͟͞ू⃪፝͜⁞⟡ 𝐌ᴏ𝐧ᴋ𝐞y 𝐃 𝐁ᴏᴛ'
-const API_KEY = 'LUFFY-GEAR5'
-const API_BASE = 'https://rest.apicausas.xyz/api/v1/descargas/youtube'
+
 const youtubeRegexID = /(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/))([a-zA-Z0-9_-]{11})/
-const MAX_AUDIO = 16 * 1024 * 1024
-const MAX_VIDEO = 64 * 1024 * 1024
 
-const handler = async (m, { conn, args, usedPrefix, command, text }) => {
-  const name = conn.getName(m.sender)
-
-  const contextInfo = {
-    mentionedJid: [m.sender],
-    isForwarded: true,
-    forwardingScore: 999,
-    forwardedNewsletterMessageInfo: {
-      newsletterJid,
-      newsletterName,
-      serverMessageId: -1
-    },
-    externalAdReply: {
-      title: '¡El Rey de los Piratas te trae música! 🎶',
-      body: `¡Vamos a buscar eso, ${name}!`,
-      thumbnail: null,
-      sourceUrl: null,
-      mediaType: 1,
-      renderLargerThumbnail: false
-    }
-  }
-
-  if (!text?.trim()) {
-    return conn.reply(m.chat, `☠️ *¡Hey ${name}!* ¿Qué canción o video estás buscando?\n\nEjemplo:\n${usedPrefix + command} Binks no Sake`, m, { contextInfo })
-  }
-
-  const mode = args[0]?.toLowerCase()
-  const isMode = ["audio", "video"].includes(mode)
-  const queryOrUrl = isMode ? args.slice(1).join(" ") : text
-  const isUrl = youtubeRegexID.test(queryOrUrl)
-
-  // --- MODO DESCARGA (viene del botón) ---
-  if (isMode && isUrl) {
-    await m.react("⏳")
+export default {
+  command: ['play', 'yta', 'ytmp3', 'play2', 'ytv', 'ytmp4', 'playaudio', 'mp4'],
+  category: 'descargas',
+  run: async (client, m, args, command) => {
     try {
-      const videoId = queryOrUrl.match(youtubeRegexID)?.[1]
-      const cleanUrl = `https://www.youtube.com/watch?v=${videoId}`
-      const apiUrl = `${API_BASE}?url=${encodeURIComponent(cleanUrl)}&type=${mode}&apikey=${API_KEY}`
+      const text = args.join(' ')
+      
+      if (!text.trim()) return m.reply(`❍ Por favor, proporciona un nombre o enlace de YouTube`)
 
-      const res = await fetch(apiUrl)
-      const json = await res.json()
+      let searchQuery = text
+      let ytplay2 = null
 
-      if (!json?.status || !json?.data?.download?.url) {
-        throw new Error(json?.msg || "Sin URL de descarga")
-      }
+      const isUrl = /^https?:\/\/(www\.)?(youtube\.com|youtu\.be)/.test(text)
 
-      const dlUrl = json.data.download.url
-      const title = json.data.title || "descarga"
+      if (isUrl) {
+        try {
+          const result = await yts(text)
+          ytplay2 = result.all?.[0] || result.videos?.[0] || null
+        } catch (_) {}
 
-      // Verificar tamaño
-      let fileSize = 0
-      try {
-        const head = await fetch(dlUrl, { method: 'HEAD' })
-        fileSize = parseInt(head.headers.get('content-length') || '0')
-      } catch (_) {}
-
-      if (mode === 'audio') {
-        const supera = fileSize > MAX_AUDIO
-        await conn.sendMessage(m.chat, supera
-          ? { document: { url: dlUrl }, fileName: `${title}.mp3`, mimetype: "audio/mpeg" }
-          : { audio: { url: dlUrl }, fileName: `${title}.mp3`, mimetype: "audio/mpeg", ptt: false }
-        , { quoted: m })
+        if (!ytplay2 || !ytplay2.url) {
+          ytplay2 = {
+            url: text,
+            title: 'Desconocido',
+            thumbnail: '',
+            timestamp: 'N/A',
+            views: null,
+            ago: 'N/A',
+            author: { url: 'Desconocido' }
+          }
+        }
       } else {
-        const supera = fileSize > MAX_VIDEO
-        await conn.sendMessage(m.chat, supera
-          ? { document: { url: dlUrl }, fileName: `${title}.mp4`, mimetype: "video/mp4" }
-          : { video: { url: dlUrl }, fileName: `${title}.mp4`, mimetype: "video/mp4", caption: `🎬 *${title}*` }
-        , { quoted: m })
+        ytplay2 = await yts(searchQuery)
+        ytplay2 = ytplay2.all?.[0] || ytplay2.videos?.[0] || ytplay2
+
+        if (!ytplay2 || !ytplay2.url) return m.reply(`❍ No se encontraron resultados`)
       }
 
-      await m.react("✅")
-    } catch (e) {
-      await m.react("❌")
-      return conn.reply(m.chat, `💔 *¡Rayos!* Error: ${e.message}`, m)
+      let { title, thumbnail, timestamp, views, ago, url, author } = ytplay2
+      const vistas = formatViews(views)
+      const canalLink = author?.url || 'Desconocido'
+
+      const infoMessage = `¡! ׂׂૢ *Download Youtube*
+✩̣̣̣̣̣ͯ┄•͙✧⃝•͙┄✩ͯ•͙͙✧⃝•͙͙✩ͯ
+
+❍ *Título* › *${title || 'Desconocido'}*
+❍ *Vistas* › *${vistas}*
+❍ *Duración* › *${timestamp}*
+❍ *Publicado* › *${ago}*
+❍ *Canal* › *${canalLink}*
+❍ *Enlace* › *${url}*
+
+──⇌••⇋──
+
+${dev}`
+
+      const thumb = thumbnail ? (await client.getFile(thumbnail))?.data : null
+      const JT = {
+        contextInfo: {
+          externalAdReply: {
+            title: botname,
+            body: dev,
+            mediaType: 1,
+            previewType: 0,
+            mediaUrl: url,
+            sourceUrl: url,
+            thumbnail: thumb,
+            renderLargerThumbnail: true,
+          },
+        },
+      }
+
+      await client.reply(m.chat, infoMessage, m, JT)
+
+      if (['play', 'yta', 'ytmp3', 'playaudio'].includes(command)) {
+        try {
+          const api = await (await fetch(
+            `https://api.alyacore.xyz/dl/ytmp3?url=${encodeURIComponent(url)}&key=${LUFFY-GEAR4}`
+          )).json()
+
+          if (!api.status) throw new Error(api.message || 'La API no devolvió status=true')
+
+          const { title: fileName, dl } = api.data || {}
+
+          if (!dl) throw new Error('No se generó el enlace.')
+
+          await client.sendMessage(m.chat, {
+            audio: { url: dl },
+            fileName: (fileName || 'audio') + '.mp3',
+            mimetype: 'audio/mpeg',
+            ptt: false
+          }, { quoted: m })
+
+        } catch (e) {
+          return m.reply(`❍ Error al descargar el audio`)
+        }
+      }
+
+      else if (['play2', 'ytv', 'ytmp4', 'mp4'].includes(command)) {
+        const mensajeDescarga = `❍ Descargando video en 480p...`
+        await client.reply(m.chat, mensajeDescarga, m)
+
+        try {
+          const api = await (await fetch(
+            `https://api.alyacore.xyz/dl/ytmp4?url=${encodeURIComponent(url)}&quality=480&key=${apikey}`
+          )).json()
+
+          if (!api.status) {
+            throw new Error(api.message || 'La API no devolvió status=true')
+          }
+
+          const { title: fileName, dl, quality } = api.data || {}
+
+          if (!dl) throw new Error('No se generó el enlace.')
+
+          await client.sendMessage(m.chat, {
+            document: { url: dl },
+            fileName: (fileName || `video_${quality || '480'}p`) + '.mp4',
+            mimetype: 'video/mp4',
+            caption: `${dev}`
+          }, { quoted: m })
+
+        } catch (e) {
+          console.error('Error en descarga de video:', e)
+          return m.reply(`❍ Error al descargar el video`)
+        }
+      } else {
+        return m.reply(`❍ Comando no reconocido`)
+      }
+
+    } catch (error) {
+      return m.reply(`❍ Error: ${error.message}`)
     }
-    return
-  }
-
-  // --- BÚSQUEDA INICIAL ---
-  await m.react("🔍")
-  let video
-  try {
-    const match = text.match(youtubeRegexID)
-    if (match) {
-      const s = await yts({ videoId: match[1] })
-      video = s.all?.[0] || s
-    } else {
-      const s = await yts(text)
-      video = s.videos[0]
-    }
-  } catch (e) {
-    await m.react("❌")
-    return conn.reply(m.chat, `😵 No encontré nada con: "${text}"`, m, { contextInfo })
-  }
-
-  if (!video) return conn.reply(m.chat, `😵 No se encontraron resultados.`, m, { contextInfo })
-
-  const vistas = formatViews(video.views)
-
-  let thumbBuffer = null
-  try {
-    const thumbData = await conn.getFile(video.thumbnail)
-    thumbBuffer = thumbData?.data
-  } catch (_) {}
-
-  contextInfo.externalAdReply.thumbnail = thumbBuffer
-  contextInfo.externalAdReply.mediaUrl = video.url
-  contextInfo.externalAdReply.sourceUrl = video.url
-
-  const buttons = [
-    { buttonId: `${usedPrefix}${command} audio ${video.url}`, buttonText: { displayText: '🎵 MP3 (Audio)' }, type: 1 },
-    { buttonId: `${usedPrefix}${command} video ${video.url}`, buttonText: { displayText: '📹 MP4 (Video)' }, type: 1 }
-  ]
-
-  const caption = `╭───🍖 *¡LO ENCONTRÉ, ${name.toUpperCase()}!* 🍖───
-│🍓 *Título:* ${video.title}
-│⏱️ *Duración:* ${video.timestamp}
-│👁️ *Vistas:* ${vistas}
-│🎨 *Autor:* ${video.author?.name || 'Desconocido'}
-│🗓️ *Publicado:* ${video.ago}
-╰───────────────────────────────`
-
-  await conn.sendMessage(m.chat, {
-    image: { url: video.thumbnail },
-    caption,
-    footer: '¿Cómo quieres que te lo entregue, nakama?',
-    buttons,
-    headerType: 4,
-    contextInfo
-  }, { quoted: m })
-  await m.react("🏴‍☠️")
-}
-
-handler.help = ['play'].map(v => v + ' <texto o URL>')
-handler.tags = ['descargas']
-handler.command = ['play']
-handler.register = true
-
-export default handler
+  },
+};
 
 function formatViews(views) {
   if (!views) return "No disponible"
-  if (views >= 1e9) return `${(views / 1e9).toFixed(1)}B`
-  if (views >= 1e6) return `${(views / 1e6).toFixed(1)}M`
-  if (views >= 1e3) return `${(views / 1e3).toFixed(1)}k`
+  if (views >= 1_000_000_000) return `${(views / 1_000_000_000).toFixed(1)}B (${views.toLocaleString()})`
+  if (views >= 1_000_000) return `${(views / 1_000_000).toFixed(1)}M (${views.toLocaleString()})`
+  if (views >= 1_000) return `${(views / 1_000).toFixed(1)}k (${views.toLocaleString()})`
   return views.toString()
 }
