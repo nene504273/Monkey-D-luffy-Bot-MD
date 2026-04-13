@@ -82,34 +82,46 @@ ${dev}`
     await conn.reply(m.chat, infoMessage, m)
   }
 
-
+  // ============ AUDIO ============
   if (['play', 'yta', 'ytmp3', 'playaudio'].includes(command)) {
     try {
-      const api = await (await fetch(
+      // Intento con API Alyacore
+      let api = await (await fetch(
         `https://api.alyacore.xyz/dl/ytmp3?url=${encodeURIComponent(url)}&key=${apikey}`
       )).json()
-
-      if (!api.status) throw new Error(api.message || 'La API no devolvió status=true')
-
-      const { title: fileName, dl } = api.data || {}
-      if (!dl) throw new Error('No se generó el enlace.')
-
-      await conn.sendMessage(m.chat, {
-        audio: { url: dl },
-        fileName: (fileName || 'audio') + '.mp3',
-        mimetype: 'audio/mpeg',
-        ptt: false
-      }, { quoted: m })
-
-      await m.react(done)
-
-    } catch (e) {
-      await m.react(error)
-      return conn.reply(m.chat, `${msm} Error al descargar el audio.`, m)
+      
+      if (!api.status) throw new Error('Alyacore falló')
+      
+      var fileName = api.data?.title || 'audio'
+      var dl = api.data?.dl
+      
+      if (!dl) throw new Error('No se generó enlace (Alyacore)')
+      
+    } catch {
+      // Respaldo con API alternativa
+      const backup = await (await fetch(
+        `https://api.davidcyriltech.my.id/download/ytmp3?url=${encodeURIComponent(url)}`
+      )).json()
+      
+      if (!backup.success) throw new Error('API de respaldo falló')
+      
+      var fileName = backup.result?.title || 'audio'
+      var dl = backup.result?.download_url
+      
+      if (!dl) throw new Error('No se generó enlace (respaldo)')
     }
-  }
 
+    await conn.sendMessage(m.chat, {
+      audio: { url: dl },
+      fileName: fileName + '.mp3',
+      mimetype: 'audio/mpeg',
+      ptt: false
+    }, { quoted: m })
 
+    await m.react(done)
+
+  } 
+  // ============ VIDEO ============
   else if (['play2', 'ytv', 'ytmp4', 'mp4'].includes(command)) {
     try {
       await conn.reply(m.chat, `❍ Descargando video en 480p...`, m)
