@@ -103,7 +103,7 @@ ${finalMessage}
 
       // Cambio aquí: Se envía como imagen con el texto de caption
       await _envio.sendMessage(m.chat, {
-        image: { url: 'https://files.catbox.moe/34i6f0.jpg' },
+        image: { url: '' },
         caption: msg,
         mentions: _envio.parseMention(msg) 
       }, { quoted: m });
