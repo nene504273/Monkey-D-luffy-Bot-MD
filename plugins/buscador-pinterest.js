@@ -1,79 +1,77 @@
-// plugins/pinterest-buscador.js
-import fetch from 'node-fetch';
+import fetch from "node-fetch"
 
-const handler = async (m, { conn, args, usedPrefix, command }) => {
-    // Verificar que se haya escrito un término de búsqueda
-    if (!args[0]) {
-        return conn.sendMessage(m.chat, { 
-            text: `❌ *Escribe lo que quieres buscar*\nEjemplo: ${usedPrefix + command} luffy gear 5` 
-        }, { quoted: m });
+const handler = async (m, { text, conn, args, command }) => {
+  if (!args[0]) {
+    return conn.reply(m.chat, `${emoji} Por favor, escribe qué quieres buscar en Pinterest.\nEjemplo: #pin Luffy`, m)
+  }
+
+  const apikey = "LUFFY-GEAR4"
+  const query = args.join(' ')
+  const maxImages = 5 // Número máximo de imágenes a enviar
+
+  try {
+    await m.react(rwait)
+
+    // Llamada a la API de Alyacore para Pinterest
+    const apiUrl = `https://api.alyacore.xyz/search/pinterest?query=${encodeURIComponent(query)}&key=${apikey}`
+    const response = await fetch(apiUrl)
+    const json = await response.json()
+
+    // Validar respuesta de la API
+    let imageUrls = []
+    if (json.status === true && Array.isArray(json.data)) {
+      imageUrls = json.data.slice(0, maxImages)
+    } else if (Array.isArray(json)) {
+      // Por si la respuesta es directamente un array
+      imageUrls = json.slice(0, maxImages)
+    } else {
+      throw new Error("Formato de respuesta inesperado")
     }
 
-    // Construir el término de búsqueda (agregar "Pin " al inicio como requiere la API)
-    const query = args.join(' ');
-    const searchTerm = `Pin ${query}`;
-    const apiKey = 'LUFFY-GEAR4';
-    const apiUrl = `https://api.alyacore.xyz/dl/pinterest?url=${encodeURIComponent(searchTerm)}&key=${LUFFY-GEAR4}`;
-
-    try {
-        // Hacer la petición a la API
-        const response = await fetch(apiUrl);
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
-
-        const data = await response.json();
-
-        // La estructura de respuesta puede variar. Asumimos que viene un array de imágenes.
-        // Si la API devuelve un objeto con 'result', 'data' o similar, ajústalo.
-        const images = data.result || data.data || data.images || data;
-
-        if (!images || !Array.isArray(images) || images.length === 0) {
-            return conn.sendMessage(m.chat, { text: '⚠️ No se encontraron resultados para esa búsqueda.' }, { quoted: m });
-        }
-
-        // Tomamos las primeras 5 imágenes (o el límite que desees)
-        const maxImages = 5;
-        const selected = images.slice(0, maxImages);
-
-        // Enviar cada imagen como mensaje multimedia
-        for (const item of selected) {
-            // Intentamos obtener la URL de la imagen (propiedades comunes)
-            const imageUrl = item.image || item.url || item.media_url || item.src || item.thumbnail;
-            const title = item.title || item.description || 'Pinterest';
-
-            if (imageUrl) {
-                await conn.sendMessage(m.chat, {
-                    image: { url: imageUrl },
-                    caption: `📌 *${title}*\n🔗 ${item.link || item.pin_url || ''}`.trim()
-                }, { quoted: m });
-            } else {
-                // Si no hay URL de imagen, enviamos solo el enlace del pin
-                if (item.link || item.pin_url) {
-                    await conn.sendMessage(m.chat, { 
-                        text: `📌 *${title}*\n🔗 ${item.link || item.pin_url}` 
-                    }, { quoted: m });
-                }
-            }
-            // Pequeña pausa para evitar spam de mensajes
-            await new Promise(resolve => setTimeout(resolve, 500));
-        }
-
-        // Mensaje final
-        await conn.sendMessage(m.chat, { 
-            text: `✅ Se mostraron ${selected.length} resultados de *${query}*` 
-        }, { quoted: m });
-
-    } catch (error) {
-        console.error(error);
-        conn.sendMessage(m.chat, { 
-            text: `❌ *Error al conectar con la API*\n${error.message}` 
-        }, { quoted: m });
+    if (imageUrls.length === 0) {
+      await m.react(error)
+      return conn.reply(m.chat, `${emoji2} No se encontraron imágenes para: *${query}*`, m)
     }
-};
+
+    // Mensaje informativo antes de enviar las imágenes
+    const header = `🔎 *Pinterest Search*\n` +
+                   `✩̣̣̣̣̣ͯ┄•͙✧⃝•͙┄✩ͯ•͙͙✧⃝•͙͙✩ͯ\n` +
+                   `❍ *Búsqueda* › *${query}*\n` +
+                   `❍ *Resultados* › ${imageUrls.length} imágenes\n` +
+                   `──⇌••⇋──\n` +
+                   `${dev}`
+
+    await conn.reply(m.chat, header, m)
+
+    // Enviar cada imagen
+    for (let i = 0; i < imageUrls.length; i++) {
+      const imgUrl = imageUrls[i]
+      try {
+        await conn.sendMessage(m.chat, {
+          image: { url: imgUrl },
+          caption: `📌 Pinterest • ${i + 1}/${imageUrls.length}\n${query}`,
+        }, { quoted: m })
+      } catch (imgError) {
+        console.error(`Error enviando imagen ${i}:`, imgError.message)
+        // Continuar con la siguiente imagen aunque falle una
+      }
+    }
+
+    await m.react(done)
+
+  } catch (e) {
+    console.error(e)
+    await m.react(error)
+    return conn.reply(m.chat, `${msm} Ocurrió un error al buscar en Pinterest.`, m)
+  }
+}
 
 // Configuración del comando
-handler.help = ['pinterest <búsqueda>'];
-handler.tags = ['buscador', 'descargas'];
-handler.command = ['pin'];
-handler.limit = false;  // Cambia a true si quieres que gaste límites
+handler.help = ['pin', 'pinterest']
+handler.tags = ['búsqueda']
+handler.command = ['pin', 'pinterest', 'pins']
+handler.group = true
+handler.register = true
+handler.coin = 2
 
-export default handler;
+export default handler
