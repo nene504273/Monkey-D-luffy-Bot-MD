@@ -13,7 +13,7 @@ const handler = async (m, { conn, args, usedPrefix, command }) => {
     const query = args.join(' ');
     const searchTerm = `Pin ${query}`;
     const apiKey = 'LUFFY-GEAR4';
-    const apiUrl = `https://api.alyacore.xyz/dl/pinterest?url=${encodeURIComponent(searchTerm)}&key=${apiKey}`;
+    const apiUrl = `https://api.alyacore.xyz/dl/pinterest?url=${encodeURIComponent(searchTerm)}&key=${LUFFY-GEAR4}`;
 
     try {
         // Hacer la petición a la API
