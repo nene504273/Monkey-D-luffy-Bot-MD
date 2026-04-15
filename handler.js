@@ -9,6 +9,8 @@ import fetch from 'node-fetch'
 import failureHandler from './lib/respuesta.js';
 import { manejarRespuestasBotones } from './lib/botones.js';
 import { manejarRespuestasStickers } from './lib/stickers.js';
+import PhoneNumber from 'awesome-phonenumber';
+const urlRegex = (await import('url-regex-safe')).default({ strict: false });
 
 const { proto } = (await import('@whiskeysockets/baileys')).default
 const isNumber = x => typeof x === 'number' && !isNaN(x)
@@ -359,7 +361,6 @@ export async function handler(chatUpdate) {
         }
         let user, stats = global.db.data.stats
         if (m) {
-            // FIX 3: fallback a {} para evitar error de .level en print.js
             let utente = global.db.data.users[sender] || {}
             if (utente && utente.muto == true) {
                 let bang = m.key.id
@@ -394,7 +395,75 @@ export async function handler(chatUpdate) {
         }
 
         try {
-            if (!opts['noprint']) await (await import(`./lib/print.js`)).default(m, this)
+            if (!opts['noprint']) {
+                const conn = this
+                let _name = await conn.getName(m.sender)
+                let sender = PhoneNumber('+' + m.sender.replace('@s.whatsapp.net', '')).getNumber('international') + (_name ? ' ~' + _name : '')
+                let chat = await conn.getName(m.chat)
+                let chatName = chat ? (m.isGroup ? 'Grupo: ' + chat : 'Chat privado: ' + chat) : ''
+                let me = PhoneNumber('+' + (conn.user?.jid || '').replace('@s.whatsapp.net', '')).getNumber('international')
+
+                let filesize = (m.msg ?
+                    m.msg.vcard ? m.msg.vcard.length :
+                    m.msg.fileLength ? (m.msg.fileLength.low || m.msg.fileLength) :
+                    m.msg.axolotlSenderKeyDistributionMessage ? m.msg.axolotlSenderKeyDistributionMessage.length :
+                    m.text ? m.text.length : 0
+                    : m.text ? m.text.length : 0) || 0
+
+                let user = global.db.data.users[m.sender] || {}
+                let oraAttuale = new Date()
+                let oraColombia = oraAttuale.toLocaleString('it-IT', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+
+                console.log(`╭────────────────────────────────···
+│❍  ${chalk.black(chalk.bgCyanBright(me + ' ~' + conn.user.name))}
+│⧖ㅤ${chalk.cyanBright(oraColombia)}
+│⎙ㅤ${chalk.cyanBright(m.messageStubType ? m.messageStubType : 'WAMessageStubType')}
+│⌨ㅤ${chalk.cyanBright(filesize + ' [' + (filesize === 0 ? 0 : (filesize / 1009 ** Math.floor(Math.log(filesize) / Math.log(1000))).toFixed(1)) + ' ' + (['', ...'KMGTP'][Math.floor(Math.log(filesize) / Math.log(1000))] || '') + 'B]')}
+│✦ㅤ${chalk.white(sender)}
+│⚑ㅤ${chalk.cyanBright((m ? m.exp : '?') + (user ? '|' + user.exp + '|' + (user.limit ?? 0) : '') + '|' + (user.level ?? 0))}
+│❑ㅤ${chalk.cyanBright(chatName)}
+│⎙ ⎗ㅤ${chalk.cyanBright(m.mtype ? m.mtype.replace(/message$/i, '').replace('audio', m.msg?.ptt ? 'PTT' : 'audio').replace(/^./, v => v.toUpperCase()) : '')}
+╰───────────────────···`)
+
+                if (typeof m.text === 'string' && m.text) {
+                    let log = m.text.replace(/\u200e+/g, '')
+                    let mdRegex = /(?<=(?:^|[\s\n])\S?)(?:([*_~])(.+?)\1|```((?:.||[\n\r])+?)```)(?=\S?(?:[\s\n]|$))/g
+                    let mdFormat = (depth = 4) => (_, type, text, monospace) => {
+                        let types = { _: 'italic', '*': 'bold', '~': 'strikethrough' }
+                        text = text || monospace
+                        return !types[type] || depth < 1 ? text : chalk[types[type]](text.replace(mdRegex, mdFormat(depth - 1)))
+                    }
+                    if (log.length < 4096) {
+                        log = log.replace(urlRegex, (url, i, text) => {
+                            let end = url.length + i
+                            return i === 0 || end === text.length || (/^\s$/.test(text[end]) && /^\s$/.test(text[i - 1])) ? chalk.blueBright(url) : url
+                        })
+                    }
+                    log = log.replace(mdRegex, mdFormat(4))
+                    for (let mentionedUser of (m.mentionedJid || [])) {
+                        log = log.replace('@' + mentionedUser.split('@')[0], chalk.blueBright('@' + await conn.getName(mentionedUser)))
+                    }
+                    console.log(m.error != null ? chalk.red(log) : m.isCommand ? chalk.yellow(log) : log)
+                }
+
+                if (m.messageStubParameters && m.messageStubParameters.length > 0) {
+                    console.log(m.messageStubParameters.map(jid => {
+                        jid = conn.decodeJid(jid)
+                        let name = conn.getName(jid)
+                        const phoneNumber = PhoneNumber('+' + jid.replace('@s.whatsapp.net', '')).getNumber('international')
+                        return name ? chalk.gray(`${phoneNumber} (${name})`) : ''
+                    }).filter(Boolean).join(', '))
+                }
+
+                if (/document/i.test(m.mtype)) console.log(`🗂️ ${m.msg?.fileName || m.msg?.displayName || 'Document'}`)
+                else if (/ContactsArray/i.test(m.mtype)) console.log(`👨‍👩‍👧‍👦`)
+                else if (/contact/i.test(m.mtype)) console.log(`👨 ${m.msg?.displayName || ''}`)
+                else if (/audio/i.test(m.mtype)) {
+                    const duration = m.msg?.seconds || 0
+                    console.log(`${m.msg?.ptt ? '🎤ㅤ(PTT ' : '🎵ㅤ('}AUDIO) ${Math.floor(duration / 60).toString().padStart(2, '0')}:${(duration % 60).toString().padStart(2, '0')}`)
+                }
+                console.log()
+            }
         } catch (e) {
             console.log(m, m.quoted, e)
         }
