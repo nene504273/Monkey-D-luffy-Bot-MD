@@ -3,7 +3,7 @@ import moment from 'moment-timezone';
 const newsletterJid = '120363420846835529@newsletter';
 const newsletterName = '⿻̸̷᮫̼̼፝͠🥨᪲ 𝐋𝗎𝖿𝖿𝗒 𝐆͢𝖾𝖺⃜𝗋 𝟧 ׅ ࿔𔗨̶🌊'; 
 
-const gifVideo = 'https://cdn.dev-ander.xyz/upload_1776228954206.gif';
+const gifVideo = 'https://cdn.dev-ander.xyz/upload_1776229736427.gif';
 const randomThumbnail = 'https://cdn.dev-ander.xyz/upload_1776228957469.jpg';
 
 let handler = async (m, { conn, usedPrefix }) => {
