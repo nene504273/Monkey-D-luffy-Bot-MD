@@ -440,7 +440,7 @@ export async function handler(chatUpdate) {
                         })
                     }
                     log = log.replace(mdRegex, mdFormat(4))
-                    for (let mentionedUser of (m.mentionedJid || [])) {
+                    for (let mentionedUser of (Array.isArray(m.mentionedJid) ? m.mentionedJid : [])) {
                         log = log.replace('@' + mentionedUser.split('@')[0], chalk.blueBright('@' + await conn.getName(mentionedUser)))
                     }
                     console.log(m.error != null ? chalk.red(log) : m.isCommand ? chalk.yellow(log) : log)
