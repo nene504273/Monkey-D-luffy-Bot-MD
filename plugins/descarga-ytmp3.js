@@ -5,6 +5,13 @@ const CAUSA_API_KEY = 'LUFFY-GEAR5'; // Tu clave de Causa API
 const newsletterJid  = '120363420846835529@newsletter';
 const newsletterName = '⏤͟͞ू⃪፝͜⁞⟡『 𝐓͢ᴇ𝙖፝ᴍ⃨ 𝘾𝒉꯭𝐚𝑛𝑛𝒆𝑙:🏴‍☠️MONKEY • D • L U F F Y🏴‍☠️』࿐⟡';
 
+// --- VALORES POR DEFECTO (Agregados para evitar ReferenceError) ---
+const wm = 'Monkey D. Luffy Bot';   // Watermark
+const dev = 'Equipo Pirata';        // Nombre del dev
+const redes = 'https://github.com'; // URL de redes
+const icons = 'https://i.imgur.com/0qK4X5P.jpeg'; // URL de una imagen por defecto (puedes cambiarla)
+// ----------------------------------------------------------------
+
 var handler = async (m, { conn, args, usedPrefix, command }) => {
   const emoji = '🎵';
   const contextInfo = {
@@ -45,9 +52,6 @@ var handler = async (m, { conn, args, usedPrefix, command }) => {
 
     const url = args[0];
 
-    // --- CAMBIO: Usando la API de Causa (Apicausas) ---
-    // Endpoint: /api/v1/descargas/youtube
-    // Parámetros: url, type (audio), apikey
     const causaApiUrl = `https://rest.apicausas.xyz/api/v1/descargas/youtube?url=${encodeURIComponent(url)}&type=audio&apikey=${CAUSA_API_KEY}`;
 
     const res = await fetch(causaApiUrl);
@@ -56,7 +60,6 @@ var handler = async (m, { conn, args, usedPrefix, command }) => {
         return null;
     });
 
-    // Causa API devuelve { status: true, data: { title, download: { url } } }
     if (!json || !json.status || !json.data) {
         return conn.reply(
             m.chat,
@@ -69,13 +72,19 @@ var handler = async (m, { conn, args, usedPrefix, command }) => {
     const data = json.data;
     const title = data.title || 'Audio de YouTube';
     const downloadURL = data.download?.url; 
-    
-    // Causa API a veces no devuelve thumbnail directamente en el objeto de descarga, 
-    // usamos la constante 'icons' como respaldo.
-    const thumb = icons;
+
+    // Intentamos obtener la miniatura que devuelve la API (si existe), sino usamos la por defecto
+    const thumbUrl = data.thumbnail || icons;
 
     if (downloadURL) {
-      // Enviar el archivo de audio
+      let thumbBuffer = null;
+      try {
+        const thumbRes = await fetch(thumbUrl);
+        thumbBuffer = await thumbRes.buffer();
+      } catch (thumbErr) {
+        console.error('No se pudo descargar la miniatura, se omite.', thumbErr);
+      }
+
       await conn.sendMessage(
         m.chat,
         {
@@ -88,8 +97,8 @@ var handler = async (m, { conn, args, usedPrefix, command }) => {
             externalAdReply: {
                ...contextInfo.externalAdReply,
                title: title,
-               body: 'Descarga Completada via Causa API',
-               thumbnail: thumb ? await (await fetch(thumb)).buffer() : null
+               body: 'Descarga Completada vía Causa API',
+               thumbnail: thumbBuffer
             }
           }
         },
