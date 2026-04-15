@@ -1,28 +1,18 @@
-import fs from 'fs';
-import path from 'path';
 import moment from 'moment-timezone';
 
 const newsletterJid = '120363420846835529@newsletter';
 const newsletterName = '⿻̸̷᮫̼̼፝͠🥨᪲ 𝐋𝗎𝖿𝖿𝗒 𝐆͢𝖾𝖺⃜𝗋 𝟧 ׅ ࿔𔗨̶🌊'; 
 
-let handler = async (m, { conn, usedPrefix }) => {
-    let mediaLinks;
-    try {
-        const dbPath = path.join(process.cwd(), 'src', 'database', 'db.json');
-        mediaLinks = JSON.parse(fs.readFileSync(dbPath)).links;
-    } catch (e) {
-        return conn.reply(m.chat, '❌ *Error en la bodega:* No se encontraron los tesoros.', m);
-    }
+const gifVideo = 'https://cdn.dev-ander.xyz/upload_1776228954206.gif';
+const randomThumbnail = 'https://cdn.dev-ander.xyz/upload_1776228957469.jpg';
 
+let handler = async (m, { conn, usedPrefix }) => {
     if (m.quoted?.id && m.quoted?.fromMe) return;
 
     let name = await conn.getName(m.sender);
     const uptime = clockString(process.uptime() * 1000);
     const totalreg = Object.keys(global.db?.data?.users || {}).length;
     const venezuelaTime = moment().tz('America/Caracas').format('HH:mm:ss');
-
-    const gifVideo = mediaLinks.video[Math.floor(Math.random() * mediaLinks.video.length)];
-    const randomThumbnail = mediaLinks.imagen[Math.floor(Math.random() * mediaLinks.imagen.length)];
 
     let groups = {};
     Object.values(global.plugins || {}).forEach(plugin => {
