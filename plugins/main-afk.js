@@ -5,7 +5,7 @@ conn.reply(m.chat, `${emoji} Dejastes De Estar Inactivo\n${user.afkReason ? 'Mot
 user.afk = -1;
 user.afkReason = '';
 }
-const jids = [...new Set([...(m.mentionedJid || []), ...(m.quoted ? [m.quoted.sender] : [])])];
+const jids = [...new Set([...(Array.isArray(m.mentionedJid) ? m.mentionedJid : []), ...(m.quoted ? [m.quoted.sender] : [])])];
 for (const jid of jids) {
 const user = global.db.data.users[jid];
 if (!user) {
