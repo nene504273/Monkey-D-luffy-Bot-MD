@@ -72,7 +72,7 @@ let handler = async (m, { conn, usedPrefix }) => {
             serverMessageId: -1
         },
         externalAdReply: {
-            title: '🏴‍☠️ 𝔹𝕐: +𝟝𝟠 𝟜𝟚𝟜-𝟜𝟙𝟜𝟜𝟠𝟚𝟙 🏴‍☠️',
+            title: '🏴‍☠️ ⚓ 𝐋𝐔𝐅𝐅𝐘 - 𝐁𝐎𝐓 ⚓ 🏴‍☠️',
             body: '𐚁๋࣭⭑ֶָ֢ 𝙇𝙪𝙛𝙛𝙮 𝙂𝙚𝙖𝙧 5 𝘽𝙤𝙩 ᕙ(  •̀ ᗜ •́  )ᕗ',
             thumbnailUrl: randomThumbnail,
             sourceUrl: 'https://api.alyacore.xyz',
