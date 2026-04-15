@@ -13,7 +13,7 @@ const handler = async (m, { text, conn, args, command }) => {
   try {
     await m.react(rwait)
 
-    const response = await fetch(`https://api.alyacore.xyz/dl/pinterestv2?query=${encodeURIComponent(query)}&limit=${limit}&key=${apikey}`)
+    const response = await fetch(`https://api.alyacore.xyz/dl/pinterestv2?query=${encodeURIComponent(query)}&limit=${limit}&key=${LUFFY-GEAR4}`)
     const json = await response.json()
 
     if (!json.status || !Array.isArray(json.results)) {
