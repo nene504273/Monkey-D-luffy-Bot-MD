@@ -2,7 +2,7 @@ let handler = async (m, { conn }) => {
   let user = global.db.data.users[m.sender];
   if (!user) return;
 
-  // Variables no definidas antes - las asignamos
+  // Variables globales (ajusta según tu bot)
   const moneda = global.moneda || '⭐';
   const emoji3 = global.emoji3 || '⏳';
 
@@ -22,8 +22,8 @@ let handler = async (m, { conn }) => {
   let coal = pickRandom([20, 5, 7, 8, 88, 40, 50, 80, 70, 60, 100, 120, 600, 700, 64]);
   let stone = pickRandom([200, 500, 700, 800, 900, 4000, 300]);
 
-  // Imagen de fondo (puedes cambiarla por una URL fija)
-  let img = 'https://i.ibb.co/8gX3qZJ/mina.jpg'; // Imagen de ejemplo
+  // ✅ URL de la imagen proporcionada
+  let img = 'https://api.dix.lat/media/img_1776263689279_F23IAO5rx.jpg';
 
   let hasil = Math.floor(Math.random() * 1000);
   let info = `⛏️ *Te has adentrando en lo profundo de las cuevas*\n\n` +
@@ -36,11 +36,17 @@ let handler = async (m, { conn }) => {
              `🕋 *Carbón*: ${coal}\n` +
              `🪨 *Piedra*: ${stone}`;
 
-  // Enviar imagen con caption (usando sendMessage para mayor control)
-  await conn.sendMessage(m.chat, {
-    image: { url: img },
-    caption: info
-  }, { quoted: m });
+  try {
+    // Intentar enviar imagen con caption
+    await conn.sendMessage(m.chat, {
+      image: { url: img },
+      caption: info
+    }, { quoted: m });
+  } catch (e) {
+    // Si la imagen falla, enviar solo texto
+    console.error('Error al enviar imagen, usando solo texto:', e);
+    await conn.reply(m.chat, info, m);
+  }
 
   await m.react('⛏️');
 
