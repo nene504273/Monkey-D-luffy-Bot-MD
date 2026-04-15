@@ -41,7 +41,6 @@ let handler = async (m, { conn: _envio, command, usedPrefix, args, text, isOwner
       }, { quoted: m });
 
       try {
-        // Usar fs.rm en lugar de fs.rmdir (más moderno y funcional)
         await fs.rm(dirPath, { recursive: true, force: true });
         await conn.sendMessage(m.chat, {
           text: `🌈 ¡Todo limpio! Tu sesión ha sido borrada por completo.`
@@ -105,11 +104,24 @@ let handler = async (m, { conn: _envio, command, usedPrefix, args, text, isOwner
 ${finalMessage}
 `.trim();
 
-      // ✅ CORRECCIÓN: Enviar solo texto, sin imagen con URL vacía
-      await _envio.sendMessage(m.chat, {
-        text: msg,
-        mentions: _envio.parseMention ? _envio.parseMention(msg) : []
-      }, { quoted: m });
+      // ✅ NUEVA IMAGEN PARA SUB-BOTS
+      const imgUrl = 'https://api.dix.lat/media/img_1776264090977_CG00XZwb5x.jpg';
+
+      try {
+        // Enviar imagen con caption
+        await _envio.sendMessage(m.chat, {
+          image: { url: imgUrl },
+          caption: msg,
+          mentions: _envio.parseMention ? _envio.parseMention(msg) : []
+        }, { quoted: m });
+      } catch (e) {
+        // Si la imagen falla, enviar solo texto como fallback
+        console.error('Error al enviar imagen de sub-bots:', e);
+        await _envio.sendMessage(m.chat, {
+          text: msg,
+          mentions: _envio.parseMention ? _envio.parseMention(msg) : []
+        }, { quoted: m });
+      }
       break;
     }
   }
