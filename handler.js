@@ -62,7 +62,8 @@ export async function handler(chatUpdate) {
             })
         } : {}
 
-        const participants_lid = (m.isGroup ? (Array.isArray(groupMetadata_lid.participants) ? groupMetadata_lid.participants : []) : []).map(participant => ({ id: participant.jid, jid: participant.jid, lid: participant.lid, admin: participant.admin }))
+
+        const participants_lid = (m.isGroup ? (Array.isArray(groupMetadata_lid?.participants) ? groupMetadata_lid.participants : []) : []).map(participant => ({ id: participant.jid, jid: participant.jid, lid: participant.lid, admin: participant.admin }))
 
         if (m.isGroup && sender.endsWith('@lid')) {
             const participantInfo = participants_lid.find(p => p.lid === sender);
@@ -187,7 +188,8 @@ export async function handler(chatUpdate) {
             })
         } : {}
 
-        const participants = (m.isGroup ? (Array.isArray(groupMetadata.participants) ? groupMetadata.participants : []) : []).map(participant => ({ id: participant.jid, jid: participant.jid, lid: participant.lid, admin: participant.admin }))
+
+        const participants = (m.isGroup ? (Array.isArray(groupMetadata?.participants) ? groupMetadata.participants : []) : []).map(participant => ({ id: participant.jid, jid: participant.jid, lid: participant.lid, admin: participant.admin }))
 
         const user = (m.isGroup ? participants.find((u) => this.decodeJid(u.jid) === sender) : {}) || {}
         const bot = (m.isGroup ? participants.find((u) => this.decodeJid(u.jid) == this.user.jid) : {}) || {}
@@ -357,7 +359,8 @@ export async function handler(chatUpdate) {
         }
         let user, stats = global.db.data.stats
         if (m) {
-            let utente = global.db.data.users[sender]
+            // FIX 3: fallback a {} para evitar error de .level en print.js
+            let utente = global.db.data.users[sender] || {}
             if (utente && utente.muto == true) {
                 let bang = m.key.id
                 let cancellazzione = m.key.participant
