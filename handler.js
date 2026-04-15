@@ -201,7 +201,7 @@ export async function handler(chatUpdate) {
         const isBotAdmin = bot?.admin || false
 
         const senderNum = sender.split('@')[0];
-        const isROwner = [conn.decodeJid(global.conn.user.id), ...global.owner.map(([number]) => number)].map(v => v.replace(/[^0-9]/g, '')).includes(senderNum);
+        const isROwner = [conn.decodeJid(global.conn.user.id), ...(global.owner || []).map(v => Array.isArray(v) ? v[0] : v)].map(v => v?.replace(/[^0-9]/g, '') || '').includes(senderNum);
         const isOwner = isROwner || m.fromMe
 
         const isMods = isOwner || global.mods.map(v => v.replace(/[^0-9]/g, '')).includes(senderNum)
