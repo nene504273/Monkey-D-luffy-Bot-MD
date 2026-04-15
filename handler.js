@@ -58,7 +58,7 @@ export async function handler(chatUpdate) {
         const groupMetadata_lid = m.isGroup ? {
             ...(this.chats[m.chat]?.metadata || await this.groupMetadata(m.chat).catch(_ => null) || {}),
             ...(Array.isArray((this.chats[m.chat]?.metadata || await this.groupMetadata(m.chat).catch(_ => null) || {}).participants) && {
-                participants: (this.chats[m.chat]?.metadata || await this.groupMetadata(m.chat).catch(_ => null) || {}).participants.map(p => ({ ...p, id: p.jid, jid: p.jid, lid: p.lid }))
+                participants: ((this.chats[m.chat]?.metadata || await this.groupMetadata(m.chat).catch(_ => null) || {}).participants || []).map(p => ({ ...p, id: p.jid, jid: p.jid, lid: p.lid }))
             })
         } : {}
 
@@ -183,7 +183,7 @@ export async function handler(chatUpdate) {
         const groupMetadata = m.isGroup ? {
             ...(this.chats[m.chat]?.metadata || await this.groupMetadata(m.chat).catch(_ => null) || {}),
             ...(Array.isArray((this.chats[m.chat]?.metadata || await this.groupMetadata(m.chat).catch(_ => null) || {}).participants) && {
-                participants: (this.chats[m.chat]?.metadata || await this.groupMetadata(m.chat).catch(_ => null) || {}).participants.map(p => ({ ...p, id: p.jid, jid: p.jid, lid: p.lid }))
+                participants: ((this.chats[m.chat]?.metadata || await this.groupMetadata(m.chat).catch(_ => null) || {}).participants || []).map(p => ({ ...p, id: p.jid, jid: p.jid, lid: p.lid }))
             })
         } : {}
 
