@@ -5,7 +5,7 @@ const newsletterName = '⿻̸̷᮫̼̼፝͠🥨᪲ 𝐋𝗎𝖿𝖿𝗒 𝐆͢�
 
 const gifVideo = 'https://cdn.dev-ander.xyz/upload_1776229736427.gif';
 const randomThumbnail = 'https://cdn.dev-ander.xyz/upload_1776228957469.jpg';
-
+const AlyaCore = 'https://api.alyacore.xyz'
 let handler = async (m, { conn, usedPrefix }) => {
     if (m.quoted?.id && m.quoted?.fromMe) return;
 
@@ -75,7 +75,7 @@ let handler = async (m, { conn, usedPrefix }) => {
             title: '🏴‍☠️ ⚓ 𝐋𝐔𝐅𝐅𝐘 - 𝐁𝐎𝐓 ⚓ 🏴‍☠️',
             body: '𐚁๋࣭⭑ֶָ֢ 𝙇𝙪𝙛𝙛𝙮 𝙂𝙚𝙖𝙧 5 𝘽𝙤𝙩 ᕙ(  •̀ ᗜ •́  )ᕗ',
             thumbnailUrl: randomThumbnail,
-            sourceUrl: 'https://api.alyacore.xyz',
+            sourceUrl: AlyaCore,
             mediaType: 1,
             showAdAttribution: false,
             renderLargerThumbnail: false 
