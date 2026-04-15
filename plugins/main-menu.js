@@ -47,7 +47,6 @@ let handler = async (m, { conn, usedPrefix }) => {
     menuText += `╭ׅ━ׁ┉ׅ─ׁ┉ׅ─ׁ┉ׅ─ׁ 𝆭˳ּ🌊 ׁ─ׅ┉ׁ─ׅ┉ׁ─ׅ┉ׁ━ִ╮\n`;
     menuText += `*✿ֶׁ〪 🅓︩︪𝗮𝘁𝗼𝘀 𝗱𝗲𝗹 𝗡𝗮𝘃𝗲𝗴𝗮𝗻𝘁𝗲 ⠶*\n`;
     menuText += `> ⌑ׄ👤〪𝆭݀₊ _Usuario:_ ${name}\n`;
-    menuText += `> ⌑ׄ👑〪𝆭݀₊ _Creador:_ +58 4244144821\n`;
     menuText += `> ⌑ׄ🎖️〪𝆭݀₊ _Alianza:_ ${totalreg} Piratas\n`;
     menuText += `> ⌑ׄ⏳〪𝆭݀₊ _Activo:_ ${uptime}\n`;
     menuText += `> ⌑ׄ🕒〪𝆭݀₊ _Hora:_ ${venezuelaTime} (VZLA)\n`;
@@ -70,8 +69,7 @@ let handler = async (m, { conn, usedPrefix }) => {
     menuText += `.   ╓᷼─ໍ۪┅֟፝─̥࣪:¨᜔⠣۟⠜¨᜔:࣪─࣮࣪͡┅ꊥ᜔۫👒ꊥ᜔┅࣮࣪͡─:࣪¨᜔⠣۟⠜¨᜔:࣪─̥፝֟┅۪─᷼ໍ╖\n`;
     menuText += `> *“Si no arriesgas tu vida, no puedes crear un futuro.”*\n`;
     menuText += `> _— Monkey D. Luffy_\n`;
-    menuText += `.   ╙᷼─ໍ۪┅֟፝─̥࣪:¨᜔⠣۟⠜¨᜔:࣪─࣮࣪͡┅ꊥ᜔۫⚓ꊥ᜔┅࣮࣪͡─:࣪¨᜔⠣۟⠜¨᜔:࣪─̥፝֟┅۪─᷼ໍ╜\n\n`;
-    menuText += `⚓ *Contacto:* wa.me/584244144821`;
+    menuText += `.   ╙᷼─ໍ۪┅֟፝─̥࣪:¨᜔⠣۟⠜¨᜔:࣪─࣮࣪͡┅ꊥ᜔۫⚓ꊥ᜔┅࣮࣪͡─:࣪¨᜔⠣۟⠜¨᜔:࣪─̥፝֟┅۪─᷼ໍ╜`;
 
 
     const contextInfo = {
@@ -87,7 +85,7 @@ let handler = async (m, { conn, usedPrefix }) => {
             title: '🏴‍☠️ 𝔹𝕐: +𝟝𝟠 𝟜𝟚𝟜-𝟜𝟙𝟜𝟜𝟠𝟚𝟙 🏴‍☠️',
             body: '𐚁๋࣭⭑ֶָ֢ 𝙇𝙪𝙛𝙛𝙮 𝙂𝙚𝙖𝙧 5 𝘽𝙤𝙩 ᕙ(  •̀ ᗜ •́  )ᕗ',
             thumbnailUrl: randomThumbnail,
-            sourceUrl: 'https://wa.me/584244144821',
+            sourceUrl: 'https://api.alyacore.xyz',
             mediaType: 1,
             showAdAttribution: false,
             renderLargerThumbnail: false 
