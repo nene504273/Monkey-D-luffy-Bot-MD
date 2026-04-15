@@ -20,10 +20,7 @@ const delay = ms => isNumber(ms) && new Promise(resolve => setTimeout(function (
 const normalizeJid = jid => jid?.replace(/[^0-9]/g, '')
 const cleanJid = jid => jid?.split(':')[0] || ''
 
-// Definición global y centralizada de la función de error.
 global.dfail = (type, m, conn) => {
-    // Llama al manejador de errores externo.
-    // La variable 'global.comando' se asigna más abajo antes de que se llame a fail().
     failureHandler(type, conn, m, global.comando);
 };
 
@@ -36,9 +33,7 @@ export async function handler(chatUpdate) {
     let m = chatUpdate.messages[chatUpdate.messages.length - 1]
     if (!m) return
 
-    // Manejo de botones con archivo externo
     if (await manejarRespuestasBotones(this, m)) return;
-    // Manejo de stickers con archivo externo
     if (await manejarRespuestasStickers(this, m)) return;
 
     if (m.isGroup) {
@@ -56,13 +51,19 @@ export async function handler(chatUpdate) {
     let sender;
     try {
         m = smsg(this, m) || m
-        if (!m)
-            return
+        if (!m) return
 
         sender = m.isGroup ? (m.key.participant ? m.key.participant : m.sender) : m.key.remoteJid;
 
-        const groupMetadata_lid = m.isGroup ? { ...(this.chats[m.chat]?.metadata || await this.groupMetadata(m.chat).catch(_ => null) || {}), ...(((this.chats[m.chat]?.metadata || await this.groupMetadata(m.chat).catch(_ => null) || {}).participants) && { participants: ((this.chats[m.chat]?.metadata || await this.groupMetadata(m.chat).catch(_ => null) || {}).participants || []).map(p => ({ ...p, id: p.jid, jid: p.jid, lid: p.lid })) }) } : {}
-        const participants_lid = ((m.isGroup ? groupMetadata_lid.participants : []) || []).map(participant => ({ id: participant.jid, jid: participant.jid, lid: participant.lid, admin: participant.admin }))
+        const groupMetadata_lid = m.isGroup ? {
+            ...(this.chats[m.chat]?.metadata || await this.groupMetadata(m.chat).catch(_ => null) || {}),
+            ...(Array.isArray((this.chats[m.chat]?.metadata || await this.groupMetadata(m.chat).catch(_ => null) || {}).participants) && {
+                participants: (this.chats[m.chat]?.metadata || await this.groupMetadata(m.chat).catch(_ => null) || {}).participants.map(p => ({ ...p, id: p.jid, jid: p.jid, lid: p.lid }))
+            })
+        } : {}
+
+        const participants_lid = (m.isGroup ? (Array.isArray(groupMetadata_lid.participants) ? groupMetadata_lid.participants : []) : []).map(participant => ({ id: participant.jid, jid: participant.jid, lid: participant.lid, admin: participant.admin }))
+
         if (m.isGroup && sender.endsWith('@lid')) {
             const participantInfo = participants_lid.find(p => p.lid === sender);
             if (participantInfo && participantInfo.jid) {
@@ -118,6 +119,7 @@ export async function handler(chatUpdate) {
                 global.db.data.users[sender] = {
                     exp: 0, coin: 10, joincount: 1, diamond: 3, lastadventure: 0, health: 100, lastclaim: 0, lastcofre: 0, lastdiamantes: 0, lastcode: 0, lastduel: 0, lastpago: 0, lastmining: 0, lastcodereg: 0, muto: false, registered: false, genre: '', birth: '', marry: '', description: '', packstickers: null, name: m.name, age: -1, regTime: -1, afk: -1, afkReason: '', banned: false, useDocument: false, bank: 0, level: 0, role: 'Nuv', premium: false, premiumTime: 0
                 }
+
             let chat = global.db.data.chats[m.chat]
             if (typeof chat !== 'object')
                 global.db.data.chats[m.chat] = {}
@@ -147,6 +149,7 @@ export async function handler(chatUpdate) {
                 global.db.data.chats[m.chat] = {
                     sAutoresponder: '', welcome: true, isBanned: false, autolevelup: false, autoresponder: false, delete: false, autoAceptar: false, autoRechazar: false, detect: true, antiBot: false, antiBot2: false, modoadmin: false, antiLink: true, antifake: false, reaction: false, nsfw: false, expired: 0, antiLag: false, per: [],
                 }
+
             var settings = global.db.data.settings[this.user.jid]
             if (typeof settings !== 'object') global.db.data.settings[this.user.jid] = {}
             if (settings) {
@@ -161,6 +164,7 @@ export async function handler(chatUpdate) {
         } catch (e) {
             console.error(e)
         }
+
         const mainBot = global.conn.user.jid
         const chat = global.db.data.chats[m.chat] || {}
         const isSubbs = chat.antiLag === true
@@ -175,8 +179,15 @@ export async function handler(chatUpdate) {
         if (typeof m.text !== 'string') m.text = ''
 
         const _user = global.db.data.users[sender]
-        const groupMetadata = m.isGroup ? { ...(this.chats[m.chat]?.metadata || await this.groupMetadata(m.chat).catch(_ => null) || {}), ...(((this.chats[m.chat]?.metadata || await this.groupMetadata(m.chat).catch(_ => null) || {}).participants) && { participants: ((this.chats[m.chat]?.metadata || await this.groupMetadata(m.chat).catch(_ => null) || {}).participants || []).map(p => ({ ...p, id: p.jid, jid: p.jid, lid: p.lid })) }) } : {}
-        const participants = ((m.isGroup ? groupMetadata.participants : []) || []).map(participant => ({ id: participant.jid, jid: participant.jid, lid: participant.lid, admin: participant.admin }))
+
+        const groupMetadata = m.isGroup ? {
+            ...(this.chats[m.chat]?.metadata || await this.groupMetadata(m.chat).catch(_ => null) || {}),
+            ...(Array.isArray((this.chats[m.chat]?.metadata || await this.groupMetadata(m.chat).catch(_ => null) || {}).participants) && {
+                participants: (this.chats[m.chat]?.metadata || await this.groupMetadata(m.chat).catch(_ => null) || {}).participants.map(p => ({ ...p, id: p.jid, jid: p.jid, lid: p.lid }))
+            })
+        } : {}
+
+        const participants = (m.isGroup ? (Array.isArray(groupMetadata.participants) ? groupMetadata.participants : []) : []).map(participant => ({ id: participant.jid, jid: participant.jid, lid: participant.lid, admin: participant.admin }))
 
         const user = (m.isGroup ? participants.find((u) => this.decodeJid(u.jid) === sender) : {}) || {}
         const bot = (m.isGroup ? participants.find((u) => this.decodeJid(u.jid) == this.user.jid) : {}) || {}
@@ -277,6 +288,7 @@ export async function handler(chatUpdate) {
                         if (name != 'owner-unbanuser.js' && user?.banned) return
                     }
                 }
+
                 let hl = _prefix
                 let adminMode = global.db.data.chats[m.chat].modoadmin
                 let mini = `${plugins.botAdmin || plugins.admin || plugins.group || plugins || noPrefix || hl || m.text.slice(0, 1) == hl || plugins.command}`
@@ -297,7 +309,6 @@ export async function handler(chatUpdate) {
                 if (xp > 200) m.reply('chirrido -_-')
                 else m.exp += xp
 
-                // Pequeño ajuste: reemplazada variable 'moneda' no definida por texto fijo 'monedas'
                 if (!isPrems && plugin.coin && global.db.data.users[sender].coin < plugin.coin * 1) {
                     conn.reply(m.chat, `❮✦❯ Se agotaron tus monedas`, m)
                     continue
@@ -306,6 +317,7 @@ export async function handler(chatUpdate) {
                     conn.reply(m.chat, `❮✦❯ Se requiere el nivel: *${plugin.level}*\n\n• Tu nivel actual es: *${_user.level}*\n\n• Usa este comando para subir de nivel:\n*${usedPrefix}levelup*`, m)
                     continue
                 }
+
                 let extra = { match, usedPrefix, noPrefix, _args, args, command, text, conn: this, participants, groupMetadata, user, bot, isROwner, isOwner, isRAdmin, isAdmin, isBotAdmin, isPrems, chatUpdate, __dirname: ___dirname, __filename }
                 try {
                     await plugin.call(this, m, extra)
@@ -315,7 +327,6 @@ export async function handler(chatUpdate) {
                     console.error(e)
                     if (e) {
                         let text = format(e)
-                               // ✅ CORRECCIÓN AQUÍ: Verificamos que global.APIKeys exista y sea objeto antes de iterar
                         if (global.APIKeys && typeof global.APIKeys === 'object') {
                             for (let key of Object.values(global.APIKeys)) {
                                 text = text.replace(new RegExp(key, 'g'), 'Administrador')
@@ -331,7 +342,6 @@ export async function handler(chatUpdate) {
                             console.error(e)
                         }
                     }
-                    // Reemplazada variable 'moneda' por texto fijo 'monedas'
                     if (m.coin) conn.reply(m.chat, `❮✦❯ Utilizaste ${+m.coin} monedas`, m)
                 }
                 break
@@ -385,6 +395,7 @@ export async function handler(chatUpdate) {
         } catch (e) {
             console.log(m, m.quoted, e)
         }
+
         let settingsREAD = global.db.data.settings[this.user.jid] || {}
         if (opts['autoread']) await this.readMessages([m.key])
 
@@ -401,7 +412,6 @@ export async function handler(chatUpdate) {
 
 const file = global.__filename(import.meta.url, true);
 
-// NO TOCAR
 watchFile(file, async () => {
     unwatchFile(file);
     console.log(chalk.green('Actualizando "handler.js"'));
