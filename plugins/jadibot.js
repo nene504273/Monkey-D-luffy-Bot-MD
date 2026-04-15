@@ -8,8 +8,11 @@ let handler = async (m, { conn: _envio, command, usedPrefix, args, text, isOwner
   const isPauseBot = /^(stop|pausarai|pausarbot)$/i.test(command);
   const isShowBots = /^(bots|sockets|socket)$/i.test(command);
 
+  // Asegurar que 'jadi' esté definida (carpeta de sesiones)
+  const sessionFolder = global.jadi || './sessions';
+
   const reportError = async (e) => {
-    await m.reply(`⚠️ Ocurrió un error inesperado, lo siento mucho...`)
+    await m.reply(`⚠️ Ocurrió un error inesperado, lo siento mucho...`);
     console.error(e);
   };
 
@@ -17,9 +20,9 @@ let handler = async (m, { conn: _envio, command, usedPrefix, args, text, isOwner
     case isDeleteSession: {
       const who = m.mentionedJid && m.mentionedJid[0] ? m.mentionedJid[0] : m.fromMe ? conn.user.jid : m.sender;
       const uniqid = `${who.split('@')[0]}`;
-      const dirPath = `./${jadi}/${uniqid}`;
+      const dirPath = path.join(sessionFolder, uniqid);
 
-      if (!await fs.existsSync(dirPath)) {
+      if (!fs.existsSync(dirPath)) {
         await conn.sendMessage(m.chat, {
           text: `🚫 Sesión no encontrada. No tienes una sesión activa.\n\nCrea una con: ${usedPrefix}serbot`
         }, { quoted: m });
@@ -38,7 +41,8 @@ let handler = async (m, { conn: _envio, command, usedPrefix, args, text, isOwner
       }, { quoted: m });
 
       try {
-        fs.rmdir(`./${jadi}/${uniqid}`, { recursive: true, force: true });
+        // Usar fs.rm en lugar de fs.rmdir (más moderno y funcional)
+        await fs.rm(dirPath, { recursive: true, force: true });
         await conn.sendMessage(m.chat, {
           text: `🌈 ¡Todo limpio! Tu sesión ha sido borrada por completo.`
         }, { quoted: m });
@@ -52,7 +56,7 @@ let handler = async (m, { conn: _envio, command, usedPrefix, args, text, isOwner
       if (global.conn.user.jid == conn.user.jid) {
         conn.reply(m.chat, `🚫 No puedes pausar el bot principal.\nSi deseas ser un Sub-Bot, contacta con el número principal.`, m);
       } else {
-        await conn.reply(m.chat, `🔕 ${botname} ha sido pausada.`, m);
+        await conn.reply(m.chat, `🔕 ${global.botname || 'El bot'} ha sido pausada.`, m);
         conn.ws.close();
       }
       break;
@@ -101,11 +105,10 @@ let handler = async (m, { conn: _envio, command, usedPrefix, args, text, isOwner
 ${finalMessage}
 `.trim();
 
-      // Cambio aquí: Se envía como imagen con el texto de caption
+      // ✅ CORRECCIÓN: Enviar solo texto, sin imagen con URL vacía
       await _envio.sendMessage(m.chat, {
-        image: { url: '' },
-        caption: msg,
-        mentions: _envio.parseMention(msg) 
+        text: msg,
+        mentions: _envio.parseMention ? _envio.parseMention(msg) : []
       }, { quoted: m });
       break;
     }
