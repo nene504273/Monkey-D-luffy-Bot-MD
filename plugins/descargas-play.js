@@ -82,10 +82,9 @@ ${dev}`
     await conn.reply(m.chat, infoMessage, m)
   }
 
-  // ============ AUDIO ============
+
   if (['play', 'yta', 'ytmp3', 'playaudio'].includes(command)) {
     try {
-      // Intento con API Alyacore
       let api = await (await fetch(
         `https://api.alyacore.xyz/dl/ytmp3?url=${encodeURIComponent(url)}&key=${apikey}`
       )).json()
@@ -97,18 +96,9 @@ ${dev}`
       
       if (!dl) throw new Error('No se generó enlace (Alyacore)')
       
-    } catch {
-      // Respaldo con API alternativa
-      const backup = await (await fetch(
-        `https://api.davidcyriltech.my.id/download/ytmp3?url=${encodeURIComponent(url)}`
-      )).json()
-      
-      if (!backup.success) throw new Error('API de respaldo falló')
-      
-      var fileName = backup.result?.title || 'audio'
-      var dl = backup.result?.download_url
-      
-      if (!dl) throw new Error('No se generó enlace (respaldo)')
+    } catch (e) {
+      await m.react(error)
+      return conn.reply(m.chat, `${msm} Error al descargar el audio.`, m)
     }
 
     await conn.sendMessage(m.chat, {
@@ -121,7 +111,7 @@ ${dev}`
     await m.react(done)
 
   } 
-  // ============ VIDEO ============
+
   else if (['play2', 'ytv', 'ytmp4', 'mp4'].includes(command)) {
     try {
       await conn.reply(m.chat, `❍ Descargando video en 480p...`, m)
