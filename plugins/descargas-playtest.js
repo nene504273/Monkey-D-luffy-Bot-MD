@@ -1,17 +1,12 @@
-// Requisitos: instalar dependencias: yt-search, ytdl-core, node-fetch
-// npm i yt-search ytdl-core node-fetch
-import fetch from 'node-fetch'
-import yts from 'yt-search'
-import ytdl from 'ytdl-core'
+const apikey = "LUFFY-GEAR4"
 
-let handler = async (m, { conn }) => {
+const handler = async (m, { conn, args: usedArgs, command }) => {
   try {
     const full = (m.text || m.message?.conversation || '') + ''
     const parts = full.trim().split(/\s+/)
     const invoked = parts[0].replace(/^#|!|\./, '').toLowerCase()
     const arg = parts.slice(1).join(' ').trim()
 
-    // Helper para reaccionar con emoji (si el cliente lo soporta)
     const react = async (emoji = '⏳') => {
       try {
         await conn.sendMessage(m.chat, { react: { text: emoji, key: m.key } })
@@ -24,24 +19,20 @@ let handler = async (m, { conn }) => {
         return await conn.sendMessage(m.chat, { text: '❗️ Uso: #play <texto>\nEjemplo: #play Despacito' }, { quoted: m })
       }
 
-      // indicar búsqueda (reacción reloj)
       await react('⏳')
 
-      // buscar en YouTube (yt-search)
       const search = await yts(arg)
       const video = (search?.videos && search.videos.length > 0) ? search.videos[0] : null
       if (!video) {
         return await conn.sendMessage(m.chat, { text: '❌ No se encontraron resultados en YouTube para ese texto.' }, { quoted: m })
       }
 
-      // obtener datos
       const title = video.title || 'Desconocido'
       const author = (video.author && (video.author.name || video.author.url)) || video.author || 'Desconocido'
       const url = video.url || `https://www.youtube.com/watch?v=${video.videoId || ''}`
-      const durationSeconds = Number(video.seconds || 0) // yt-search suele proveer seconds
+      const durationSeconds = Number(video.seconds || 0)
       const durationText = video.timestamp || formatSeconds(durationSeconds)
 
-      // obtener thumb
       let thumbBuffer = null
       try {
         const res = await fetch(video.thumbnail)
@@ -50,14 +41,12 @@ let handler = async (m, { conn }) => {
         thumbBuffer = null
       }
 
-      // construir texto y botones
       const txt = `Título: ${title}\nAutor: ${author}\nDuración: ${durationText}\nEnlace: ${url}\n\n> Selecciona una opción para enviar:`
       const buttons = [
         { buttonId: `play_audio ${url}`, buttonText: { displayText: 'Audio' }, type: 1 },
         { buttonId: `play_video ${url}`, buttonText: { displayText: 'Video' }, type: 1 }
       ]
 
-      // enviar mensaje con thumbnail, texto y botones
       await conn.sendMessage(m.chat, {
         image: thumbBuffer,
         caption: txt,
@@ -69,14 +58,13 @@ let handler = async (m, { conn }) => {
       return
     }
 
-    // ------ BOTONES / callbacks: play_audio <url> ------
+    // ------ BOTONES: play_audio <url> ------
     if (invoked === 'play_audio' || invoked === 'audio') {
       const url = arg
       if (!url) return await conn.sendMessage(m.chat, { text: '❗️ No se recibió la URL del video.' }, { quoted: m })
 
       await react('⏳')
 
-      // validar url y duración con ytdl-core
       if (!ytdl.validateURL(url)) {
         return await conn.sendMessage(m.chat, { text: '❌ URL de YouTube inválida.' }, { quoted: m })
       }
@@ -93,16 +81,16 @@ let handler = async (m, { conn }) => {
         return await conn.sendMessage(m.chat, { text: '⚠️ El video supera los 8 minutos. No puedo enviar audio de videos tan largos.' }, { quoted: m })
       }
 
-      // descargar audio desde la API proporcionada
-      const apiUrl = `https://ruby-core.vercel.app/api/download/youtube/mp3?url=${encodeURIComponent(url)}`
+      // Nueva API alyacore.xyz para MP3
+      const apiUrl = `https://api.alyacore.xyz/dl/ytmp3?url=${encodeURIComponent(url)}&key=${apikey}`
       try {
         const res = await fetch(apiUrl)
         if (!res.ok) throw new Error(`API error ${res.status}`)
         const ct = res.headers.get('content-type') || ''
         const buffer = await res.buffer()
 
+        // Si la API devuelve JSON (error) lo detectamos
         if (!ct.startsWith('audio') && !ct.startsWith('application')) {
-          // la API pudo devolver JSON con error
           const txt = buffer.toString('utf8').slice(0, 800)
           throw new Error(`Respuesta inesperada: ${txt}`)
         }
@@ -121,7 +109,7 @@ let handler = async (m, { conn }) => {
       return
     }
 
-    // ------ BOTONES / callbacks: play_video <url> ------
+    // ------ BOTONES: play_video <url> ------
     if (invoked === 'play_video' || invoked === 'video') {
       const url = arg
       if (!url) return await conn.sendMessage(m.chat, { text: '❗️ No se recibió la URL del video.' }, { quoted: m })
@@ -144,8 +132,8 @@ let handler = async (m, { conn }) => {
         return await conn.sendMessage(m.chat, { text: '⚠️ El video supera los 8 minutos. No puedo enviar videos tan largos.' }, { quoted: m })
       }
 
-      // descargar video desde la API proporcionada
-      const apiUrl = `https://ruby-core.vercel.app/api/download/youtube/mp4?url=${encodeURIComponent(url)}`
+      // Nueva API alyacore.xyz para MP4 (asumiendo que existe)
+      const apiUrl = `https://api.alyacore.xyz/dl/ytmp4?url=${encodeURIComponent(url)}&key=${apikey}`
       try {
         const res = await fetch(apiUrl)
         if (!res.ok) throw new Error(`API error ${res.status}`)
@@ -176,7 +164,6 @@ let handler = async (m, { conn }) => {
   }
 }
 
-// util: formatea segundos a HH:MM:SS o MM:SS
 function formatSeconds(sec = 0) {
   sec = Number(sec) || 0
   const h = Math.floor(sec / 3600)
@@ -192,7 +179,6 @@ function sanitizeFileName(name = '') {
 
 handler.help = ['play <texto>']
 handler.tags = ['downloader', 'tools']
-// El handler admite varias invocaciones: play (búsqueda) y los botones play_audio/play_video
-handler.command = ['playtest', 'play_audio', 'play_video', 'audio', 'video']
+handler.command = ['play', 'play_audio', 'play_video', 'audio', 'video']
 
 export default handler
