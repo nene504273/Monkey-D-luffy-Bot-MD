@@ -1,60 +1,137 @@
 import fetch from 'node-fetch';
 
-const ApiKey = 'LUFFY-GEAR4';
+// ==================== CONFIGURACIÓN ====================
+const API_KEY = 'LUFFY-GEAR4';
+const API_BASE = 'https://rest.alyabotpe.xyz/ai/texttoimage';
+const DEFAULT_STYLE = 'realista';
+const TIMEOUT_MS = 45000; // 45 segundos máximo de espera
 
-let handler = async (m, { conn, args }) => {
-  const prompt = args.join(' ');
+// ==================== FUNCIONES AUXILIARES ====================
 
-  if (!prompt) return m.reply('*¡Hey! 🏴‍☠️ Necesito un texto para crear la imagen.*');
+/**
+ * Obtiene una imagen generada por IA desde la API externa.
+ * @param {string} prompt - Texto descriptivo para la imagen.
+ * @returns {Promise<Buffer>} Buffer de la imagen generada.
+ * @throws {Error} Si la API no responde correctamente o no es una imagen.
+ */
+async function fetchGeneratedImage(prompt) {
+  const url = `${API_BASE}?prompt=${encodeURIComponent(prompt)}&style=${DEFAULT_STYLE}&key=${API_KEY}`;
+
+  // Controlador de timeout para evitar esperas infinitas
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_MS);
 
   try {
-    await conn.sendMessage(m.chat, { react: { text: '🎨', key: m.key } });
-
-    const apiUrl = `https://rest.alyabotpe.xyz/ai/texttoimage?prompt=${encodeURIComponent(prompt)}&style=realista&key=${ApiKey}`;
-
-    // Añadimos un Header de User-Agent por si el server bloquea bots
-    const res = await fetch(apiUrl, {
-      headers: { 'User-Agent': 'Mozilla/5.0' }
+    const response = await fetch(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (compatible; WhatsAppBot/2.0)',
+        'Accept': 'image/*, application/json'
+      },
+      signal: controller.signal
     });
 
-    const contentType = res.headers.get('content-type');
+    clearTimeout(timeoutId);
 
-    if (contentType && contentType.includes('image')) {
-      // Cambio clave: Uso de arrayBuffer para mayor compatibilidad
-      const arrayBuffer = await res.arrayBuffer();
-      const buffer = Buffer.from(arrayBuffer);
-
-      await conn.sendMessage(m.chat, {
-        image: buffer,
-        caption: `*¡Imagen generada! 🎨*\n\n*Prompt:* ${prompt}`
-      }, { quoted: m });
-
-      await conn.sendMessage(m.chat, { react: { text: '✅', key: m.key } });
-    } else {
-      // Si no es imagen, leemos el texto del error
-      const textError = await res.text();
-      let errorMessage = 'La API no devolvió una imagen.';
-      
+    // 1. Verificar estado HTTP
+    if (!response.ok) {
+      let errorDetail = `HTTP ${response.status}`;
       try {
-        const jsonError = JSON.parse(textError);
-        errorMessage = jsonError.message || errorMessage;
-      } catch (e) {
-        errorMessage = textError.slice(0, 100); // Tomamos los primeros 100 caracteres si no es JSON
+        const json = await response.json();
+        errorDetail = json.message || json.error || errorDetail;
+      } catch {
+        // Si no es JSON, tomamos parte del texto
+        const text = await response.text();
+        errorDetail = text.slice(0, 200) || errorDetail;
       }
-      
-      throw new Error(errorMessage);
+      throw new Error(`API respondió con error: ${errorDetail}`);
+    }
+
+    // 2. Verificar tipo de contenido
+    const contentType = response.headers.get('content-type') || '';
+
+    if (contentType.includes('image/')) {
+      // Es una imagen → convertir a Buffer
+      const arrayBuffer = await response.arrayBuffer();
+      return Buffer.from(arrayBuffer);
+    }
+
+    // 3. No es imagen, intentar leer mensaje de error en JSON
+    const textResponse = await response.text();
+    try {
+      const jsonError = JSON.parse(textResponse);
+      throw new Error(jsonError.message || jsonError.error || 'La API no devolvió una imagen válida.');
+    } catch (parseError) {
+      // No es JSON, mostrar parte del texto recibido
+      const preview = textResponse.slice(0, 150);
+      throw new Error(`Respuesta inesperada (no imagen): ${preview}...`);
     }
 
   } catch (error) {
-    console.error(error);
+    clearTimeout(timeoutId);
+    // Mejorar mensaje de timeout
+    if (error.name === 'AbortError') {
+      throw new Error(`La generación excedió el tiempo límite (${TIMEOUT_MS / 1000}s).`);
+    }
+    throw error; // Relanzar para manejo superior
+  }
+}
+
+// ==================== HANDLER PRINCIPAL ====================
+const handler = async (m, { conn, args }) => {
+  const prompt = args.join(' ').trim();
+
+  // Validación de entrada
+  if (!prompt) {
+    return conn.sendMessage(m.chat, { 
+      text: '*🎨 ¡Hey! Necesito un texto para crear la imagen.*\n\n_Ejemplo: .text2img atardecer en la playa_' 
+    }, { quoted: m });
+  }
+
+  // Límite de caracteres para evitar prompts muy largos (opcional pero recomendable)
+  if (prompt.length > 500) {
+    return conn.sendMessage(m.chat, { 
+      text: '⚠️ *El texto es demasiado largo.* Por favor, resúmelo a menos de 500 caracteres.' 
+    }, { quoted: m });
+  }
+
+  // Reacción inicial indicando proceso
+  await conn.sendMessage(m.chat, { react: { text: '🎨', key: m.key } });
+
+  try {
+    // Obtener imagen desde la API
+    const imageBuffer = await fetchGeneratedImage(prompt);
+
+    // Enviar imagen con caption atractivo
+    await conn.sendMessage(m.chat, {
+      image: imageBuffer,
+      caption: `✅ *¡Imagen generada con éxito!*\n\n📝 *Prompt:* ${prompt}\n🎭 *Estilo:* ${DEFAULT_STYLE}\n🔮 *Generada por IA*`,
+      mimetype: 'image/jpeg' // Forzar tipo MIME para evitar problemas
+    }, { quoted: m });
+
+    // Reacción de éxito
+    await conn.sendMessage(m.chat, { react: { text: '✅', key: m.key } });
+
+  } catch (error) {
+    console.error('❌ Error en text2img:', error);
+
+    // Reacción de fallo
     await conn.sendMessage(m.chat, { react: { text: '✖️', key: m.key } });
-    m.reply(`*¡Error! 💢*\n\n> *Detalle:* ${error.message}`);
+
+    // Mensaje de error detallado pero amigable
+    const errorMessage = error.message.includes('API respondió') 
+      ? error.message 
+      : `*Ocurrió un error inesperado.*\n\n🔍 _Detalle:_ ${error.message}`;
+
+    await conn.sendMessage(m.chat, { 
+      text: `💢 *¡Error al generar la imagen!*\n\n${errorMessage}\n\n⏳ _Inténtalo de nuevo en unos momentos._` 
+    }, { quoted: m });
   }
 };
 
-handler.help = ['text2img <texto>'];
-handler.tags = ['ai'];
-handler.command = ['text2img', 'imagen', 'iaimg'];
+// ==================== METADATOS DEL COMANDO ====================
+handler.help = ['text2img <descripción>'];
+handler.tags = ['ai', 'imagenes'];
+handler.command = ['text2img', 'imagen', 'iaimg', 'imgia', 't2i'];
 handler.limit = true;
 handler.register = true;
 
