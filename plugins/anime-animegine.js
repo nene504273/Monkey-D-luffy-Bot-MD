@@ -1,23 +1,22 @@
+
 import fetch from 'node-fetch';
 
 // ==================== CONFIGURACIÓN ====================
 const API_KEY = 'LUFFY-GEAR4';
-const API_BASE = 'https://rest.alyabotpe.xyz/ai/texttoimage';
-const DEFAULT_STYLE = 'realista';
-const TIMEOUT_MS = 45000; // 45 segundos máximo de espera
+const API_BASE = 'https://api.alyacore.xyz/search/googleimagen';
+const TIMEOUT_MS = 30000; // 30 segundos máximo de espera
 
 // ==================== FUNCIONES AUXILIARES ====================
 
 /**
- * Obtiene una imagen generada por IA desde la API externa.
- * @param {string} prompt - Texto descriptivo para la imagen.
- * @returns {Promise<Buffer>} Buffer de la imagen generada.
- * @throws {Error} Si la API no responde correctamente o no es una imagen.
+ * Busca imágenes en Google a través de la API externa.
+ * @param {string} query - Término de búsqueda.
+ * @returns {Promise<string[]>} Array de URLs de imágenes.
+ * @throws {Error} Si la API falla o no devuelve resultados válidos.
  */
-async function fetchGeneratedImage(prompt) {
-  const url = `${API_BASE}?prompt=${encodeURIComponent(prompt)}&style=${DEFAULT_STYLE}&key=${API_KEY}`;
+async function fetchGoogleImages(query) {
+  const url = `${API_BASE}?query=${encodeURIComponent(query)}&key=${API_KEY}`;
 
-  // Controlador de timeout para evitar esperas infinitas
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_MS);
 
@@ -25,7 +24,7 @@ async function fetchGeneratedImage(prompt) {
     const response = await fetch(url, {
       headers: {
         'User-Agent': 'Mozilla/5.0 (compatible; WhatsAppBot/2.0)',
-        'Accept': 'image/*, application/json'
+        'Accept': 'application/json'
       },
       signal: controller.signal
     });
@@ -39,99 +38,100 @@ async function fetchGeneratedImage(prompt) {
         const json = await response.json();
         errorDetail = json.message || json.error || errorDetail;
       } catch {
-        // Si no es JSON, tomamos parte del texto
         const text = await response.text();
         errorDetail = text.slice(0, 200) || errorDetail;
       }
       throw new Error(`API respondió con error: ${errorDetail}`);
     }
 
-    // 2. Verificar tipo de contenido
-    const contentType = response.headers.get('content-type') || '';
+    // 2. Parsear respuesta JSON
+    const data = await response.json();
 
-    if (contentType.includes('image/')) {
-      // Es una imagen → convertir a Buffer
-      const arrayBuffer = await response.arrayBuffer();
-      return Buffer.from(arrayBuffer);
+    // 3. Validar estructura de respuesta (ajusta según el formato real de la API)
+    //    Suponemos que data.result es un array con objetos que tienen una propiedad "url" o "link".
+    let images = [];
+    if (Array.isArray(data.result)) {
+      images = data.result
+        .map(item => item.url || item.link || item.image || item.src)
+        .filter(url => typeof url === 'string' && url.startsWith('http'));
+    } else if (Array.isArray(data)) {
+      images = data
+        .map(item => item.url || item.link || item.image || item.src)
+        .filter(url => typeof url === 'string' && url.startsWith('http'));
     }
 
-    // 3. No es imagen, intentar leer mensaje de error en JSON
-    const textResponse = await response.text();
-    try {
-      const jsonError = JSON.parse(textResponse);
-      throw new Error(jsonError.message || jsonError.error || 'La API no devolvió una imagen válida.');
-    } catch (parseError) {
-      // No es JSON, mostrar parte del texto recibido
-      const preview = textResponse.slice(0, 150);
-      throw new Error(`Respuesta inesperada (no imagen): ${preview}...`);
+    if (images.length === 0) {
+      throw new Error('No se encontraron imágenes para esta búsqueda.');
     }
+
+    return images;
 
   } catch (error) {
     clearTimeout(timeoutId);
-    // Mejorar mensaje de timeout
     if (error.name === 'AbortError') {
-      throw new Error(`La generación excedió el tiempo límite (${TIMEOUT_MS / 1000}s).`);
+      throw new Error(`La búsqueda excedió el tiempo límite (${TIMEOUT_MS / 1000}s).`);
     }
-    throw error; // Relanzar para manejo superior
+    throw error;
   }
 }
 
 // ==================== HANDLER PRINCIPAL ====================
 const handler = async (m, { conn, args }) => {
-  const prompt = args.join(' ').trim();
+  const query = args.join(' ').trim();
 
   // Validación de entrada
-  if (!prompt) {
-    return conn.sendMessage(m.chat, { 
-      text: '*🎨 ¡Hey! Necesito un texto para crear la imagen.*\n\n_Ejemplo: .text2img atardecer en la playa_' 
+  if (!query) {
+    return conn.sendMessage(m.chat, {
+      text: '*🔍 ¡Necesito un término de búsqueda!*\n\n_Ejemplo: .googleimg paisajes montañosos_'
     }, { quoted: m });
   }
 
-  // Límite de caracteres para evitar prompts muy largos (opcional pero recomendable)
-  if (prompt.length > 500) {
-    return conn.sendMessage(m.chat, { 
-      text: '⚠️ *El texto es demasiado largo.* Por favor, resúmelo a menos de 500 caracteres.' 
+  if (query.length > 200) {
+    return conn.sendMessage(m.chat, {
+      text: '⚠️ *La búsqueda es demasiado larga.* Por favor, resúmela a menos de 200 caracteres.'
     }, { quoted: m });
   }
 
-  // Reacción inicial indicando proceso
-  await conn.sendMessage(m.chat, { react: { text: '🎨', key: m.key } });
+  // Reacción inicial
+  await conn.sendMessage(m.chat, { react: { text: '🔍', key: m.key } });
 
   try {
-    // Obtener imagen desde la API
-    const imageBuffer = await fetchGeneratedImage(prompt);
+    // Obtener URLs de imágenes desde la API
+    const imageUrls = await fetchGoogleImages(query);
 
-    // Enviar imagen con caption atractivo
+    // Seleccionar la primera imagen (puedes cambiar a aleatoria si prefieres)
+    const selectedImageUrl = imageUrls[0];
+
+    // Enviar la imagen
     await conn.sendMessage(m.chat, {
-      image: imageBuffer,
-      caption: `✅ *¡Imagen generada con éxito!*\n\n📝 *Prompt:* ${prompt}\n🎭 *Estilo:* ${DEFAULT_STYLE}\n🔮 *Generada por IA*`,
-      mimetype: 'image/jpeg' // Forzar tipo MIME para evitar problemas
+      image: { url: selectedImageUrl },
+      caption: `✅ *Resultado de búsqueda:*\n\n📝 *Término:* ${query}\n🖼️ *Fuente:* Google Imágenes`,
+      mimetype: 'image/jpeg'
     }, { quoted: m });
 
     // Reacción de éxito
     await conn.sendMessage(m.chat, { react: { text: '✅', key: m.key } });
 
   } catch (error) {
-    console.error('❌ Error en text2img:', error);
+    console.error('❌ Error en googleimg:', error);
 
     // Reacción de fallo
     await conn.sendMessage(m.chat, { react: { text: '✖️', key: m.key } });
 
-    // Mensaje de error detallado pero amigable
-    const errorMessage = error.message.includes('API respondió') 
-      ? error.message 
+    const errorMessage = error.message.includes('API respondió') || error.message.includes('No se encontraron')
+      ? error.message
       : `*Ocurrió un error inesperado.*\n\n🔍 _Detalle:_ ${error.message}`;
 
-    await conn.sendMessage(m.chat, { 
-      text: `💢 *¡Error al generar la imagen!*\n\n${errorMessage}\n\n⏳ _Inténtalo de nuevo en unos momentos._` 
+    await conn.sendMessage(m.chat, {
+      text: `💢 *¡Error al buscar imágenes!*\n\n${errorMessage}\n\n⏳ _Inténtalo de nuevo más tarde._`
     }, { quoted: m });
   }
 };
 
 // ==================== METADATOS DEL COMANDO ====================
-handler.help = ['text2img <descripción>'];
-handler.tags = ['ai', 'imagenes'];
-handler.command = ['text2img', 'imagen', 'iaimg', 'imgia', 't2i'];
+handler.help = ['text2img <búsqueda>'];
+handler.tags = ['buscador', 'imagenes'];
+handler.command = ['googleimg', 'gimage', 'imgsearch', 'buscarimg'];
 handler.limit = true;
 handler.register = true;
 
