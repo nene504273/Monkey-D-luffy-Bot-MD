@@ -166,6 +166,6 @@ npm start
 <div align="center">
   <img src="https://media1.tenor.com/m/K24L1kZ10nEAAAAC/luffy-gear-5-one-piece.gif" width="100%" />
   <h3>¡GRACIAS POR NAVEGAR CON NOSOTROS! 🎉</h3>
-  <sub>© 2025 Monkey D. Luffy Bot</sub>
+  <sub>© 2026 Monkey D. Luffy Bot</sub>
 </div>
 ```
