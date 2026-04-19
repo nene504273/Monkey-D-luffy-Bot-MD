@@ -116,17 +116,6 @@ npm start
 
 🤝 CONECTA CONMIGO
 
-<p align="left">
-  <a href="https://whatsapp.com/channel/0029VbBNkDqInlqSR3MtNN0u">
-    <img src="https://img.shields.io/badge/Canal%20Oficial-25D366?style=for-the-badge&logo=whatsapp&logoColor=white" />
-  </a>
-  <a href="https://chat.whatsapp.com/JgRSyLzk5zLGCF4AvEHLAC">
-    <img src="https://img.shields.io/badge/Comunidad%20Stellar%20Wa-25D366?style=for-the-badge&logo=whatsapp&logoColor=white" />
-  </a>
-  <a href="https://chat.whatsapp.com/GoCTBX17WRV9PqwHGXm43G?mode=gi_t">
-    <img src="https://img.shields.io/badge/Grupo%20Oficial%20Bot-25D366?style=for-the-badge&logo=whatsapp&logoColor=white" />
-  </a>
-</p>
 
 📧 Correo: salassantos675@gmail.com
 
