@@ -30,7 +30,7 @@
     <img src="https://img.shields.io/badge/Grupo%20del%20Bot-25D366?style=for-the-badge&logo=whatsapp&logoColor=white" alt="Grupo Bot">
   </a>
   <a href="https://chat.whatsapp.com/JgRSyLzk5zLGCF4AvEHLAC">
-    <img src="https://img.shields.io/badge/Comunidad%20Stellar%20Wa-25D366?style=for-the-badge&logo=whatsapp&logoColor=white" alt="Comunidad">
+    <img src="https://img.shields.io/badge/Comunidad-25D366?style=for-the-badge&logo=whatsapp&logoColor=white" alt="Comunidad">
   </a>
 </div>
 
@@ -64,6 +64,25 @@ Sigue los comandos **uno por uno**:
 ```bash
 # 1. Dar permisos a Termux
 termux-setup-storage
+
+# 2. Actualizar paquetes
+apt update && apt upgrade -y
+
+# 3. Instalar dependencias
+pkg install git nodejs ffmpeg imagemagick yarn -y
+
+# 4. Clonar repositorio
+git clone https://github.com/nene504273/Monkey-D-Luffy-Bot-MD
+cd Monkey-D-Luffy-Bot-MD
+
+# 5. Instalar librerías
+yarn install
+npm install
+
+# 6. Iniciar el bot
+npm start
+
+---
 
 🔄 COMANDOS ÚTILES TERMUX
 
@@ -116,7 +135,6 @@ npm start
 
 🤝 CONECTA CONMIGO
 
-
 📧 Correo: salassantos675@gmail.com
 
 ---
@@ -142,4 +160,12 @@ npm start
 <p align="center">
   <i>⭐ Dale una estrella al repositorio si te gusta mi trabajo ⭐</i>
 </p>
+
+---
+
+<div align="center">
+  <img src="https://media1.tenor.com/m/K24L1kZ10nEAAAAC/luffy-gear-5-one-piece.gif" width="100%" />
+  <h3>¡GRACIAS POR NAVEGAR CON NOSOTROS! 🎉</h3>
+  <sub>© 2025 Monkey D. Luffy Bot</sub>
+</div>
 ```
