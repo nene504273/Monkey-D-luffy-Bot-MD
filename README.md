@@ -65,19 +65,92 @@ Sigue los comandos **uno por uno**:
 # 1. Dar permisos a Termux
 termux-setup-storage
 
-# 2. Actualizar paquetes
-apt update && apt upgrade -y
+🔄 COMANDOS ÚTILES TERMUX
 
-# 3. Instalar dependencias
-pkg install git nodejs ffmpeg imagemagick yarn -y
+<details>
+<summary><b>🌀 REINICIAR SI SE DETIENE</b></summary>
 
-# 4. Clonar repositorio
-git clone https://github.com/nene504273/Monkey-D-Luffy-Bot-MD
+```bash
 cd Monkey-D-Luffy-Bot-MD
-
-# 5. Instalar librerías
-yarn install
-npm install
-
-# 6. Iniciar el bot
 npm start
+```
+
+</details>
+
+<details>
+<summary><b>🔁 ACTIVAR 24/7 CON PM2</b></summary>
+
+```bash
+termux-wake-lock
+npm i -g pm2
+pm2 start index.js
+pm2 save
+pm2 logs
+```
+
+</details>
+
+<details>
+<summary><b>🆕 NUEVO QR (BORRAR SESIÓN)</b></summary>
+
+```bash
+cd Monkey-D-Luffy-Bot-MD
+rm -rf session
+npm start
+```
+
+</details>
+
+<details>
+<summary><b>⬆️ ACTUALIZAR BOT</b></summary>
+
+```bash
+git pull
+npm install
+npm start
+```
+
+</details>
+
+---
+
+🤝 CONECTA CONMIGO
+
+<p align="left">
+  <a href="https://whatsapp.com/channel/0029VbBNkDqInlqSR3MtNN0u">
+    <img src="https://img.shields.io/badge/Canal%20Oficial-25D366?style=for-the-badge&logo=whatsapp&logoColor=white" />
+  </a>
+  <a href="https://chat.whatsapp.com/JgRSyLzk5zLGCF4AvEHLAC">
+    <img src="https://img.shields.io/badge/Comunidad%20Stellar%20Wa-25D366?style=for-the-badge&logo=whatsapp&logoColor=white" />
+  </a>
+  <a href="https://chat.whatsapp.com/GoCTBX17WRV9PqwHGXm43G?mode=gi_t">
+    <img src="https://img.shields.io/badge/Grupo%20Oficial%20Bot-25D366?style=for-the-badge&logo=whatsapp&logoColor=white" />
+  </a>
+</p>
+
+📧 Correo: salassantos675@gmail.com
+
+---
+
+🛠️ TECNOLOGÍAS QUE USO
+
+<p align="left">
+  <img src="https://img.shields.io/badge/JavaScript-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black" />
+  <img src="https://img.shields.io/badge/Node.js-339933?style=for-the-badge&logo=node.js&logoColor=white" />
+  <img src="https://img.shields.io/badge/Baileys_MD-25D366?style=for-the-badge&logo=whatsapp&logoColor=white" />
+</p>
+
+---
+
+👑 CREADOR & CRÉDITOS
+
+<div align="center">
+  <img src="https://github.com/nene504273.png" width="130" height="130" style="border-radius:50%; border:4px solid #FF0000;" />
+  <h3>ɴ͡ᴇ͜ɴᴇ❀᭄☂️</h3>
+  <p><strong>Desarrollador Principal & Capitán de la Tripulación</strong></p>
+</div>
+
+<p align="center">
+  <i>⭐ Dale una estrella al repositorio si te gusta mi trabajo ⭐</i>
+</p>
+```
