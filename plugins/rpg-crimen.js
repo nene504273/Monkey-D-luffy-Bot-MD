@@ -4,6 +4,7 @@ let handler = async (m, { conn, text, command, usedPrefix }) => {
   let users = global.db.data.users
   let senderId = m.sender
   let senderName = conn.getName(senderId)
+  let moneda = global.moneda || 'Berris 💰'   // 🔥 usar moneda del bot
 
   let tiempo = 5 * 60
   if (cooldowns[m.sender] && Date.now() - cooldowns[m.sender] < tiempo * 1000) {
@@ -12,27 +13,27 @@ let handler = async (m, { conn, text, command, usedPrefix }) => {
     return
   }
   cooldowns[m.sender] = Date.now()
-  
+
   let senderCoin = users[senderId].coin || 0
-  
+
   // Seleccionar una víctima aleatoria (distinta al remitente)
   let randomUserId = Object.keys(users)[Math.floor(Math.random() * Object.keys(users).length)]
   while (randomUserId === senderId) {
     randomUserId = Object.keys(users)[Math.floor(Math.random() * Object.keys(users).length)]
   }
   let randomUserCoin = users[randomUserId].coin || 0
+  let victimName = conn.getName(randomUserId)
 
-  // 🔥 NUEVO RANGO: de 500 a 700 monedas
-  let minAmount = 500
-  let maxAmount = 700
-  
+  // 🔥 NUEVO RANGO: de 1000 a 9000 monedas
+  let minAmount = 1000
+  let maxAmount = 9000
+
   let randomOption = Math.floor(Math.random() * 3) // 0, 1, 2
-  
+
   switch (randomOption) {
     case 0: {
       // Éxito total: robo completo
       let amountTaken = Math.floor(Math.random() * (maxAmount - minAmount + 1)) + minAmount
-      // Verificar que la víctima tenga suficiente; si no, robar todo lo que tenga
       if (randomUserCoin < amountTaken) amountTaken = randomUserCoin
       if (amountTaken <= 0) {
         m.reply(`${emoji2} Intentaste robar pero la víctima no tenía ${moneda} suficientes.`)
@@ -41,14 +42,13 @@ let handler = async (m, { conn, text, command, usedPrefix }) => {
       users[senderId].coin += amountTaken
       users[randomUserId].coin -= amountTaken
       conn.sendMessage(m.chat, {
-        text: `${emoji} ¡Lograste cometer tu crimen con éxito!, acabas de robar *${amountTaken} ${moneda} 💸* a @${randomUserId.split("@")[0]}\n\nSe suman *+${amountTaken} ${moneda} 💸* a ${senderName}.`,
+        text: `${emoji} ¡Lograste cometer tu crimen con éxito!, acabas de robar *${amountTaken} ${moneda}* a *${victimName}*\n\nSe suman *+${amountTaken} ${moneda}* a ${senderName}.`,
         contextInfo: { mentionedJid: [randomUserId] }
       }, { quoted: m })
       break
     }
     case 1: {
       // Fracaso: el ladrón pierde dinero
-      // Se calcula una multa entre 500 y 700, pero sin superar el saldo del ladrón
       let amountSubtracted = Math.floor(Math.random() * (maxAmount - minAmount + 1)) + minAmount
       if (senderCoin < amountSubtracted) amountSubtracted = senderCoin
       if (amountSubtracted <= 0) {
@@ -56,14 +56,12 @@ let handler = async (m, { conn, text, command, usedPrefix }) => {
         return
       }
       users[senderId].coin -= amountSubtracted
-      conn.reply(m.chat, `${emoji2} No fuiste cuidadoso y te atraparon mientras cometías tu crimen, se restaron *-${amountSubtracted} ${moneda} 💸* a ${senderName}.`, m)
+      conn.reply(m.chat, `${emoji2} No fuiste cuidadoso y te atraparon mientras cometías tu crimen, se restaron *-${amountSubtracted} ${moneda}* a ${senderName}.`, m)
       break
     }
     case 2: {
-      // Éxito parcial: robo reducido (entre 250 y 450, por ejemplo)
-      // Podemos mantener la lógica de "pequeño robo" pero con valores proporcionales al nuevo rango
+      // Éxito parcial: robo reducido (aprox. la mitad)
       let smallAmountTaken = Math.floor(Math.random() * (maxAmount - minAmount + 1)) + minAmount
-      // Reducir a la mitad aproximadamente (simulando que solo pudiste llevarte parte)
       smallAmountTaken = Math.floor(smallAmountTaken * 0.5) 
       if (randomUserCoin < smallAmountTaken) smallAmountTaken = randomUserCoin
       if (smallAmountTaken <= 0) {
@@ -73,13 +71,13 @@ let handler = async (m, { conn, text, command, usedPrefix }) => {
       users[senderId].coin += smallAmountTaken
       users[randomUserId].coin -= smallAmountTaken
       conn.sendMessage(m.chat, {
-        text: `${emoji} Lograste cometer tu crimen con éxito, pero te descubrieron y solo lograste tomar *${smallAmountTaken} ${moneda} 💸* de @${randomUserId.split("@")[0]}\n\nSe suman *+${smallAmountTaken} ${moneda} 💸* a ${senderName}.`,
+        text: `${emoji} Lograste cometer tu crimen con éxito, pero te descubrieron y solo lograste tomar *${smallAmountTaken} ${moneda}* de *${victimName}*\n\nSe suman *+${smallAmountTaken} ${moneda}* a ${senderName}.`,
         contextInfo: { mentionedJid: [randomUserId] }
       }, { quoted: m })
       break
     }
   }
-  
+
   global.db.write()
 }
 
