@@ -1,36 +1,37 @@
 import fetch from 'node-fetch'
 
-// 🔑 Configuración de la API
 const API_KEY = 'LUFFY-GEAR4'
 
 const handler = async (m, { conn, text, usedPrefix, command }) => {
-    // 1. Validación del enlace
     if (!text) throw m.reply(`🌐 Por favor, ingresa un enlace de *TikTok*.`)
 
-    // 2. Reacción de proceso
     await conn.sendMessage(m.chat, { react: { text: '🕒', key: m.key } })
 
     try {
-        // 3. Construir URL con la API Key (LUFFY-GEAR4)
         const apiUrl = `https://api.alyacore.xyz/dl/tiktokmp3?url=${encodeURIComponent(text)}&key=${API_KEY}`
+        console.log('[TikTok MP3] Consultando:', apiUrl)
+
         const response = await fetch(apiUrl)
         const json = await response.json()
+        console.log('[TikTok MP3] Respuesta API:', JSON.stringify(json, null, 2))
 
-        // 4. Validar respuesta de la API
-        if (!json.status || !json.data?.dl) {
-            throw new Error('La API no devolvió un enlace de audio válido.')
+        // Validación más detallada
+        if (!json.status) {
+            throw new Error(`API respondió con estado false: ${json.message || 'Sin mensaje'}`)
+        }
+        if (!json.data || !json.data.dl) {
+            throw new Error('La API no devolvió el enlace de descarga (dl)')
         }
 
-        // 5. Extraer datos
         const { dl: audioUrl, thumbnail, title } = json.data
 
-        // 6. Obtener miniatura
-        const thumbBuffer = await (await fetch(thumbnail)).buffer()
+        // Obtener miniatura usando conn.getFile (más fiable que fetch directo)
+        const thumbData = await conn.getFile(thumbnail)
 
-        // 7. Construir mensaje de audio
+        // Construir mensaje
         const audioMessage = {
             audio: { url: audioUrl },
-            mimetype: 'audio/mp4',
+            mimetype: 'audio/mpeg',        // Probamos con 'audio/mpeg' que es más estándar para MP3
             fileName: `tiktok_${Date.now()}.mp3`,
             contextInfo: {
                 externalAdReply: {
@@ -39,29 +40,27 @@ const handler = async (m, { conn, text, usedPrefix, command }) => {
                     mediaUrl: text,
                     title: title || 'Audio TikTok',
                     sourceUrl: text,
-                    thumbnail: thumbBuffer
+                    thumbnail: thumbData.data
                 }
             }
         }
 
-        // 8. Enviar audio
         await conn.sendMessage(m.chat, audioMessage, { quoted: m })
-
-        // 9. Reacción de éxito
         await conn.sendMessage(m.chat, { react: { text: '✅', key: m.key } })
 
     } catch (error) {
-        console.error('Error TikTok MP3:', error)
+        console.error('[TikTok MP3] Error completo:', error)
         await conn.sendMessage(m.chat, { react: { text: '❌', key: m.key } })
-        throw m.reply('❌ No se pudo descargar el audio. Verifica el enlace.')
+        // Mensaje de error con más información (en desarrollo puedes ver la consola)
+        throw m.reply(`❌ Error al descargar: ${error.message}`)
     }
 }
 
-// Configuración del comando
+// ⚙️ Configuración (puedes quitar group: true si quieres probar en privado)
 handler.help = ['tiktokmp3 *<url>*']
 handler.tags = ['dl']
 handler.command = ['tiktokmp3', 'ttmp3']
-handler.group = true
+handler.group = true      // <-- Quítalo o ponlo en false para probar en privado
 handler.register = true
 handler.coin = 2
 
