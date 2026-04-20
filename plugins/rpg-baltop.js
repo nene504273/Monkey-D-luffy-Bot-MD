@@ -13,16 +13,24 @@ let handler = async (m, { conn, args, participants }) => {
 
     const len = args[0] && !isNaN(args[0]) ? Math.min(10, Math.max(parseInt(args[0]), 1)) : Math.min(10, sortedLim.length);
 
-    let text = `「💰」Los usuarios con más *¥${moneda}* son:\n\n`;
+    // 🏴‍☠️ DECORACIÓN ESTILO LUFFY (ONE PIECE) 👒
+    let text = `🏴‍☠️ *TABLA DE RECOMPENSAS* 👒\n`;
+    text += `⚓ _Los piratas con más *₱${moneda}* son:_\n`;
+    text += `══════════════════════\n\n`;
+
+    const posiciones = ['🥇', '🥈', '🥉', '4️⃣', '5️⃣', '6️⃣', '7️⃣', '8️⃣', '9️⃣', '🔟'];
 
     for (let i = 0; i < len; i++) {
         const { jid, coin, bank } = sortedLim[i];
         const total = (coin || 0) + (bank || 0);
         const name = await conn.getName(jid);
 
-        text += `✰ ${i + 1} » *${name}*\n`;
-        text += `  Total → *¥${total} ${moneda}*\n\n`;
+        text += `${posiciones[i] || (i+1) + '️⃣'} *${name}*\n`;
+        text += `  💰 Total → *₱${total} ${moneda}*\n\n`;
     }
+
+    text += `══════════════════════\n`;
+    text += `🍖 *¡El rey de los piratas seré yo!* 🏴‍☠️`;
 
     await conn.reply(m.chat, text.trim(), m, {
         mentions: sortedLim.slice(0, len).map(u => u.jid)
