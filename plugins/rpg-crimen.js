@@ -4,7 +4,7 @@ let handler = async (m, { conn, text, command, usedPrefix }) => {
   let users = global.db.data.users
   let senderId = m.sender
   let senderName = conn.getName(senderId)
-  let moneda = global.moneda || 'Berris 💰'   // 🔥 usar moneda del bot
+  let moneda = global.moneda || 'Berris 💰'
 
   let tiempo = 5 * 60
   if (cooldowns[m.sender] && Date.now() - cooldowns[m.sender] < tiempo * 1000) {
@@ -16,7 +16,6 @@ let handler = async (m, { conn, text, command, usedPrefix }) => {
 
   let senderCoin = users[senderId].coin || 0
 
-  // Seleccionar una víctima aleatoria (distinta al remitente)
   let randomUserId = Object.keys(users)[Math.floor(Math.random() * Object.keys(users).length)]
   while (randomUserId === senderId) {
     randomUserId = Object.keys(users)[Math.floor(Math.random() * Object.keys(users).length)]
@@ -24,15 +23,13 @@ let handler = async (m, { conn, text, command, usedPrefix }) => {
   let randomUserCoin = users[randomUserId].coin || 0
   let victimName = conn.getName(randomUserId)
 
-  // 🔥 NUEVO RANGO: de 1000 a 9000 monedas
   let minAmount = 1000
   let maxAmount = 9000
 
-  let randomOption = Math.floor(Math.random() * 3) // 0, 1, 2
+  let randomOption = Math.floor(Math.random() * 3)
 
   switch (randomOption) {
     case 0: {
-      // Éxito total: robo completo
       let amountTaken = Math.floor(Math.random() * (maxAmount - minAmount + 1)) + minAmount
       if (randomUserCoin < amountTaken) amountTaken = randomUserCoin
       if (amountTaken <= 0) {
@@ -48,7 +45,6 @@ let handler = async (m, { conn, text, command, usedPrefix }) => {
       break
     }
     case 1: {
-      // Fracaso: el ladrón pierde dinero
       let amountSubtracted = Math.floor(Math.random() * (maxAmount - minAmount + 1)) + minAmount
       if (senderCoin < amountSubtracted) amountSubtracted = senderCoin
       if (amountSubtracted <= 0) {
@@ -60,7 +56,6 @@ let handler = async (m, { conn, text, command, usedPrefix }) => {
       break
     }
     case 2: {
-      // Éxito parcial: robo reducido (aprox. la mitad)
       let smallAmountTaken = Math.floor(Math.random() * (maxAmount - minAmount + 1)) + minAmount
       smallAmountTaken = Math.floor(smallAmountTaken * 0.5) 
       if (randomUserCoin < smallAmountTaken) smallAmountTaken = randomUserCoin
