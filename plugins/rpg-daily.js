@@ -1,17 +1,20 @@
 var handler = async (m, { conn }) => {
-    let coin = Math.floor(Math.random() * (500 - 100 + 1)) + 100;
-    let exp = Math.floor(Math.random() * (500 - 100 + 1)) + 100;
-    let d = Math.floor(Math.random() * (500 - 100 + 1)) + 100;
+    // Rangos ajustados entre 1000 y 3000
+    let coin = Math.floor(Math.random() * (3000 - 1000 + 1)) + 1000;
+    let exp = Math.floor(Math.random() * (3000 - 1000 + 1)) + 1000;
+    let d = Math.floor(Math.random() * (3000 - 1000 + 1)) + 1000;
 
-    global.db.data.users[m.sender].diamond += d;
-    global.db.data.users[m.sender].coin += coin;
-
+    // Validación de tiempo de espera (2 horas) - MOVÍ ESTO ARRIBA para que no sume si está en cooldown
     let time = global.db.data.users[m.sender].lastclaim + 86400000;
     if (new Date() - global.db.data.users[m.sender].lastclaim < 7200000) {
         return conn.reply(m.chat, `${emoji4} *Vuelve en ${msToTime(time - new Date())}*`, m);
     }
 
+    // Sumar recursos
+    global.db.data.users[m.sender].diamond += d;
+    global.db.data.users[m.sender].coin += coin;
     global.db.data.users[m.sender].exp += exp;
+    
     conn.reply(m.chat, `${emoji} *Recompensa Diaria*
 
 Recursos:
