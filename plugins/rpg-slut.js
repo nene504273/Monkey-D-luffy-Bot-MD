@@ -1,64 +1,90 @@
 let cooldowns = {};
 
-let handler = async (m, { conn, text, command, usedPrefix }) => {
+let handler = async (m, { conn, usedPrefix }) => {
   let users = global.db.data.users;
   let senderId = m.sender;
   let senderName = conn.getName(senderId);
-  const moneda = 'Berris';   // <--- Moneda fija como "Berris"
+  const moneda = 'Berris 💰';
 
-  let tiempo = 5 * 60; // 5 minutos de enfriamiento
-  if (cooldowns[m.sender] && Date.now() - cooldowns[m.sender] < tiempo * 1000) {
-    let tiempo2 = segundosAHMS(Math.ceil((cooldowns[m.sender] + tiempo * 1000 - Date.now()) / 1000));
-    m.reply(`${emoji3} Debes esperar *${tiempo2}* para usar *#slut* de nuevo.`);
-    return;
+  if (!users[senderId]) users[senderId] = { coin: 0, bank: 0 };
+
+  let tiempo = 5 * 60;
+  if (cooldowns[senderId] && Date.now() - cooldowns[senderId] < tiempo * 1000) {
+    let tiempo2 = segundosAHMS(Math.ceil((cooldowns[senderId] + tiempo * 1000 - Date.now()) / 1000));
+    return m.reply(`🏴‍☠️ ¡Aún estás descansando de tu último servicio, nakama! Vuelve en ⏱️ *${tiempo2}*.`);
   }
-  cooldowns[m.sender] = Date.now();
+  cooldowns[senderId] = Date.now();
 
   let senderCoin = users[senderId].coin || 0;
 
-  // Elegir un usuario aleatorio que no sea el que ejecuta el comando
-  let randomUserId = Object.keys(users)[Math.floor(Math.random() * Object.keys(users).length)];
-  while (randomUserId === senderId) {
-    randomUserId = Object.keys(users)[Math.floor(Math.random() * Object.keys(users).length)];
+  if (!m.isGroup) {
+    return m.reply('🍖 ¡Este comando solo funciona en grupos, como una buena fiesta en el Thousand Sunny!');
   }
-  let randomUserCoin = users[randomUserId].coin || 0;
-  let randomUserName = conn.getName(randomUserId);
 
-  // Rango de ganancia/pérdida: 1000 a 9000 Berris
+  let groupParticipants = [];
+  try {
+    let metadata = await conn.groupMetadata(m.chat);
+    groupParticipants = metadata.participants.map(p => p.id);
+  } catch (e) {
+    return m.reply('❌ No pude obtener la lista de la tripulación.');
+  }
+
+  let possibleClients = groupParticipants.filter(id => id !== senderId);
+  if (possibleClients.length === 0) {
+    return m.reply('😭 No hay nadie más en el grupo... ¡Ni siquiera Zoro está para un favor!');
+  }
+
+  let clientId = possibleClients[Math.floor(Math.random() * possibleClients.length)];
+  if (!users[clientId]) users[clientId] = { coin: 0, bank: 0 };
+
+  let clientCoin = users[clientId].coin || 0;
+  let clientName = '@' + clientId.split('@')[0];
+
   let minAmount = 1000;
   let maxAmount = 9000;
   let amount = Math.floor(Math.random() * (maxAmount - minAmount + 1)) + minAmount;
-
-  let randomOption = Math.floor(Math.random() * 3); // 0, 1 o 2
+  let randomOption = Math.floor(Math.random() * 3);
 
   switch (randomOption) {
-    case 0:
-      // Éxito: se gana dinero de otro usuario
-      users[senderId].coin += amount;
-      users[randomUserId].coin -= amount;
-      conn.sendMessage(m.chat, {
-        text: `${emoji} ¡Se la chupaste a @${randomUserName} por *${amount} ${moneda}* y lo dejaste bien seco!\n\nSe suman *+${amount} ${moneda}* a ${senderName}.`,
-        contextInfo: { mentionedJid: [randomUserId] }
+    case 0: {
+      let taken = Math.min(amount, clientCoin);
+      if (taken <= 0) {
+        return m.reply(`😵 ${clientName} no tiene ni un solo Berry... ¡Está más pobre que Buggy el payaso!`);
+      }
+      users[senderId].coin += taken;
+      users[clientId].coin -= taken;
+      await conn.sendMessage(m.chat, {
+        text: `💃 *¡SERVICIO EXITOSO!* 💃\n\n🍖 *${senderName}* atendió a ${clientName} y ganó *₱${taken} ${moneda}*.\n\n⚓ ¡Ese botín sabe bien! *+₱${taken}*`,
+        mentions: [clientId]
       }, { quoted: m });
       break;
-
-    case 1:
-      // Fracaso: se pierde dinero
-      let amountSubtracted = Math.min(amount, senderCoin);
-      users[senderId].coin -= amountSubtracted;
-      conn.reply(m.chat, `${emoji} No fuiste cuidadoso y le rompiste la verga a tu cliente, se te restaron *-${amountSubtracted} ${moneda}* a ${senderName}.`, m);
-      break;
-
-    case 2:
-      // Otra variante de éxito
-      let smallAmountTaken = Math.min(amount, randomUserCoin);
-      users[senderId].coin += smallAmountTaken;
-      users[randomUserId].coin -= smallAmountTaken;
-      conn.sendMessage(m.chat, {
-        text: `${emoji} Le diste unos sentones y te pagaron *${smallAmountTaken} ${moneda}* de @${randomUserName} y lo dejaste paralítico.\n\nSe suman *+${smallAmountTaken} ${moneda}* a ${senderName}.`,
-        contextInfo: { mentionedJid: [randomUserId] }
+    }
+    case 1: {
+      let lost = Math.min(amount, senderCoin);
+      if (lost <= 0) {
+        return m.reply(`👮‍♂️ ¡Los marines te descubrieron! Pero como no tenías Berris, te dejaron con una advertencia.`);
+      }
+      users[senderId].coin -= lost;
+      await conn.sendMessage(m.chat, {
+        text: `👮‍♂️ *¡REDADA DE LOS MARINES!* 👮‍♂️\n\n🍖 *${senderName}* fue atrapado en pleno acto y perdió *₱${lost} ${moneda}*.\n\n😭 ¡Maldito Smoker!`,
+        mentions: [senderId]
       }, { quoted: m });
       break;
+    }
+    case 2: {
+      let partial = Math.floor(amount * 0.5);
+      partial = Math.min(partial, clientCoin);
+      if (partial <= 0) {
+        return m.reply(`😵 ${clientName} se quedó sin Berris a medio servicio... ¡Qué mala suerte!`);
+      }
+      users[senderId].coin += partial;
+      users[clientId].coin -= partial;
+      await conn.sendMessage(m.chat, {
+        text: `🍻 *¡SERVICIO RÁPIDO!* 🍻\n\n🍖 *${senderName}* hizo un trabajito express para ${clientName} y sacó *₱${partial} ${moneda}*.\n\n⚡ ¡Algo es algo! *+₱${partial}*`,
+        mentions: [clientId]
+      }, { quoted: m });
+      break;
+    }
   }
 
   global.db.write();
