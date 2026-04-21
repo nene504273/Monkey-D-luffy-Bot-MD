@@ -3,42 +3,39 @@ import fetch from 'node-fetch'
 const API_URL = 'https://api.alyacore.xyz/dl/tiktokmp3'
 const API_KEY = 'LUFFY-GEAR4'
 
-const handler = async (m, { conn, text, usedPrefix, command }) => {
-    if (!text || !text.trim()) {
+const handler = async (m, { conn, text }) => {
+    if (!text?.trim()) {
         return conn.sendMessage(m.chat, { 
             text: '🌐 *Falta el enlace.*\nEjemplo: `#tiktokmp3 https://vt.tiktok.com/ZS91Etu8w/`' 
         }, { quoted: m })
     }
 
-    // Enviar un mensaje de "procesando" visible
-    const waitingMsg = await conn.sendMessage(m.chat, { text: '⏳ *Descargando audio de TikTok...*' }, { quoted: m })
+    // Mensaje temporal de espera (se borrará después)
+    const waitMsg = await conn.sendMessage(m.chat, { text: '⏳ *Procesando audio...*' }, { quoted: m })
 
     try {
-        const requestUrl = `${API_URL}?url=${encodeURIComponent(text)}&key=${API_KEY}`
-        const response = await fetch(requestUrl)
+        const response = await fetch(`${API_URL}?url=${encodeURIComponent(text)}&key=${API_KEY}`)
         const json = await response.json()
 
-        if (!json?.status || !json?.data?.dl) {
-            throw new Error('La API no devolvió enlace de audio válido')
-        }
+        if (!json?.status || !json?.data?.dl) throw new Error('Audio no disponible')
 
         const { dl: audioUrl, title } = json.data
 
-        // Enviar el audio como DOCUMENTO MP3 (más fiable que mensaje de audio con externalAdReply)
+        // 🔥 Envío como AUDIO nativo de WhatsApp (sin contextInfo complejo)
         await conn.sendMessage(m.chat, {
-            document: { url: audioUrl },
-            fileName: `${title?.replace(/[^\w\s]/gi, '') || 'tiktok_audio'}.mp3`,
+            audio: { url: audioUrl },
             mimetype: 'audio/mpeg',
-            caption: `🎵 *${title || 'Audio TikTok'}*\n🔗 ${text}`
+            fileName: `${title || 'tiktok_audio'}.mp3`,
+            ptt: false   // false = se muestra como música, no como nota de voz
         }, { quoted: m })
 
-        // Eliminar mensaje de "procesando" para limpiar chat
-        await conn.sendMessage(m.chat, { delete: waitingMsg.key })
+        // Borrar mensaje de "procesando"
+        await conn.sendMessage(m.chat, { delete: waitMsg.key })
 
-    } catch (error) {
-        console.error('Error TikTok Audio:', error)
+    } catch (err) {
+        console.error('Error audio TikTok:', err)
         await conn.sendMessage(m.chat, { 
-            text: '❌ *No se pudo obtener el audio.*\nVerifica que el enlace sea público y tenga audio.' 
+            text: '❌ *No se pudo obtener el audio.* Verifica el enlace.' 
         }, { quoted: m })
     }
 }
