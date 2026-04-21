@@ -1,76 +1,53 @@
 import fetch from 'node-fetch'
 
-// Configuración del servicio
-const SERVICE_KEY = 'LUFFY-GEAR4'
-const BASE_API = 'https://api.alyacore.xyz/dl/tiktokmp3'
+const API_URL = 'https://api.alyacore.xyz/dl/tiktokmp3'
+const API_KEY = 'LUFFY-GEAR4'
 
-const tiktokAudioHandler = async (m, { conn, text, usedPrefix, command }) => {
-    // Validación inicial: se requiere un enlace
+const handler = async (m, { conn, text, usedPrefix, command }) => {
     if (!text || !text.trim()) {
-        return conn.sendMessage(m.chat, { text: '🌐 *Por favor, ingresa el enlace del video de TikTok.*' }, { quoted: m })
+        return conn.sendMessage(m.chat, { 
+            text: '🌐 *Falta el enlace.*\nEjemplo: `#tiktokmp3 https://vt.tiktok.com/ZS91Etu8w/`' 
+        }, { quoted: m })
     }
 
-    // Notificar inicio de procesamiento
-    await conn.sendMessage(m.chat, { react: { text: '⏳', key: m.key } })
+    // Enviar un mensaje de "procesando" visible
+    const waitingMsg = await conn.sendMessage(m.chat, { text: '⏳ *Descargando audio de TikTok...*' }, { quoted: m })
 
     try {
-        // Construir endpoint con parámetros
-        const requestUrl = `${BASE_API}?url=${encodeURIComponent(text)}&key=${SERVICE_KEY}`
-        
-        // Consultar API
-        const apiResponse = await fetch(requestUrl)
-        const responseData = await apiResponse.json()
+        const requestUrl = `${API_URL}?url=${encodeURIComponent(text)}&key=${API_KEY}`
+        const response = await fetch(requestUrl)
+        const json = await response.json()
 
-        // Verificar estructura de respuesta
-        if (!responseData?.status || !responseData?.data?.dl) {
-            throw new Error('Respuesta de API inválida o enlace no procesable')
+        if (!json?.status || !json?.data?.dl) {
+            throw new Error('La API no devolvió enlace de audio válido')
         }
 
-        const { dl: audioLink, thumbnail, title } = responseData.data
+        const { dl: audioUrl, title } = json.data
 
-        // Descargar miniatura para la previsualización
-        const imageBuffer = await fetch(thumbnail).then(res => res.buffer())
-
-        // Preparar mensaje de audio con metadata
-        const audioPayload = {
-            audio: { url: audioLink },
+        // Enviar el audio como DOCUMENTO MP3 (más fiable que mensaje de audio con externalAdReply)
+        await conn.sendMessage(m.chat, {
+            document: { url: audioUrl },
+            fileName: `${title?.replace(/[^\w\s]/gi, '') || 'tiktok_audio'}.mp3`,
             mimetype: 'audio/mpeg',
-            fileName: `TikTok_Audio_${Date.now()}.mp3`,
-            contextInfo: {
-                externalAdReply: {
-                    showAdAttribution: true,
-                    mediaType: 2,
-                    mediaUrl: text,
-                    title: title?.slice(0, 100) || 'Audio de TikTok',
-                    sourceUrl: text,
-                    thumbnail: imageBuffer
-                }
-            }
-        }
+            caption: `🎵 *${title || 'Audio TikTok'}*\n🔗 ${text}`
+        }, { quoted: m })
 
-        // Enviar el audio
-        await conn.sendMessage(m.chat, audioPayload, { quoted: m })
+        // Eliminar mensaje de "procesando" para limpiar chat
+        await conn.sendMessage(m.chat, { delete: waitingMsg.key })
 
-        // Confirmar éxito
-        await conn.sendMessage(m.chat, { react: { text: '🎧', key: m.key } })
-
-    } catch (err) {
-        console.error('Fallo en descarga de audio TikTok:', err)
-        // Reacción de error
-        await conn.sendMessage(m.chat, { react: { text: '⚠️', key: m.key } })
-        // Mensaje de fallo
+    } catch (error) {
+        console.error('Error TikTok Audio:', error)
         await conn.sendMessage(m.chat, { 
-            text: '❌ *Ocurrió un error al procesar el audio.*\nVerifica que el enlace sea válido y que el video contenga audio.' 
+            text: '❌ *No se pudo obtener el audio.*\nVerifica que el enlace sea público y tenga audio.' 
         }, { quoted: m })
     }
 }
 
-// Metadatos del comando
-tiktokAudioHandler.help = ['tiktokmp3 <url>']
-tiktokAudioHandler.tags = ['descargas']
-tiktokAudioHandler.command = ['tiktokmp3']
-tiktokAudioHandler.group = true
-tiktokAudioHandler.register = true
-tiktokAudioHandler.coin = 2
+handler.help = ['tiktokmp3 <url>']
+handler.tags = ['descargas']
+handler.command = ['ttmp3']
+handler.group = true
+handler.register = true
+handler.coin = 2
 
-export default tiktokAudioHandler
+export default handler
