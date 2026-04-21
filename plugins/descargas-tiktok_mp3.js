@@ -68,7 +68,7 @@ const tiktokAudioHandler = async (m, { conn, text, usedPrefix, command }) => {
 // Metadatos del comando
 tiktokAudioHandler.help = ['tiktokmp3 <url>']
 tiktokAudioHandler.tags = ['descargas']
-tiktokAudioHandler.command = /^(tiktokmp3|ttaudio|ttmp3)$/i
+tiktokAudioHandler.command = ['tiktokmp3']
 tiktokAudioHandler.group = true
 tiktokAudioHandler.register = true
 tiktokAudioHandler.coin = 2
