@@ -5,7 +5,7 @@ import fetch from 'node-fetch';
 let handler = async (m, { conn }) => {
     let mentionedUser = m.mentionedJid[0];
     let citedMessage = m.quoted ? m.quoted.sender : null;
-    let who = mentionedUser || citedMessage || m.sender; 
+    let who = mentionedUser || citedMessage || m.sender;
     let name = await conn.getName(who) || 'Usuario';
     let user = global.db.data.users[who];
 
@@ -15,21 +15,26 @@ let handler = async (m, { conn }) => {
     }
 
     let { min, xp } = xpRange(user.level, global.multiplier);
-
     let before = user.level * 1;
+
     while (canLevelUp(user.level, user.exp, global.multiplier)) user.level++;
 
     if (before !== user.level) {
-       
-        let avatar = await conn.profilePictureUrl(who, 'image').catch(_ => 'https://files.catbox.moe/0ctsy3.jpg');
+        // Subió de nivel → generar imagen y enviarla
+        let avatar;
+        try {
+            avatar = await conn.profilePictureUrl(who, 'image').catch(_ => 'https://files.catbox.moe/0ctsy3.jpg');
+        } catch {
+            avatar = 'https://files.catbox.moe/0ctsy3.jpg';
+        }
+
         let background = encodeURIComponent('https://files.catbox.moe/jpb1kh.jpg');
         let avatarURL = encodeURIComponent(avatar);
         let fromLevel = before;
         let toLevel = user.level;
         let apiURL = `https://api.siputzx.my.id/api/canvas/level-up?backgroundURL=${background}&avatarURL=${avatarURL}&fromLevel=${fromLevel}&toLevel=${toLevel}&name=${encodeURIComponent(name)}`;
 
-        
-        await conn.sendFile(m.chat, apiURL, 'levelup.jpg', `
+        let caption = `
 ᥫ᭡ ¡Felicidades, @${who.split('@')[0]}!
 
 ✦ Has subido de nivel:
@@ -37,9 +42,24 @@ let handler = async (m, { conn }) => {
 
 🗓️ *Fecha:* ${new Date().toLocaleString('es-DO')}
 > *Sigue interactuando para subir más nivel.*
-        `.trim(), m, false, { mentions: [who] });
+        `.trim();
+
+        try {
+            let imgRes = await fetch(apiURL);
+            if (!imgRes.ok) throw new Error('API de imagen falló');
+            let buffer = Buffer.from(await imgRes.arrayBuffer());
+            await conn.sendMessage(m.chat, {
+                image: buffer,
+                caption: caption,
+                mentions: [who]
+            }, { quoted: m });
+        } catch (e) {
+            console.error(e);
+            // Si falla la imagen, enviamos solo texto
+            await conn.sendMessage(m.chat, { text: caption, mentions: [who] }, { quoted: m });
+        }
     } else {
-        // Mostrar progreso si no sube de nivel
+        // No subió de nivel → mostrar progreso
         let users = Object.entries(global.db.data.users).map(([key, value]) => {
             return { ...value, jid: key };
         });
