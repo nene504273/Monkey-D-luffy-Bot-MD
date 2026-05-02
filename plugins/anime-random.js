@@ -1,5 +1,196 @@
 import fetch from 'node-fetch'
-import { t } from '../locales/index.js'
+
+// Textos directos en español, separados por acción y si es a uno mismo o a otro
+const interactionMessages = {
+  angry: {
+    self: '*{from}* está enojado/a consigo mismo/a.',
+    other: '*{from}* está enojado/a con *{who}*.'
+  },
+  bath: {
+    self: '*{from}* se está bañando.',
+    other: '*{from}* baña a *{who}*.'
+  },
+  bite: {
+    self: '*{from}* se muerde a sí mismo/a.',
+    other: '*{from}* muerde a *{who}*.'
+  },
+  bleh: {
+    self: '*{from}* saca la lengua.',
+    other: '*{from}* le saca la lengua a *{who}*.'
+  },
+  blush: {
+    self: '*{from}* se sonroja.',
+    other: '*{from}* se sonroja por *{who}*.'
+  },
+  bored: {
+    self: '*{from}* está aburrido/a.',
+    other: '*{from}* está aburrido/a de *{who}*.'
+  },
+  clap: {
+    self: '*{from}* aplaude.',
+    other: '*{from}* aplaude a *{who}*.'
+  },
+  coffee: {
+    self: '*{from}* toma café.',
+    other: '*{from}* toma café con *{who}*.'
+  },
+  cry: {
+    self: '*{from}* está llorando.',
+    other: '*{from}* llora por *{who}*.'
+  },
+  cuddle: {
+    self: '*{from}* se acurruca.',
+    other: '*{from}* se acurruca con *{who}*.'
+  },
+  dance: {
+    self: '*{from}* está bailando.',
+    other: '*{from}* baila con *{who}*.'
+  },
+  drunk: {
+    self: '*{from}* está borracho/a.',
+    other: '*{from}* está borracho/a gracias a *{who}*.'
+  },
+  eat: {
+    self: '*{from}* está comiendo.',
+    other: '*{from}* come con *{who}*.'
+  },
+  happy: {
+    self: '*{from}* está feliz.',
+    other: '*{from}* está feliz con *{who}*.'
+  },
+  hug: {
+    self: '*{from}* se abraza a sí mismo/a.',
+    other: '*{from}* abraza a *{who}*.'
+  },
+  kill: {
+    self: '*{from}* se mata a sí mismo/a.',
+    other: '*{from}* mata a *{who}*.'
+  },
+  kiss: {
+    self: '*{from}* se besa a sí mismo/a.',
+    other: '*{from}* besa a *{who}*.'
+  },
+  laugh: {
+    self: '*{from}* se ríe.',
+    other: '*{from}* se ríe de *{who}*.'
+  },
+  lick: {
+    self: '*{from}* se lame.',
+    other: '*{from}* lame a *{who}*.'
+  },
+  slap: {
+    self: '*{from}* se abofetea.',
+    other: '*{from}* le da una bofetada a *{who}*.'
+  },
+  sleep: {
+    self: '*{from}* está durmiendo.',
+    other: '*{from}* duerme con *{who}*.'
+  },
+  smoke: {
+    self: '*{from}* está fumando.',
+    other: '*{from}* fuma con *{who}*.'
+  },
+  spit: {
+    self: '*{from}* escupe.',
+    other: '*{from}* escupe a *{who}*.'
+  },
+  step: {
+    self: '*{from}* pisa fuerte.',
+    other: '*{from}* pisa a *{who}*.'
+  },
+  think: {
+    self: '*{from}* está pensando.',
+    other: '*{from}* piensa en *{who}*.'
+  },
+  love: {
+    self: '*{from}* está enamorado/a.',
+    other: '*{from}* está enamorado/a de *{who}*.'
+  },
+  pat: {
+    self: '*{from}* se da palmaditas.',
+    other: '*{from}* le da palmaditas a *{who}*.'
+  },
+  pout: {
+    self: '*{from}* hace pucheros.',
+    other: '*{from}* le hace pucheros a *{who}*.'
+  },
+  punch: {
+    self: '*{from}* se golpea a sí mismo/a.',
+    other: '*{from}* golpea a *{who}*.'
+  },
+  run: {
+    self: '*{from}* está corriendo.',
+    other: '*{from}* corre hacia *{who}*.'
+  },
+  sad: {
+    self: '*{from}* está triste.',
+    other: '*{from}* está triste por *{who}*.'
+  },
+  scared: {
+    self: '*{from}* está asustado/a.',
+    other: '*{from}* está asustado/a de *{who}*.'
+  },
+  seduce: {
+    self: '*{from}* se seduce a sí mismo/a.',
+    other: '*{from}* seduce a *{who}*.'
+  },
+  shy: {
+    self: '*{from}* está tímido/a.',
+    other: '*{from}* se pone tímido/a con *{who}*.'
+  },
+  walk: {
+    self: '*{from}* está caminando.',
+    other: '*{from}* camina junto a *{who}*.'
+  },
+  dramatic: {
+    self: '*{from}* hace drama.',
+    other: '*{from}* hace drama por *{who}*.'
+  },
+  kisscheek: {
+    self: '*{from}* se besa la mejilla.',
+    other: '*{from}* le da un beso en la mejilla a *{who}*.'
+  },
+  wink: {
+    self: '*{from}* guiña un ojo.',
+    other: '*{from}* le guiña un ojo a *{who}*.'
+  },
+  cringe: {
+    self: '*{from}* siente vergüenza ajena.',
+    other: '*{from}* siente vergüenza ajena por *{who}*.'
+  },
+  smug: {
+    self: '*{from}* presume con aires de superioridad.',
+    other: '*{from}* presume ante *{who}*.'
+  },
+  smile: {
+    self: '*{from}* está sonriendo.',
+    other: '*{from}* le sonríe a *{who}*.'
+  },
+  highfive: {
+    self: '*{from}* choca los cinco consigo mismo/a.',
+    other: '*{from}* choca los cinco con *{who}*.'
+  },
+  handhold: {
+    self: '*{from}* se toma de la mano.',
+    other: '*{from}* toma de la mano a *{who}*.'
+  },
+  bully: {
+    self: '*{from}* se hace bullying a sí mismo/a.',
+    other: '*{from}* le hace bullying a *{who}*.'
+  },
+  wave: {
+    self: '*{from}* saluda.',
+    other: '*{from}* saluda a *{who}*.'
+  },
+  impregnate: {
+    self: '*{from}* intenta algo raro consigo mismo/a.',
+    other: '*{from}* deja embarazada a *{who}*.'
+  },
+  bonk: {
+    self: '*{from}* se da un bonk.',
+    other: '*{from}* le da un bonk a *{who}*.'
+  }
+}
 
 let handler = async (m, { conn, command, usedPrefix }) => {
   let mentionedJid = await m.mentionedJid
@@ -113,27 +304,32 @@ let handler = async (m, { conn, command, usedPrefix }) => {
     '5': 'highfive',
     'bullying': 'bully',
     'mano': 'handhold',
-    'hello': 'wave',
     'hello': 'wave'
   }
 
   const cmd = aliases[command] || command
   const interaction = interactions[cmd]
 
-  if (!interaction) return m.reply(t('anime:interactions.not_recognized', conn.user.jid))
+  if (!interaction) return m.reply('❌ Esa interacción no está disponible.')
 
   type = interaction.type
   const isSelf = from === who
-  const translationKey = `anime:interactions.${type}_${isSelf ? 'self' : 'other'}`
-  str = t(translationKey, conn.user.jid, { from, who })
+  const messages = interactionMessages[type]
+  if (!messages) return m.reply('❌ Texto no encontrado para esta acción.')
+
+  // Reemplaza las variables en el texto según si es a uno mismo o a otro
+  let template = isSelf ? messages.self : messages.other
+  str = template.replace('{from}', from).replace('{who}', who)
 
   if (m.isGroup) {
     try {
+      // ⚠️ CAMBIA 'apikey' POR TU API KEY REAL
+      const apikey = 'LUFFY-GEAR4'
       const res = await fetch(`https://api.alyacore.xyz/anime/interaction?type=${type}&key=${apikey}`)
       const json = await res.json()
 
       if (!json.status || !json.result) {
-        return m.reply(t('anime:interactions.no_results', conn.user.jid))
+        return m.reply('⚠️ No se encontraron resultados.')
       }
 
       conn.sendMessage(m.chat, { 
@@ -143,10 +339,7 @@ let handler = async (m, { conn, command, usedPrefix }) => {
         mentions: [userId] 
       }, { quoted: m })
     } catch (e) {
-      return m.reply(t('anime:interactions.error', conn.user.jid, { 
-        prefix: usedPrefix, 
-        error: e.message 
-      }))
+      return m.reply(`❌ Ocurrió un error: ${e.message}`)
     }
   }
 }
