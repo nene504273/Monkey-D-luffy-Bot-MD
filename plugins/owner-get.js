@@ -4,49 +4,56 @@ import { format } from 'util'
 let handler = async (m, { conn, text }) => {
   if (m.fromMe) return
   if (!text || !/^https?:\/\//.test(text)) 
-    return m.reply(`🏴‍☠️ Por favor, ingresa la *url* de la página.`)
+    return m.reply(`🏴‍☠️ Por favor, ingresa una URL válida.`)
 
-  let url = text
   await m.react('🕒')
 
-  let res
   try {
-    res = await fetch(url)
+    // Realizamos un solo GET
+    const res = await fetch(text)
+    
+    if (!res.ok) throw new Error(`Error HTTP: ${res.status} ${res.statusText}`)
+
+    const contentType = res.headers.get('content-type') || ''
+    
+    // 1. Si es texto, código o JSON, lo leemos y mostramos
+    if (/text|json|javascript|application\/xml/.test(contentType)) {
+      let txt = await res.text()
+      try {
+        // Intentamos formatear si es JSON para que se vea bonito
+        txt = JSON.stringify(JSON.parse(txt), null, 2)
+      } catch (e) {
+        // Si no es JSON, se queda como texto plano
+      }
+      
+      await m.reply(txt.slice(0, 65536))
+      await m.react('✔️')
+    } 
+    
+    // 2. Si es cualquier otra cosa (imagen, video, pdf, etc.)
+    else {
+      // Extraemos el nombre del archivo de la URL
+      let filename = text.split('/').pop().split('?')[0] || 'file'
+      
+      // Si no tiene extensión, intentamos ponerle una basada en el content-type
+      if (!filename.includes('.')) {
+        const ext = contentType.split('/').pop().split(';')[0]
+        filename = `${filename}.${ext}`
+      }
+
+      /* 
+         IMPORTANTE: Pasamos 'text' (la URL) en lugar del buffer. 
+         Esto hace que el bot NO descargue el archivo a su RAM, 
+         sino que le diga a WhatsApp que lo jale directamente de la fuente.
+      */
+      await conn.sendFile(m.chat, text, filename, `🔗 Archivo detectado: ${filename}`, m)
+      await m.react('✔️')
+    }
+
   } catch (e) {
-    return m.reply('❌ Error al conectarse a la URL.')
-  }
-
-  const contentLength = res.headers.get('content-length')
-  if (contentLength && +contentLength > 100 * 1024 * 1024 * 1024) {
-    return m.reply('El archivo es demasiado grande (>100 GB).')
-  }
-
-  const contentType = res.headers.get('content-type') || ''
-  const isText = /text|json/.test(contentType)
-
-  if (isText) {
-    let txt = await res.buffer()
-    try {
-      txt = format(JSON.parse(txt + ''))
-    } catch (e) {
-      txt = txt + ''
-    }
-    m.reply(txt.slice(0, 65536) + '')
-    await m.react('✔️')
-  } else {
-    // Archivo binario: se descarga completamente y se envía como buffer
-    let buffer = await res.buffer()
-    let filename = 'file'
-    try {
-      const pathname = new URL(url).pathname
-      filename = pathname.split('/').pop() || 'file'
-    } catch (e) {}
-    if (!filename.includes('.')) {
-      const ext = contentType.split('/').pop().split(';')[0]
-      filename = `file.${ext}`
-    }
-    await conn.sendFile(m.chat, buffer, filename, text, m)
-    await m.react('✔️')
+    console.error(e)
+    await m.reply(`❌ Fallo: ${e.message}`)
+    await m.react('✖️')
   }
 }
 
