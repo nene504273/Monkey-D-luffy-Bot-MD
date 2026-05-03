@@ -3,8 +3,11 @@ import { sticker } from '../lib/sticker.js'
 
 const fetchSticker = async (text, attempt = 1) => {
   try {
-    const url = `https://skyzxu-brat.hf.space/brat?text=${encodeURIComponent(text)}`
-    const response = await axios.get(url, { responseType: 'arraybuffer' })
+    const url = 'https://skyzxu-brat.hf.space/brat'
+    const response = await axios.post(url,
+      { text: text },
+      { responseType: 'arraybuffer' }
+    )
     return response.data
   } catch (error) {
     if (error.response?.status === 429 && attempt <= 3) {
@@ -32,7 +35,6 @@ let handler = async (m, { conn, text, usedPrefix, command }) => {
     })
 
     const packname = ``
-
     const author = [
       `𖤓 Usuario: ${nombre}`,
       `𖤓 Bot: —͞ू⃪🍖 Lᴜғғʏ-Bᴏᴛ-MD ◖🏴‍☠️`,
