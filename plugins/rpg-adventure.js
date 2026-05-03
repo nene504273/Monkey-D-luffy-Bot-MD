@@ -2,7 +2,7 @@ import fetch from 'node-fetch';
 
 let handler = async (m, { conn }) => {
     let user = global.db.data.users[m.sender];
-    let img = 'https://files.catbox.moe/qptfv3.jpg';
+
     if (!user) {
         return conn.reply(m.chat, `${emoji} El usuario no se encuentra en la base de Datos.`, m);
     }
@@ -13,17 +13,11 @@ let handler = async (m, { conn }) => {
         let timeLeft = 1500000 - (new Date() - user.lastAdventure);
         return conn.reply(m.chat, `${emoji3} Debés esperar. ${msToTime(timeLeft)} antes de aventurarte de nuevo.`, m);
     }
+
     let kingdoms = [
-        'Reino de los Piratas',
-        'Reino de Dressrosa',
-        'Reino de Alabasta',
-        'Reino de Skypiea',
-        'Reino de Zou',
-        'Reino de Wano',
-        'Reino de Sabaody',
-        'Reino de Fish-Man',
-        'Reino de Elbaf',
-        'Reino de Amazon Lily'
+        'Reino de los Piratas', 'Reino de Dressrosa', 'Reino de Alabasta', 'Reino de Skypiea',
+        'Reino de Zou', 'Reino de Wano', 'Reino de Sabaody', 'Reino de Fish-Man',
+        'Reino de Elbaf', 'Reino de Amazon Lily'
     ];
     let randomKingdom = pickRandom(kingdoms);
     let coin = pickRandom([20, 5, 7, 8, 88, 40, 50, 70, 90, 999, 300]);
@@ -34,6 +28,7 @@ let handler = async (m, { conn }) => {
     let stone = pickRandom([200, 500, 700, 800, 900, 4000, 300]);
     let diamonds = pickRandom([1, 2, 3, 4, 5]);
     let exp = pickRandom([10, 20, 30, 40, 50]);
+
     user.coin += coin;
     user.emerald += emerald;
     user.iron += iron;
@@ -44,9 +39,8 @@ let handler = async (m, { conn }) => {
     user.exp += exp;
     user.health -= 50;
     user.lastAdventure = new Date();
-    if (user.health < 0) {
-        user.health = 0;
-    }
+    if (user.health < 0) user.health = 0;
+
     let info = `🛫 Te has aventurado en el *<${randomKingdom}>*\n` +
         `🏞️ *Aventura Finalizada* 🏞️\n` +
         `💸 *Ganados:* ${coin}\n` +
@@ -58,8 +52,10 @@ let handler = async (m, { conn }) => {
         `💎 *Diamantes Ganados:* ${diamonds}\n` +
         `✨ *Experiencia Ganada:* ${exp}\n` +
         `❤️ *Salud Actual:* ${user.health}`;
-    await conn.sendFile(m.chat, img, 'yuki.jpg', info, fkontak);
-}
+
+    // Enviar solo texto (sin imagen)
+    await conn.reply(m.chat, info, m);
+};
 
 handler.help = ['aventura', 'adventure'];
 handler.tags = ['rpg'];
