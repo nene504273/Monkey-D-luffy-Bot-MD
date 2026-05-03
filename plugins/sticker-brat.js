@@ -2,62 +2,56 @@ import axios from 'axios'
 import { sticker } from '../lib/sticker.js'
 
 let handler = async (m, { conn, text, usedPrefix, command }) => {
-  const txt = text?.trim() || (m.quoted?.text?.trim()) || null
+  // Captura el texto del mensaje o del mensaje citado
+  const txt = text ? text : m.quoted && m.quoted.text ? m.quoted.text : null
 
   if (!txt) {
     return conn.sendMessage(m.chat, {
-      text: `🏴‍☠️ *¡Oye! Necesitas un texto.*\nEjemplo: _${usedPrefix + command} Hola_`
+      text: `✐ ֹ ִ 🏴‍☠️ *¡Oye Nakama! Necesitas un texto.* \n\n> *Ejemplo:* _${usedPrefix + command} Hola_`
     }, { quoted: m })
   }
 
-  // Reacción inicial (si el conector lo soporta)
-  try { await conn.sendMessage(m.chat, { react: { text: '🏴‍☠️', key: m.key } }) } catch {}
+  // Reacción inicial (Procesando)
+  try { 
+    await conn.sendMessage(m.chat, { react: { text: '⏳', key: m.key } }) 
+  } catch (e) {}
 
   try {
     const nombre = m.pushName || 'Nakama'
-    const fecha = new Date().toLocaleDateString('es-CO', { day: '2-digit', month: 'numeric', year: 'numeric' })
-    const tiempo = new Date().toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' })
+    const packname = 'Luffy Bot MD ✐ ֹ ִ' // Branding corregido
+    const author = `⚓ ${nombre}`
 
-    // Metadatos simples (evita multilínea larga que puede fallar)
-    const packname = 'Luffy Bot MD'
-    const author = `Usuario: ${nombre} | ${fecha} ${tiempo}`
+    // URL de la API con el texto codificado y tu Key
+    const apiURL = `https://api.alyacore.xyz/tools/brat?text=${encodeURIComponent(txt)}&key=LUFFY-GEAR4`
 
-    // URL con tu key
-    const url = `https://api.alyacore.xyz/tools/brat?text=${encodeURIComponent(txt)}&key=LUFFY-GEAR4`
+    // Petición con axios asegurando el tipo de respuesta
+    const response = await axios.get(apiURL, { responseType: 'arraybuffer' })
 
-    // Descarga con timepo y verificando que sea imagen
-    const response = await axios.get(url, {
-      responseType: 'arraybuffer',
-      timeout: 15000
-    })
+    if (!response.data) throw new Error('La API no devolvió datos.')
 
-    const contentType = response.headers['content-type']
-    if (!contentType || !contentType.startsWith('image/')) {
-      throw new Error(`La API no devolvió una imagen (recibido: ${contentType})`)
-    }
+    // Conversión a sticker usando tu librería interna
+    const stickerBuffer = await sticker(response.data, false, packname, author)
 
-    const buffer = Buffer.from(response.data)
+    if (!stickerBuffer) throw new Error('No se pudo procesar el sticker.')
 
-    // Convierte a sticker (tu función original)
-    const stickerBuf = await sticker(buffer, false, packname, author)
-    if (!stickerBuf) throw new Error('No se pudo generar el sticker')
+    // Envío del sticker y reacción de éxito
+    await conn.sendMessage(m.chat, { sticker: stickerBuffer }, { quoted: m })
+    await conn.sendMessage(m.chat, { react: { text: '🍖', key: m.key } })
 
-    // Envía el sticker
-    await conn.sendMessage(m.chat, { sticker: stickerBuf }, { quoted: m })
-
-    // Reacción final
-    try { await conn.sendMessage(m.chat, { react: { text: '🍖', key: m.key } }) } catch {}
-
-  } catch (e) {
-    console.error('[brat]', e)
-    try { await conn.sendMessage(m.chat, { react: { text: '✖️', key: m.key } }) } catch {}
-    conn.sendMessage(m.chat, { text: `❌ Error: ${e.message}` }, { quoted: m })
+  } catch (err) {
+    console.error('[ERROR BRAT]:', err)
+    await conn.sendMessage(m.chat, { react: { text: '❌', key: m.key } })
+    
+    // Mensaje de error para el usuario
+    conn.sendMessage(m.chat, { 
+      text: `❌ *Error en el sistema:* \n\n${err.message}` 
+    }, { quoted: m })
   }
 }
 
-handler.help = ['brat <texto>']
+handler.help = ['brat <texto>', 'luffy <texto>']
 handler.tags = ['sticker']
-handler.command = ['brat', 'luffy']
+handler.command = /^(brat|luffy)$/i // Soporta ambos nombres de comando
 handler.register = true
 
 export default handler
