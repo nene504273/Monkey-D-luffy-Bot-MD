@@ -1,64 +1,60 @@
-import axios from 'axios'
+import fetch from 'node-fetch'
 import { sticker } from '../lib/sticker.js'
 
-// ✐ ֹ ִ ── [ APARTADO DE CONFIGURACIÓN ] ── ֹ ִ ✐
-const API_KEY = 'LUFFY-GEAR4' 
-const BASE_URL = 'https://api.alyacore.xyz/tools/brat'
-// ─────────────────────────────────────────
+// ⚠️ Coloca aquí tu API key (si cambia, solo edita esta línea)
+const API_KEY = 'LUFFY-GEAR4'
 
-let handler = async (m, { conn, text, usedPrefix, command }) => {
-  // Captura el texto del mensaje actual o de un mensaje citado
-  const content = text ? text : m.quoted && m.quoted.text ? m.quoted.text : null
+const handler = async (m, { conn, text, usedPrefix, command }) => {
+  // 1. Obtener el texto
+  const txt = text?.trim() || m.quoted?.text?.trim() || ''
 
-  if (!content) {
+  if (!txt) {
     return conn.sendMessage(m.chat, {
-      text: `✐ ֹ ִ 🏴‍☠️ *¡Oye Nakama! Falta el texto.* \n\n> *Uso:* _${usedPrefix + command} <tu mensaje>_`
+      text: `🏴‍☠️ *Escribe un texto para el sticker*\nEjemplo: *${usedPrefix + command}* Hola`
     }, { quoted: m })
   }
 
-  // Reacción de "procesando" para indicar que el bot está trabajando
-  try { await conn.sendMessage(m.chat, { react: { text: '⏳', key: m.key } }) } catch (e) {}
+  // 2. Reacción de espera
+  try { await conn.sendMessage(m.chat, { react: { text: '⏳', key: m.key } }) } catch {}
 
   try {
-    const pushName = m.pushName || 'Nakama'
-    const botName = 'Monkey D. Luffy Bot - MD'
-    const packname = `✐ ֹ ִ ${botName}`
-    const author = `⚓ ${pushName}`
+    // 3. Construir la URL con la key
+    const url = `https://api.alyacore.xyz/tools/brat?text=${encodeURIComponent(txt)}&key=${API_KEY}`
 
-    // Construcción de la URL con la lógica de la API
-    const finalUrl = `${BASE_URL}?text=${encodeURIComponent(content)}&key=${API_KEY}`
+    // 4. Descargar la imagen
+    const res = await fetch(url, { timeout: 15000 })
+    if (!res.ok) throw new Error('La API no respondió correctamente')
 
-    // Petición a la API configurada para recibir datos binarios (Buffer)
-    const response = await axios.get(finalUrl, { 
-      responseType: 'arraybuffer',
-      timeout: 20000 // Tiempo de espera para evitar bloqueos
-    })
+    const buffer = Buffer.from(await res.arrayBuffer())
 
-    if (!response.data) throw new Error('La API no devolvió contenido visual.')
+    // 5. Convertir a sticker con tu librería
+    const stickerBuffer = await sticker(buffer, false, '', '')
 
-    // Generación del sticker con los metadatos del bot
-    const stickerBuffer = await sticker(response.data, false, packname, author)
+    // 6. Metadatos del sticker
+    const nombre = m.pushName || 'Nakama'
+    const fecha = new Date().toLocaleDateString('es-CO', { day: '2-digit', month: 'numeric', year: 'numeric' })
+    const hora = new Date().toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' })
 
-    if (!stickerBuffer) throw new Error('Error al transformar la imagen en sticker.')
+    // 7. Enviar el sticker
+    await conn.sendMessage(m.chat, {
+      sticker: stickerBuffer,
+      packname: 'Brat Sticker',
+      author: `${nombre} • ${fecha} ${hora}`
+    }, { quoted: m })
 
-    // Envío del sticker y reacción final de éxito
-    await conn.sendMessage(m.chat, { sticker: stickerBuffer }, { quoted: m })
-    await conn.sendMessage(m.chat, { react: { text: '🍖', key: m.key } })
+    // 8. Reacción de éxito
+    try { await conn.sendMessage(m.chat, { react: { text: '🍖', key: m.key } }) } catch {}
 
   } catch (err) {
-    console.error(`[ERROR EN ${command.toUpperCase()}]:`, err.message)
-    await conn.sendMessage(m.chat, { react: { text: '❌', key: m.key } })
-    
-    // Notificación de error al usuario
-    conn.sendMessage(m.chat, { 
-      text: `❌ *Hubo un problema en el Grand Line:* \n\n${err.message}` 
-    }, { quoted: m })
+    console.error('[brat]', err)
+    try { await conn.sendMessage(m.chat, { react: { text: '✖️', key: m.key } }) } catch {}
+    conn.sendMessage(m.chat, { text: `❌ Error: ${err.message}` }, { quoted: m })
   }
 }
 
 handler.help = ['brat <texto>']
 handler.tags = ['sticker']
-handler.command = /^(brat|luffy)$/i // El comando responde a !brat o !luffy
+handler.command = ['brat', 'luffy']
 handler.register = true
 
 export default handler
