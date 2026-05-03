@@ -33,9 +33,9 @@ global.getBuffer = async function getBuffer(url, options) {
 const iconUrls = [
   "https://cdn.adoolab.xyz/dl/61188594.jpeg", 
   "https://cdn.adoolab.xyz/dl/ec5d1c7e.jpeg", 
-  "https://files.catbox.moe/lrw74b.jpg", 
-  "https://files.catbox.moe/gklfyi.jpg", 
-  "https://files.catbox.moe/rmyjhd.jpg"
+  "https://cdn.adoolab.xyz/dl/a46ff7ad.jpeg", 
+  "https://cdn.adoolab.xyz/dl/f9038604.jpeg", 
+  "https://cdn.adoolab.xyz/dl/9ab5796c.jpeg"
 ]
 
 // Función para elegir y descargar un icono aleatorio
