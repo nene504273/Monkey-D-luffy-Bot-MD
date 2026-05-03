@@ -51,7 +51,7 @@ let handler = async (m, { conn, text, usedPrefix, command }) => {
 
 handler.help = ['brat <texto>', 'luffy <texto>']
 handler.tags = ['sticker']
-handler.command = /^(brat|luffy)$/i // Soporta ambos nombres de comando
+handler.command = ['brat']
 handler.register = true
 
 export default handler
