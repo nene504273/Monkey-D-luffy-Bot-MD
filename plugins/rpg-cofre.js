@@ -1,6 +1,6 @@
-const handler = async (m, { isPrems, conn }) => {
+const handler = async (m, { conn }) => {
   if (!global.db.data.users[m.sender]) {
-    throw `${emoji4} Usuario no encontrado.`;
+    throw `❌ Usuario no encontrado.`;
   }
 
   const lastCofreTime = global.db.data.users[m.sender].lastcofre;
@@ -18,6 +18,9 @@ const handler = async (m, { isPrems, conn }) => {
   const tok = Math.floor(Math.random() * 10);
   const ai = Math.floor(Math.random() * 40);
   const expp = Math.floor(Math.random() * 5000);
+
+  // Variable "moneda" (debe estar definida, usa lo que tengas, ej: '💰')
+  const moneda = global.moneda || '💰';
 
   global.db.data.users[m.sender].coin += dia;
   global.db.data.users[m.sender].diamonds += ai;
@@ -39,9 +42,13 @@ const handler = async (m, { isPrems, conn }) => {
 ╰━━━━━━━━━━━━⬣`;
 
   try {
-    await conn.sendFile(m.chat, img, 'yuki.jpg', texto, fkontak);
+    // Envío correcto de imagen con caption
+    await conn.sendMessage(m.chat, { 
+      image: { url: img }, 
+      caption: texto 
+    }, { quoted: m });
   } catch (error) {
-    throw `${msm} Ocurrió un error al enviar el cofre.`;
+    throw `❌ Ocurrió un error al enviar el cofre.`;
   }
 };
 
@@ -55,14 +62,13 @@ handler.register = true;
 export default handler;
 
 function msToTime(duration) {
-  const milliseconds = parseInt((duration % 1000) / 100);
-  let seconds = Math.floor((duration / 1000) % 60);
-  let minutes = Math.floor((duration / (1000 * 60)) % 60);
-  let hours = Math.floor((duration / (1000 * 60 * 60)) % 24);
+  const seconds = Math.floor((duration / 1000) % 60);
+  const minutes = Math.floor((duration / (1000 * 60)) % 60);
+  const hours = Math.floor((duration / (1000 * 60 * 60)) % 24);
 
-  hours = (hours < 10) ? '0' + hours : hours;
-  minutes = (minutes < 10) ? '0' + minutes : minutes;
-  seconds = (seconds < 10) ? '0' + seconds : seconds;
+  const hh = hours < 10 ? '0' + hours : hours;
+  const mm = minutes < 10 ? '0' + minutes : minutes;
+  const ss = seconds < 10 ? '0' + seconds : seconds;
 
-  return `${hours} Horas ${minutes} Minutos`;
+  return `${hh} Horas ${mm} Minutos`;
 }
