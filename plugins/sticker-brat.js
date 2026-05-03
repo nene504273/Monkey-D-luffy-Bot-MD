@@ -1,22 +1,6 @@
+
 import axios from 'axios'
 import { sticker } from '../lib/sticker.js'
-
-const fetchSticker = async (text, attempt = 1) => {
-  try {
-    const url = 'https://skyzxu-brat.hf.space/brat'
-    const response = await axios.post(url,
-      { text: text },
-      { responseType: 'arraybuffer' }
-    )
-    return response.data
-  } catch (error) {
-    if (error.response?.status === 429 && attempt <= 3) {
-      await new Promise(resolve => setTimeout(resolve, 5000))
-      return fetchSticker(text, attempt + 1)
-    }
-    throw error
-  }
-}
 
 let handler = async (m, { conn, text, usedPrefix, command }) => {
   const txt = text?.trim() || (m.quoted?.text?.trim()) || null
@@ -42,7 +26,10 @@ let handler = async (m, { conn, text, usedPrefix, command }) => {
       `𖤓 ${tiempo} • —͞ू⃪✧ Sombrero de Paja`
     ].join('\n')
 
-    const buffer = await fetchSticker(txt)
+    const url = `https://api.alyacore.xyz/tools/brat?text=${encodeURIComponent(txt)}&key=LUFFY-GEAR4`
+    const response = await axios.get(url, { responseType: 'arraybuffer' })
+    const buffer = response.data
+
     if (!buffer) throw new Error('Sin respuesta de la API')
 
     const stickerBuf = await sticker(buffer, false, packname, author)
