@@ -1,57 +1,64 @@
 import axios from 'axios'
 import { sticker } from '../lib/sticker.js'
 
-let handler = async (m, { conn, text, usedPrefix, command }) => {
-  // Captura el texto del mensaje o del mensaje citado
-  const txt = text ? text : m.quoted && m.quoted.text ? m.quoted.text : null
+// ✐ ֹ ִ ── [ APARTADO DE CONFIGURACIÓN ] ── ֹ ִ ✐
+const API_KEY = 'LUFFY-GEAR4' 
+const BASE_URL = 'https://api.alyacore.xyz/tools/brat'
+// ─────────────────────────────────────────
 
-  if (!txt) {
+let handler = async (m, { conn, text, usedPrefix, command }) => {
+  // Captura el texto del mensaje actual o de un mensaje citado
+  const content = text ? text : m.quoted && m.quoted.text ? m.quoted.text : null
+
+  if (!content) {
     return conn.sendMessage(m.chat, {
-      text: `✐ ֹ ִ 🏴‍☠️ *¡Oye Nakama! Necesitas un texto.* \n\n> *Ejemplo:* _${usedPrefix + command} Hola_`
+      text: `✐ ֹ ִ 🏴‍☠️ *¡Oye Nakama! Falta el texto.* \n\n> *Uso:* _${usedPrefix + command} <tu mensaje>_`
     }, { quoted: m })
   }
 
-  // Reacción inicial (Procesando)
-  try { 
-    await conn.sendMessage(m.chat, { react: { text: '⏳', key: m.key } }) 
-  } catch (e) {}
+  // Reacción de "procesando" para indicar que el bot está trabajando
+  try { await conn.sendMessage(m.chat, { react: { text: '⏳', key: m.key } }) } catch (e) {}
 
   try {
-    const nombre = m.pushName || 'Nakama'
-    const packname = 'Luffy Bot MD ✐ ֹ ִ' // Branding corregido
-    const author = `⚓ ${nombre}`
+    const pushName = m.pushName || 'Nakama'
+    const botName = 'Monkey D. Luffy Bot - MD'
+    const packname = `✐ ֹ ִ ${botName}`
+    const author = `⚓ ${pushName}`
 
-    // URL de la API con el texto codificado y tu Key
-    const apiURL = `https://api.alyacore.xyz/tools/brat?text=${encodeURIComponent(txt)}&key=LUFFY-GEAR4`
+    // Construcción de la URL con la lógica de la API
+    const finalUrl = `${BASE_URL}?text=${encodeURIComponent(content)}&key=${API_KEY}`
 
-    // Petición con axios asegurando el tipo de respuesta
-    const response = await axios.get(apiURL, { responseType: 'arraybuffer' })
+    // Petición a la API configurada para recibir datos binarios (Buffer)
+    const response = await axios.get(finalUrl, { 
+      responseType: 'arraybuffer',
+      timeout: 20000 // Tiempo de espera para evitar bloqueos
+    })
 
-    if (!response.data) throw new Error('La API no devolvió datos.')
+    if (!response.data) throw new Error('La API no devolvió contenido visual.')
 
-    // Conversión a sticker usando tu librería interna
+    // Generación del sticker con los metadatos del bot
     const stickerBuffer = await sticker(response.data, false, packname, author)
 
-    if (!stickerBuffer) throw new Error('No se pudo procesar el sticker.')
+    if (!stickerBuffer) throw new Error('Error al transformar la imagen en sticker.')
 
-    // Envío del sticker y reacción de éxito
+    // Envío del sticker y reacción final de éxito
     await conn.sendMessage(m.chat, { sticker: stickerBuffer }, { quoted: m })
     await conn.sendMessage(m.chat, { react: { text: '🍖', key: m.key } })
 
   } catch (err) {
-    console.error('[ERROR BRAT]:', err)
+    console.error(`[ERROR EN ${command.toUpperCase()}]:`, err.message)
     await conn.sendMessage(m.chat, { react: { text: '❌', key: m.key } })
     
-    // Mensaje de error para el usuario
+    // Notificación de error al usuario
     conn.sendMessage(m.chat, { 
-      text: `❌ *Error en el sistema:* \n\n${err.message}` 
+      text: `❌ *Hubo un problema en el Grand Line:* \n\n${err.message}` 
     }, { quoted: m })
   }
 }
 
-handler.help = ['brat <texto>', 'luffy <texto>']
+handler.help = ['brat <texto>']
 handler.tags = ['sticker']
-handler.command = ['brat']
+handler.command = /^(brat|luffy)$/i // El comando responde a !brat o !luffy
 handler.register = true
 
 export default handler
