@@ -53,6 +53,6 @@ const handler = async (m, { conn, text, usedPrefix, command }) => {
 
 handler.help = ['bratv2']
 handler.tags = ['sticker']
-handler.command = ['bratv2']
+handler.command = ['bratv']
 
 export default handler
