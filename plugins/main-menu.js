@@ -27,7 +27,7 @@ let handler = async (m, { conn, usedPrefix }) => {
         });
     });
 
-   
+
     let menuText = `⏝ᩙ ׅ   ׄ᷼⏜֟፝᷼͡⏜͜   ׄ ░⃝ᩘ🏴‍☠️ᩙ ׄ  ͜⏜፝֟᷼͡⏜ׄ᷼   ׅ ⏝ᩙ\n\n`;
     menuText += `     *⿻̸̷᮫̼̼፝͠🍖̸̷ᩙ᪶𔗨̶࿔:: 𝐁𝐢𝐞𝐧𝐯𝐞𝐧𝐢𝐝𝐨 𝐚 𝐛𝐨𝐫𝐝𝐨*\n`;
     menuText += `             *𝐝𝐞𝐥 𝐦𝐞𝐣𝐨𝐫 𝐛𝐚𝐫𝐜𝐨 𝐩𝐢𝐫𝐚𝐭𝐚*\n`;
@@ -48,7 +48,7 @@ let handler = async (m, { conn, usedPrefix }) => {
     sortedTags.forEach(tag => {
         menuText += `✿ㅤ໋︵ּㅤׄ⏜ּㅤ֯✿ִㅤ⃞ׄ🧭⃞ㅤִ❀֯ㅤּ⏜ׄㅤּ︵  ✿\n`;
         menuText += `┄ ֺ 〪ᨘ✿🥂 〫࣫〇ׁ┄ \`${tag.toUpperCase()}\` ┄〇ׁ🥂✿ ׅ ۬┄\n`;
-        
+
         const sortedCommands = Array.from(groups[tag]).sort();
         sortedCommands.forEach((cmd, index) => {
             menuText += `│ ᗢׁ̇ᰍ〪֙  ᳝ ׁ \`\`\`${cmd.trim()}\`\`\`\n`;
@@ -61,7 +61,7 @@ let handler = async (m, { conn, usedPrefix }) => {
     menuText += `> _— Monkey D. Luffy_\n`;
     menuText += `.   ╙᷼─ໍ۪┅֟፝─̥࣪:¨᜔⠣۟⠜¨᜔:࣪─࣮࣪͡┅ꊥ᜔۫⚓ꊥ᜔┅࣮࣪͡─:࣪¨᜔⠣۟⠜¨᜔:࣪─̥፝֟┅۪─᷼ໍ╜`;
 
-
+    // --- Se eliminó externalAdReply por el bug de WhatsApp normal ---
     const contextInfo = {
         mentionedJid: [m.sender],
         isForwarded: true,
@@ -70,15 +70,6 @@ let handler = async (m, { conn, usedPrefix }) => {
             newsletterJid,
             newsletterName,
             serverMessageId: -1
-        },
-        externalAdReply: {
-            title: '🏴‍☠️ ⚓ 𝐋𝐔𝐅𝐅𝐘 - 𝐁𝐎𝐓 ⚓ 🏴‍☠️',
-            body: '𐚁๋࣭⭑ֶָ֢ 𝙇𝙪𝙛𝙛𝙮 𝙂𝙚𝙖𝙧 5 𝘽𝙤𝙩 ᕙ(  •̀ ᗜ •́  )ᕗ',
-            thumbnailUrl: randomThumbnail,
-            sourceUrl: AlyaCore,
-            mediaType: 1,
-            showAdAttribution: false,
-            renderLargerThumbnail: false 
         }
     };
 
