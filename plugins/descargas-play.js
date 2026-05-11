@@ -1,4 +1,4 @@
-import fetch from "node-fetch"
+import fetch from 'node-fetch'
 import yts from 'yt-search'
 
 const handler = async (m, { text, conn, args, command }) => {
@@ -61,41 +61,22 @@ const handler = async (m, { text, conn, args, command }) => {
 
 ${dev}`
 
-  try {
-    const thumb = thumbnail ? (await conn.getFile(thumbnail))?.data : null
-    const JT = {
-      contextInfo: {
-        externalAdReply: {
-          title: botname,
-          body: dev,
-          mediaType: 1,
-          previewType: 0,
-          mediaUrl: url,
-          sourceUrl: url,
-          thumbnail: thumb,
-          renderLargerThumbnail: true,
-        },
-      },
-    }
-    await conn.reply(m.chat, infoMessage, m, JT)
-  } catch (e) {
-    await conn.reply(m.chat, infoMessage, m)
-  }
-
+  // ✅ Enviamos el mensaje informativo sin externalAdReply
+  await conn.reply(m.chat, infoMessage, m)
 
   if (['play', 'yta', 'ytmp3', 'playaudio'].includes(command)) {
     try {
       let api = await (await fetch(
         `https://api.alyacore.xyz/dl/ytmp3?url=${encodeURIComponent(url)}&key=${apikey}`
       )).json()
-      
+
       if (!api.status) throw new Error('Alyacore falló')
-      
+
       var fileName = api.data?.title || 'audio'
       var dl = api.data?.dl
-      
+
       if (!dl) throw new Error('No se generó enlace (Alyacore)')
-      
+
     } catch (e) {
       await m.react(error)
       return conn.reply(m.chat, `${msm} Error al descargar el audio.`, m)
