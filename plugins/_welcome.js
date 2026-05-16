@@ -32,7 +32,7 @@ export async function before(m, { conn, participants, groupMetadata }) {
         isForwarded: true,
         forwardedNewsletterMessageInfo: {
           newsletterJid: '120363420846835529@newsletter',   // Cambia si quieres
-          newsletterName: '🎄 Jolly Roger Navideño V2 🎄',    // Nombre visible
+          newsletterName: '⏤͟͞ू⃪፝͜⁞⟡ m᥆ᥒkᥱᥡ ძ ᥣᥙ𝖿𝖿ᥡ',    // Nombre visible
           serverMessageId: String(Date.now())
         }
       }
