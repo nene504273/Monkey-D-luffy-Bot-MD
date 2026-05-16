@@ -32,49 +32,44 @@ let handler = async function (m, { conn, text }) {
   // --- Guardar en DB ---
   user.name = name.trim()
   user.age = age
-  user.regTime = + new Date
+  user.regTime = + new Date()
   user.registered = true
+
+  // Aplicar recompensas
   global.db.data.users[m.sender].money += REWARD_MONEY
   global.db.data.users[m.sender].estrellas += REWARD_ESTRELLAS
   global.db.data.users[m.sender].exp += REWARD_EXP
+  global.db.data.users[m.sender].tokens += REWARD_TOKENS   // ✅ tokens añadidos
 
-  m.react('✅')
+  // --- Mensaje de Registro con imagen + caption (compatible WhatsApp oficial) ---
+  const imagenRegistroLuffy = 'https://raw.githubusercontent.com/danielalejandrobasado-glitch/Yotsuba-MD-Premium/main/uploads/f3dec04bc1df5762.jpg'
 
-  // --- Mensaje de Registro ---
-  let regbot = `
+  let caption = `
 *『 ✅ REGISTRADO(A) ✅ 』*
 
 👤 *R E G I S T R O* 👤
 
-┍*「👤」 Nombre: ${name}*
-┕*「🌟」 Edad: ${age} años*
+┍「👤」 Nombre: ${name}
+┕「🌟」 Edad: ${age} años
 
 🎁 *R E C O M P E N S A S :*
-*• ${REWARD_ESTRELLAS} Estrellas ⭐*
-*• ${REWARD_MONEY} Monedas 🪙*
-*• ${REWARD_EXP} Exp 🪙*
-*• ${REWARD_TOKENS} Tokens 💰*
+• ${REWARD_ESTRELLAS} Estrellas ⭐
+• ${REWARD_MONEY} Monedas 🪙
+• ${REWARD_EXP} Exp 🪙
+• ${REWARD_TOKENS} Tokens 💰
 
-👑 _*Monkey D Luffy*_ 👑
-     *IA ⌚ ${time}*
+👑 *Monkey D Luffy* 👑
+     IA ⌚ ${time}
 `
 
-  // URL de la imagen solicitada
-  const imagenRegistroLuffy = 'https://raw.githubusercontent.com/danielalejandrobasado-glitch/Yotsuba-MD-Premium/main/uploads/f3dec04bc1df5762.jpg'
-
   await conn.sendMessage(m.chat, {
-    text: regbot,
-    contextInfo: {
-      externalAdReply: {
-        title: 'Monkey D Luffy Bot',
-        body: 'Registro exitoso por Monkey D Luffy',
-        thumbnailUrl: imagenRegistroLuffy, 
-        sourceUrl: 'https://github.com/nene504273/Monkey-D-luffy-Bot-MD',
-        mediaType: 1,
-        renderLargerThumbnail: true
-      }
-    }
+    image: { url: imagenRegistroLuffy },
+    caption: caption,
+    mentions: [m.sender]
   }, { quoted: m })
+
+  // Reacción después de todo correcto
+  await m.react('✅')
 }
 
 handler.help = ['reg']
