@@ -323,9 +323,25 @@ let handler = async (m, { conn, command, usedPrefix }) => {
 
   if (m.isGroup) {
     try {
-      // ⚠️ CAMBIA 'apikey' POR TU API KEY REAL
+      // ⚠️ CAMBIA 'LUFFY-GEAR4' POR TU API KEY REAL
       const apikey = 'LUFFY-GEAR4'
       const res = await fetch(`https://api.alyacore.xyz/anime/interaction?type=${type}&key=${apikey}`)
+
+      // Verificar el código de estado HTTP
+      if (!res.ok) {
+        const errorText = await res.text()
+        console.error(`API Error ${res.status}: ${errorText}`)
+        return m.reply(`❌ La API respondió con error ${res.status}. Revisa tu clave o el servicio.`)
+      }
+
+      // Verificar que la respuesta sea JSON válida
+      const contentType = res.headers.get('content-type')
+      if (!contentType || !contentType.includes('application/json')) {
+        const text = await res.text()
+        console.error('Respuesta no JSON:', text)
+        return m.reply('❌ La API no devolvió datos JSON. Posible error de clave o endpoint.')
+      }
+
       const json = await res.json()
 
       if (!json.status || !json.result) {
@@ -339,8 +355,12 @@ let handler = async (m, { conn, command, usedPrefix }) => {
         mentions: [userId] 
       }, { quoted: m })
     } catch (e) {
+      console.error('Error en interacción:', e)
       return m.reply(`❌ Ocurrió un error: ${e.message}`)
     }
+  } else {
+    // Si no es grupo, solo responde con el texto (puedes cambiarlo si quieres)
+    return m.reply(str)
   }
 }
 
