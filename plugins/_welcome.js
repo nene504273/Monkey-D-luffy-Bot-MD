@@ -1,55 +1,56 @@
 import { WAMessageStubType } from '@whiskeysockets/baileys'
+import fetch from 'node-fetch'  // Asegúrate de tenerlo: npm i node-fetch
 
 export async function before(m, { conn, participants, groupMetadata }) {
   try {
     if (!m.isGroup) return true
     if (!m.messageStubType) return true
 
-    // Obtener la cantidad actual de miembros
     const currentSize = (participants || []).length
     const groupName = groupMetadata?.subject || 'este grupo'
-    const defaultImg = 'https://raw.githubusercontent.com/danielalejandrobasado-glitch/Yotsuba-MD-Premium/main/uploads/f3dec04bc1df5762.jpg' 
+    const defaultImg = 'https://raw.githubusercontent.com/danielalejandrobasado-glitch/Yotsuba-MD-Premium/main/uploads/f3dec04bc1df5762.jpg'
 
+    /**
+     * Envía imagen + caption con formato de reenvío desde newsletter
+     */
     const sendMsg = async (jid, text, user, title) => {
-      let pp
+      let imageUrl
       try {
-        pp = await conn.profilePictureUrl(user, 'image')
+        imageUrl = await conn.profilePictureUrl(user, 'image')
       } catch (e) {
-        pp = defaultImg
+        imageUrl = defaultImg
+      }
+
+      // Descargar la imagen como buffer
+      const res = await fetch(imageUrl)
+      const imageBuffer = await res.buffer()
+
+      // Contexto que genera el texto "Reenviado muchas veces · [nombre del newsletter]"
+      const contextInfo = {
+        mentionedJid: [user],
+        forwardingScore: 999,
+        isForwarded: true,
+        forwardedNewsletterMessageInfo: {
+          newsletterJid: '120363420846835529@newsletter',   // Cambia si quieres
+          newsletterName: '🎄 Jolly Roger Navideño V2 🎄',    // Nombre visible
+          serverMessageId: String(Date.now())
+        }
       }
 
       await conn.sendMessage(jid, {
-        text: text,
-        contextInfo: {
-          mentionedJid: [user],
-          forwardingScore: 999,
-          isForwarded: true,
-          forwardedNewsletterMessageInfo: {
-            newsletterJid: '120363420846835529@newsletter',
-            newsletterName: '🎄 Jolly Roger Navideño V2 🎄',
-            serverMessageId: -1
-          },
-          externalAdReply: {
-            title: title,
-            body: '', 
-            thumbnailUrl: pp,
-            mediaType: 1,
-            renderLargerThumbnail: true, 
-            sourceUrl: 'Power by ɴ͡ᴇ͜ɴᴇ❀᭄☂️' 
-          }
-        }
+        image: imageBuffer,
+        caption: text,
+        contextInfo
       }, { quoted: m })
     }
 
-    // --- LÓGICA DE BIENVENIDA (Suma 1 al conteo) ---
+    // --- BIENVENIDA ---
     if (m.messageStubType === WAMessageStubType.GROUP_PARTICIPANT_ADD || m.messageStubType === 27) {
       const users = m.messageStubParameters || []
       for (const user of users) {
         const jid = user.includes('@') ? user : `${user}@s.whatsapp.net`
         const mentionTag = '@' + jid.split('@')[0]
-
-        // Sumamos 1 porque el evento ocurre mientras se añaden
-        const realSize = currentSize + 1 
+        const realSize = currentSize + 1
 
         const welcomeText = `
 🕊️ *BIENVENIDO/DA* 🕊️
@@ -66,14 +67,12 @@ export async function before(m, { conn, participants, groupMetadata }) {
       }
     }
 
-    // --- LÓGICA DE ADIÓS (Resta 1 al conteo) ---
+    // --- ADIÓS ---
     if (m.messageStubType === WAMessageStubType.GROUP_PARTICIPANT_REMOVE || m.messageStubType === 32) {
       const users = m.messageStubParameters || []
       for (const user of users) {
         const jid = user.includes('@') ? user : `${user}@s.whatsapp.net`
         const mentionTag = '@' + jid.split('@')[0]
-
-        // Restamos 1 porque el bot todavía cuenta a la persona que se acaba de ir
         const realSize = currentSize - 1
 
         const byeText = `
@@ -92,7 +91,7 @@ export async function before(m, { conn, participants, groupMetadata }) {
 
     return true
   } catch (e) {
-    console.error(e)
+    console.error('Error en plugin welcome:', e)
     return true
   }
 }
