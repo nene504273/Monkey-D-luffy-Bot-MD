@@ -1,7 +1,7 @@
 import fetch from "node-fetch"
 import baileys from "@whiskeysockets/baileys"
 
-// Helper: delay personalizado (compatible con cualquier versión)
+// Helper: delay personalizado (compatible con cualquier versión de Baileys)
 const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms))
 
 async function sendAlbumMessage(conn, jid, medias, options = {}) {
@@ -43,7 +43,7 @@ const handler = async (m, { conn, args, command, usedPrefix }) => {
   const rwait = global.rwait || "⏳"
   const done = global.done || "✅"
   const error = global.error || "❌"
-  const dev = global.dev || ""   // ← evita ReferenceError
+  const dev = global.dev || ""   // evita ReferenceError
 
   if (!args[0]) {
     return conn.reply(m.chat, `☠️ Por favor, escribe qué quieres buscar en Pinterest.\nEjemplo: ${usedPrefix}${command} Luffy`, m)
@@ -55,13 +55,13 @@ const handler = async (m, { conn, args, command, usedPrefix }) => {
   try {
     await m.react(rwait)
 
-    // ✅ NUEVA API con los campos correctos
+    // Nueva API de Pinterest
     const response = await fetch(
       `https://api.alyacore.xyz/search/pinterest?query=${encodeURIComponent(query)}&limit=${limit}&key=LUFFY-GEAR4`
     )
     const json = await response.json()
 
-    // ✅ Validación adaptada a la nueva estructura
+    // Validación de la nueva estructura
     if (!json.status || !Array.isArray(json.data)) {
       throw new Error("La API no devolvió un formato válido")
     }
@@ -71,18 +71,20 @@ const handler = async (m, { conn, args, command, usedPrefix }) => {
       return conn.reply(m.chat, `☠️ No se encontraron suficientes imágenes para: *${query}*`, m)
     }
 
+    const sendCount = Math.min(json.data.length, limit) // lo que realmente se enviará
+
     const infoMessage =
       `⚓ *Pinterest Search*\n` +
       `✩̣̣̣̣̣ͯ┄•͙✧⃝•͙┄✩ͯ•͙͙✧⃝•͙͙✩ͯ\n` +
       `❍ *Búsqueda* › *${query}*\n` +
       `❍ *Resultados* › ${json.data.length} imágenes\n` +
-      `❍ *Enviando* › ${json.data.length} en álbum\n` +
+      `❍ *Enviando* › ${sendCount} en álbum\n` +
       `──⇌••⇋──\n` +
       (dev ? dev + '\n' : '')
 
     await conn.reply(m.chat, infoMessage, m)
 
-    // ✅ Mapeo corregido: usamos item.hd (imagen de alta calidad)
+    // Mapeo de imágenes: usa la URL en alta calidad (item.hd)
     const images = json.data.slice(0, limit).map(item => ({
       type: "image",
       data: { url: item.hd }
