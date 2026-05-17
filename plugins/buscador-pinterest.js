@@ -1,22 +1,27 @@
 import fetch from "node-fetch"
 import baileys from "@whiskeysockets/baileys"
 
+// Helper: delay personalizado (por si baileys no exporta delay)
+const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms))
+
 async function sendAlbumMessage(conn, jid, medias, options = {}) {
-  if (typeof jid !== "string") throw new TypeError(`jid must be string, received: ${jid}`)
+  if (typeof jid !== "string") throw new TypeError(`jid debe ser string, se recibió: ${jid}`)
   if (medias.length < 2) throw new RangeError("Se necesitan al menos 2 imágenes para un álbum")
   const caption = options.text || options.caption || ""
-  const delay = !isNaN(options.delay) ? options.delay : 500
+  const delayMs = !isNaN(options.delay) ? options.delay : 500
   const quoted = options.quoted || null
   delete options.text
   delete options.caption
   delete options.delay
   delete options.quoted
+
   const album = baileys.generateWAMessageFromContent(
     jid,
     { messageContextInfo: {}, albumMessage: { expectedImageCount: medias.length } },
     quoted ? { quoted } : {}
   )
   await conn.relayMessage(album.key.remoteJid, album.message, { messageId: album.key.id })
+
   for (let i = 0; i < medias.length; i++) {
     const { type, data } = medias[i]
     const img = await baileys.generateWAMessage(
@@ -28,12 +33,18 @@ async function sendAlbumMessage(conn, jid, medias, options = {}) {
       messageAssociation: { associationType: 1, parentMessageKey: album.key }
     }
     await conn.relayMessage(img.key.remoteJid, img.message, { messageId: img.key.id })
-    await baileys.delay(delay)
+    await delay(delayMs)
   }
   return album
 }
 
 const handler = async (m, { conn, args, command, usedPrefix }) => {
+  // Definir valores por defecto para emojis/globales si no existen
+  const rwait = global.rwait || "⏳"
+  const done = global.done || "✅"
+  const error = global.error || "❌"
+  const dev = global.dev || ""   // <-- Aquí se evita el ReferenceError
+
   if (!args[0]) {
     return conn.reply(m.chat, `☠️ Por favor, escribe qué quieres buscar en Pinterest.\nEjemplo: ${usedPrefix}${command} Luffy`, m)
   }
@@ -65,7 +76,7 @@ const handler = async (m, { conn, args, command, usedPrefix }) => {
       `❍ *Resultados* › ${json.count} imágenes\n` +
       `❍ *Enviando* › ${json.results.length} en álbum\n` +
       `──⇌••⇋──\n` +
-      `${dev}`
+      (dev ? dev + '\n' : '')  // Solo se añade si dev tiene contenido
 
     await conn.reply(m.chat, infoMessage, m)
 
