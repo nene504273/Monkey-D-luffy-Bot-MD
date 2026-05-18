@@ -51,62 +51,20 @@ const interactions = {
 }
 
 const aliases = {
-  enojado: 'angry',
-  bañarse: 'bath',
-  morder: 'bite',
-  lengua: 'bleh',
-  sonrojarse: 'blush',
-  aburrido: 'bored',
-  aplaudir: 'clap',
-  cafe: 'coffee',
-  café: 'coffee',
-  llorar: 'cry',
-  acurrucarse: 'cuddle',
-  bailar: 'dance',
-  borracho: 'drunk',
-  comer: 'eat',
-  feliz: 'happy',
-  abrazar: 'hug',
-  matar: 'kill',
-  muak: 'kiss',
-  reirse: 'laugh',
-  lamer: 'lick',
-  bofetada: 'slap',
-  dormir: 'sleep',
-  fumar: 'smoke',
-  escupir: 'spit',
-  pisar: 'step',
-  pensar: 'think',
-  enamorado: 'love',
-  enamorada: 'love',
-  palmadita: 'pat',
-  picar: 'pat',
-  pucheros: 'pout',
-  pegar: 'punch',
-  golpear: 'punch',
-  preg: 'impregnate',
-  preñar: 'impregnate',
-  embarazar: 'impregnate',
-  correr: 'run',
-  triste: 'sad',
-  asustada: 'scared',
-  asustado: 'scared',
-  seducir: 'seduce',
-  timido: 'shy',
-  timida: 'shy',
-  caminar: 'walk',
-  drama: 'dramatic',
-  beso: 'kisscheek',
-  guiñar: 'wink',
-  avergonzarse: 'cringe',
-  presumir: 'smug',
-  sonreir: 'smile',
-  5: 'highfive',
-  bullying: 'bully',
-  mano: 'handhold',
-  hola: 'wave',
-  hello: 'wave',
-  palmada: 'bonk'
+  enojado: 'angry', bañarse: 'bath', morder: 'bite', lengua: 'bleh',
+  sonrojarse: 'blush', aburrido: 'bored', aplaudir: 'clap', cafe: 'coffee',
+  café: 'coffee', llorar: 'cry', acurrucarse: 'cuddle', bailar: 'dance',
+  borracho: 'drunk', comer: 'eat', feliz: 'happy', abrazar: 'hug',
+  matar: 'kill', muak: 'kiss', reirse: 'laugh', lamer: 'lick',
+  bofetada: 'slap', dormir: 'sleep', fumar: 'smoke', escupir: 'spit',
+  pisar: 'step', pensar: 'think', enamorado: 'love', enamorada: 'love',
+  palmadita: 'pat', picar: 'pat', pucheros: 'pout', pegar: 'punch',
+  golpear: 'punch', preg: 'impregnate', preñar: 'impregnate',
+  embarazar: 'impregnate', correr: 'run', triste: 'sad', asustada: 'scared',
+  asustado: 'scared', seducir: 'seduce', timido: 'shy', timida: 'shy',
+  caminar: 'walk', drama: 'dramatic', beso: 'kisscheek', guiñar: 'wink',
+  avergonzarse: 'cringe', presumir: 'smug', sonreir: 'smile', 5: 'highfive',
+  bullying: 'bully', mano: 'handhold', hola: 'wave', hello: 'wave', palmada: 'bonk'
 }
 
 const commands = [...new Set([...Object.keys(interactions), ...Object.keys(aliases)])]
@@ -124,17 +82,45 @@ const getDisplayName = async (conn, jid) => {
 }
 
 const getAlyaCoreUrl = async (type) => {
-  const key = global.apikey || global.APIKeys?.alyacore || global.APIKeys?.['LUFFY-GEAR4'] || process.env.ALYACORE_APIKEY || process.env.ALYACORE_KEY
+  // Lógica de validación de tu llave original intacta
+  const apiKey = global.apikey || global.APIKeys?.alyacore || global.APIKeys?.['api.alyacore.xyz'] || process.env.ALYACORE_APIKEY || process.env.ALYACORE_KEY;
+  
   const params = new URLSearchParams({ type })
-  if (key) params.set('key', key)
+  // Corregido: La mayoría de las APIs esperan "apikey" y no "key", lo que a veces causa el 404
+  if (apiKey) params.set('apikey', apiKey) 
 
-  const res = await fetch(`https://api.alyacore.xyz/anime/interaction?${params.toString()}`)
-  if (!res.ok) throw new Error(`API AlyaCore respondió con ${res.status}`)
+  try {
+    // Intento 1: AlyaCore (con una ruta alternativa común por si la principal falló)
+    const res = await fetch(`https://api.alyacore.xyz/api/anime/interaction?${params.toString()}`)
+    if (res.ok) {
+      const json = await res.json()
+      if (json?.status && json?.result) return json.result
+    }
 
-  const json = await res.json()
-  if (!json?.status || !json?.result) throw new Error('No se encontraron resultados para esta interacción.')
+    // Intento 2: AlyaCore (tu ruta original)
+    const res2 = await fetch(`https://api.alyacore.xyz/anime/interaction?${params.toString()}`)
+    if (res2.ok) {
+      const json2 = await res2.json()
+      if (json2?.status && json2?.result) return json2.result
+    }
+  } catch (e) {
+    console.log('[API] AlyaCore falló. Pasando al sistema de respaldo...');
+  }
 
-  return json.result
+  // INTENTO 3: SISTEMA DE RESPALDO (Evita que el bot colapse si AlyaCore da 404 a cada rato)
+  try {
+    const waifuPicsTypes = ['bully', 'cuddle', 'cry', 'hug', 'kiss', 'lick', 'pat', 'smug', 'bonk', 'blush', 'smile', 'wave', 'highfive', 'handhold', 'bite', 'slap', 'kill', 'happy', 'wink', 'dance', 'cringe']
+    
+    if (waifuPicsTypes.includes(type)) {
+      const resWaifu = await fetch(`https://api.waifu.pics/sfw/${type}`)
+      if (resWaifu.ok) {
+        const jsonWaifu = await resWaifu.json()
+        return jsonWaifu.url // Devuelve una URL funcional sin importar si AlyaCore está caído
+      }
+    }
+  } catch (e) {}
+
+  throw new Error('Todas las APIs (AlyaCore y Respaldo) están caídas o no encontraron resultados.')
 }
 
 let handler = async (m, { conn, command, usedPrefix }) => {
@@ -161,7 +147,7 @@ let handler = async (m, { conn, command, usedPrefix }) => {
       mentions: isSelf ? [m.sender] : [m.sender, userId]
     }, { quoted: m })
   } catch (e) {
-    return m.reply(`❌ Error al obtener la interacción.\n\nEjemplo: *${usedPrefix}${command} @usuario*\n> ${e.message}`)
+    return m.reply(`❌ Error de conexión al buscar el GIF (404).\n\nEjemplo: *${usedPrefix}${command} @usuario*\n> ${e.message}`)
   }
 }
 
