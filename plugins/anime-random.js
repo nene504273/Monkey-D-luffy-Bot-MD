@@ -1,6 +1,6 @@
 import fetch from 'node-fetch'
 
-const API_KEY = 'LUFFY-GEAR4' // ← tu key
+const API_KEY = 'LUFFY-GEAR4'
 
 const handler = async (m, { conn, command, usedPrefix }) => {
   let mentionedJid = m.mentionedJid || []
@@ -9,9 +9,14 @@ const handler = async (m, { conn, command, usedPrefix }) => {
     : (m.quoted ? m.quoted.sender : m.sender)
 
   const fromName = m.pushName || m.sender.split('@')[0]
-  let whoName = userId === m.sender 
-    ? fromName 
-    : (await conn.getName(userId).catch(() => userId.split('@')[0]))
+
+  // ✅ Obtener whoName de forma segura (sin .catch)
+  let whoName
+  try {
+    whoName = (await conn.getName(userId)) || userId.split('@')[0]
+  } catch {
+    whoName = userId.split('@')[0]
+  }
 
   const interactions = {
     angry: 'angry', bath: 'bath', bite: 'bite', bleh: 'bleh', blush: 'blush',
@@ -59,7 +64,6 @@ const handler = async (m, { conn, command, usedPrefix }) => {
     try {
       const res = await fetch(`https://api.alyacore.xyz/anime/interaction?type=${type}&key=${API_KEY}`)
       
-      // Verificar que la respuesta sea JSON
       const contentType = res.headers.get('content-type')
       if (!contentType || !contentType.includes('application/json')) {
         const text = await res.text()
