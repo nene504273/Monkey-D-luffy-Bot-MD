@@ -61,21 +61,21 @@ const handler = async (m, { text, conn, args, command }) => {
 
 ${dev}`
 
-  // ✅ Enviamos el mensaje informativo sin externalAdReply
   await conn.reply(m.chat, infoMessage, m)
 
+  // Descarga de audio (play, yta, ytmp3, playaudio)
   if (['play', 'yta', 'ytmp3', 'playaudio'].includes(command)) {
     try {
-      let api = await (await fetch(
-        `https://api.alyacore.xyz/dl/ytmp3?url=${encodeURIComponent(url)}&key=${apikey}`
-      )).json()
+      // --- Cambio: nuevo endpoint de audio ---
+      const apiUrl = `https://api.alyacore.xyz/dl/youtubeplayv2?query=${encodeURIComponent(url)}&type=mp3&quality=auto&key=${apikey}`
+      let api = await (await fetch(apiUrl)).json()
 
-      if (!api.status) throw new Error('Alyacore falló')
+      if (!api.status) throw new Error('La API no devolvió status=true')
 
       var fileName = api.data?.title || 'audio'
       var dl = api.data?.dl
 
-      if (!dl) throw new Error('No se generó enlace (Alyacore)')
+      if (!dl) throw new Error('No se generó enlace de descarga (audio)')
 
     } catch (e) {
       await m.react(error)
@@ -93,22 +93,23 @@ ${dev}`
 
   } 
 
+  // Descarga de video (play2, ytv, ytmp4, mp4)
   else if (['play2', 'ytv', 'ytmp4', 'mp4'].includes(command)) {
     try {
-      await conn.reply(m.chat, `❍ Descargando video en 480p...`, m)
+      await conn.reply(m.chat, `❍ Descargando video en calidad automática...`, m)
 
-      const api = await (await fetch(
-        `https://api.alyacore.xyz/dl/ytmp4?url=${encodeURIComponent(url)}&quality=480&key=${apikey}`
-      )).json()
+      // --- Cambio: nuevo endpoint de video ---
+      const apiUrl = `https://api.alyacore.xyz/dl/youtubeplayv2?query=${encodeURIComponent(url)}&type=mp4&quality=auto&key=${apikey}`
+      const api = await (await fetch(apiUrl)).json()
 
       if (!api.status) throw new Error(api.message || 'La API no devolvió status=true')
 
       const { title: fileName, dl, quality } = api.data || {}
-      if (!dl) throw new Error('No se generó el enlace.')
+      if (!dl) throw new Error('No se generó el enlace de descarga (video).')
 
       await conn.sendMessage(m.chat, {
         document: { url: dl },
-        fileName: (fileName || `video_${quality || '480'}p`) + '.mp4',
+        fileName: (fileName || `video_${quality || 'auto'}p`) + '.mp4',
         mimetype: 'video/mp4',
         caption: `${dev}`
       }, { quoted: m })
