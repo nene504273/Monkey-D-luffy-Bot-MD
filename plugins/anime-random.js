@@ -1,22 +1,18 @@
 import fetch from 'node-fetch'
 
-// ⚠️ Asegúrate de tener definida tu API key (si la API la requiere)
-const API_KEY = 'LUFFY-GEAR4'
+const API_KEY = 'LUFFY-GEAR4' // ← tu key
 
 const handler = async (m, { conn, command, usedPrefix }) => {
-  // Determinar el usuario objetivo: mencionado, citado o el propio remitente
   let mentionedJid = m.mentionedJid || []
   let userId = mentionedJid.length > 0 
     ? mentionedJid[0] 
     : (m.quoted ? m.quoted.sender : m.sender)
 
-  // Obtener nombres de forma simple
   const fromName = m.pushName || m.sender.split('@')[0]
   let whoName = userId === m.sender 
     ? fromName 
     : (await conn.getName(userId).catch(() => userId.split('@')[0]))
 
-  // Tabla de interacciones (clave: tipo)
   const interactions = {
     angry: 'angry', bath: 'bath', bite: 'bite', bleh: 'bleh', blush: 'blush',
     bored: 'bored', clap: 'clap', coffee: 'coffee', cry: 'cry', cuddle: 'cuddle',
@@ -30,7 +26,6 @@ const handler = async (m, { conn, command, usedPrefix }) => {
     bully: 'bully', wave: 'wave', impregnate: 'impregnate', bonk: 'bonk'
   }
 
-  // Alias en español → inglés
   const aliases = {
     enojado: 'angry', bañarse: 'bath', morder: 'bite', lengua: 'bleh',
     sonrojarse: 'blush', aburrido: 'bored', aplaudir: 'clap', cafe: 'coffee',
@@ -48,7 +43,6 @@ const handler = async (m, { conn, command, usedPrefix }) => {
     '5': 'highfive', bullying: 'bully', mano: 'handhold', hello: 'wave'
   }
 
-  // Obtener el tipo de interacción
   const cmd = aliases[command] || command
   const type = interactions[cmd]
 
@@ -56,18 +50,22 @@ const handler = async (m, { conn, command, usedPrefix }) => {
     return conn.sendMessage(m.chat, { text: `Acción no reconocida: ${command}` }, { quoted: m })
   }
 
-  // Construir el texto del mensaje (sin módulo de traducción)
   const isSelf = userId === m.sender
-  let caption
-  if (isSelf) {
-    caption = `@${m.sender.split('@')[0]} se ha hecho ${type} a sí mismo.`
-  } else {
-    caption = `@${m.sender.split('@')[0]} le ha hecho ${type} a @${userId.split('@')[0]}.`
-  }
+  let caption = isSelf
+    ? `@${m.sender.split('@')[0]} se ha hecho ${type} a sí mismo.`
+    : `@${m.sender.split('@')[0]} le ha hecho ${type} a @${userId.split('@')[0]}.`
 
   if (m.isGroup) {
     try {
       const res = await fetch(`https://api.alyacore.xyz/anime/interaction?type=${type}&key=${API_KEY}`)
+      
+      // Verificar que la respuesta sea JSON
+      const contentType = res.headers.get('content-type')
+      if (!contentType || !contentType.includes('application/json')) {
+        const text = await res.text()
+        throw new Error(`La API no devolvió JSON. Respuesta: ${text.slice(0, 100)}`)
+      }
+
       const json = await res.json()
 
       if (!json.status || !json.result) {
@@ -88,7 +86,6 @@ const handler = async (m, { conn, command, usedPrefix }) => {
   }
 }
 
-// Lista de comandos (ayuda, etiquetas, comandos)
 handler.help = [
   'angry', 'enojado', 'bath', 'bañarse', 'bite', 'morder', 'bleh', 'lengua',
   'blush', 'sonrojarse', 'bored', 'aburrido', 'clap', 'aplaudir', 'coffee',
@@ -106,22 +103,7 @@ handler.help = [
   'hello', 'wave', 'impregnate', 'bonk'
 ]
 handler.tags = ['anime']
-handler.command = [
-  'angry', 'enojado', 'bath', 'bañarse', 'bite', 'morder', 'bleh', 'lengua',
-  'blush', 'sonrojarse', 'bored', 'aburrido', 'clap', 'aplaudir', 'coffee',
-  'cafe', 'café', 'cry', 'llorar', 'cuddle', 'acurrucarse', 'dance', 'bailar',
-  'drunk', 'borracho', 'eat', 'comer', 'palmada', 'feliz', 'happy', 'hug',
-  'abrazar', 'kill', 'matar', 'kiss', 'muak', 'laugh', 'reirse', 'lick',
-  'lamer', 'slap', 'bofetada', 'sleep', 'dormir', 'smoke', 'fumar', 'spit',
-  'escupir', 'step', 'pisar', 'think', 'pensar', 'love', 'enamorado',
-  'enamorada', 'pat', 'palmadita', 'pout', 'pucheros', 'punch', 'pegar',
-  'golpear', 'preg', 'preñar', 'embarazar', 'run', 'correr', 'sad', 'triste',
-  'scared', 'asustada', 'asustado', 'seduce', 'seducir', 'shy', 'timido',
-  'timida', 'walk', 'caminar', 'dramatic', 'drama', 'kisscheek', 'beso',
-  'wink', 'guiñar', 'cringe', 'avergonzarse', 'smug', 'presumir', 'smile',
-  'sonreir', 'highfive', '5', 'bully', 'bullying', 'mano', 'handhold',
-  'hello', 'wave', 'impregnate', 'bonk'
-]
+handler.command = handler.help
 handler.group = true
 
 export default handler
