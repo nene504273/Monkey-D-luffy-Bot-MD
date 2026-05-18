@@ -10,40 +10,33 @@ let handler = async (m, { conn, text, usedPrefix, command }) => {
   await conn.sendMessage(m.chat, { react: { text: '🕒', key: m.key } })
 
   try {
-    const apiUrl = `https://api.alyacore.xyz/dl/pinvideo?query=${encodeURIComponent(text)}&key=LUFFY-GEAR4`
+    // *** CORRECCIÓN: Nuevo endpoint de búsqueda ***
+    const apiUrl = `https://api.alyacore.xyz/search/pinterestvideo?query=${encodeURIComponent(text)}&key=LUFFY-GEAR4`
+    
     const response = await fetch(apiUrl)
-
-    // Verificar que la respuesta sea JSON antes de parsear
-    const contentType = response.headers.get('content-type')
-    if (!contentType || !contentType.includes('application/json')) {
-      throw new Error('La API no devolvió JSON. Posible error en el servidor o clave inválida.')
+    
+    // *** MEJORA: Manejo más robusto de la respuesta ***
+    // Si la respuesta no es OK, lanzamos un error descriptivo.
+    if (!response.ok) {
+      throw new Error(`Error del servidor: ${response.status} ${response.statusText}`)
     }
-
+    
     const json = await response.json()
 
-    // Validar estructura esperada
+    // *** CORRECCIÓN: Adaptación a la nueva estructura de la API ***
     if (!json.status || !json.data || !Array.isArray(json.data.videos) || json.data.videos.length === 0) {
-      throw new Error('No se encontraron videos para esa búsqueda.')
+      throw new Error('No se encontraron videos para esta búsqueda.')
     }
 
-    // Tomar el primer video de la lista
-    const video = json.data.videos[0]
+    // *** NUEVO: Seleccionar un video aleatorio de la lista para variar ***
+    const randomIndex = Math.floor(Math.random() * json.data.videos.length)
+    const video = json.data.videos[randomIndex]
     const { title, dl, duration, likes, thumb, link } = video
 
-    // Construir caption
-    const caption = `*${emoji} Título:* ${title || 'Sin título'}\n` +
-                    `*⏱ Duración:* ${duration || 'N/A'}\n` +
-                    `*❤️ Likes:* ${likes || 0}\n` +
-                    `*🔗 Enlace original:* ${link || 'No disponible'}`
+    const caption = `🎬 *Título:* ${title || 'Sin título'}\n⏱ *Duración:* ${duration || 'N/A'}\n❤️ *Likes:* ${likes || 0}\n🔗 *Fuente:* ${link || 'No disponible'}`.trim()
 
-    // Enviar miniatura primero (opcional) y luego el video
-    // Enviar miniatura como imagen con caption y luego el video sin caption para evitar duplicado
-    if (thumb) {
-      await conn.sendFile(m.chat, thumb, 'thumb.jpg', caption, m)
-    }
-
-    // Enviar el video
-    await conn.sendFile(m.chat, dl, `${title || 'pinterest_video'}.mp4`, '', m)
+    // Enviar el video con su caption
+    await conn.sendFile(m.chat, dl, `${title || 'pinterest_video'}.mp4`, caption, m)
 
     await conn.sendMessage(m.chat, { react: { text: '✅', key: m.key } })
 
