@@ -124,7 +124,7 @@ const getDisplayName = async (conn, jid) => {
 }
 
 const getAlyaCoreUrl = async (type) => {
-  const key = global.apikey || global.APIKeys?.alyacore || global.APIKeys?.['api.alyacore.xyz'] || process.env.ALYACORE_APIKEY || process.env.ALYACORE_KEY
+  const key = global.apikey || global.APIKeys?.alyacore || global.APIKeys?.['LUFFY-GEAR4'] || process.env.ALYACORE_APIKEY || process.env.ALYACORE_KEY
   const params = new URLSearchParams({ type })
   if (key) params.set('key', key)
 
