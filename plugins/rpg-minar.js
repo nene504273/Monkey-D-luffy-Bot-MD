@@ -23,7 +23,7 @@ let handler = async (m, { conn }) => {
   let stone = pickRandom([200, 500, 700, 800, 900, 4000, 300]);
 
   // ✅ URL de la imagen proporcionada
-  let img = 'https://api.dix.lat/media/img_1776263689279_F23IAO5rx.jpg';
+  let img = 'https://cdn.adoolab.xyz/dl/02c52a3e.jpeg';
 
   let hasil = Math.floor(Math.random() * 1000);
   let info = `⛏️ *Te has adentrando en lo profundo de las cuevas*\n\n` +
