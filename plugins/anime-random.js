@@ -1,61 +1,78 @@
 import fetch from 'node-fetch'
-import { t } from '../locales/index.js'
+
+// 🔑 Tu API key de Alyacore
+const apikey = 'LUFFY-GEAR4'
 
 let handler = async (m, { conn, command, usedPrefix }) => {
   let mentionedJid = await m.mentionedJid
   let userId = mentionedJid.length > 0 ? mentionedJid[0] : (m.quoted ? await m.quoted.sender : m.sender)
-  let from = await (async () => global.db.data.users[m.sender].name || (async () => { try { const n = await conn.getName(m.sender); return typeof n === 'string' && n.trim() ? n : m.sender.split('@')[0] } catch { return m.sender.split('@')[0] } })())()
-  let who = await (async () => global.db.data.users[userId].name || (async () => { try { const n = await conn.getName(userId); return typeof n === 'string' && n.trim() ? n : userId.split('@')[0] } catch { return userId.split('@')[0] } })())()
-  let str, type
+
+  // Obtener nombre de forma segura
+  const getName = async (jid) => {
+    try {
+      if (global.db?.data?.users?.[jid]?.name) return global.db.data.users[jid].name
+    } catch {}
+    try {
+      const n = await conn.getName(jid)
+      return (typeof n === 'string' && n.trim()) ? n : jid.split('@')[0]
+    } catch {
+      return jid.split('@')[0]
+    }
+  }
+
+  let from = await getName(m.sender)
+  let who = await getName(userId)
+
+  let type, mensaje
 
   const interactions = {
-    'angry': { type: 'angry' },
-    'bath': { type: 'bath' },
-    'bite': { type: 'bite' },
-    'bleh': { type: 'bleh' },
-    'blush': { type: 'blush' },
-    'bored': { type: 'bored' },
-    'clap': { type: 'clap' },
-    'coffee': { type: 'coffee' },
-    'cry': { type: 'cry' },
-    'cuddle': { type: 'cuddle' },
-    'dance': { type: 'dance' },
-    'drunk': { type: 'drunk' },
-    'eat': { type: 'eat' },
-    'happy': { type: 'happy' },
-    'hug': { type: 'hug' },
-    'kill': { type: 'kill' },
-    'kiss': { type: 'kiss' },
-    'laugh': { type: 'laugh' },
-    'lick': { type: 'lick' },
-    'slap': { type: 'slap' },
-    'sleep': { type: 'sleep' },
-    'smoke': { type: 'smoke' },
-    'spit': { type: 'spit' },
-    'step': { type: 'step' },
-    'think': { type: 'think' },
-    'love': { type: 'love' },
-    'pat': { type: 'pat' },
-    'pout': { type: 'pout' },
-    'punch': { type: 'punch' },
-    'run': { type: 'run' },
-    'sad': { type: 'sad' },
-    'scared': { type: 'scared' },
-    'seduce': { type: 'seduce' },
-    'shy': { type: 'shy' },
-    'walk': { type: 'walk' },
-    'dramatic': { type: 'dramatic' },
-    'kisscheek': { type: 'kisscheek' },
-    'wink': { type: 'wink' },
-    'cringe': { type: 'cringe' },
-    'smug': { type: 'smug' },
-    'smile': { type: 'smile' },
-    'highfive': { type: 'highfive' },
-    'handhold': { type: 'handhold' },
-    'bully': { type: 'bully' },
-    'wave': { type: 'wave' },
-    'impregnate': { type: 'impregnate' },
-    'bonk': { type: 'bonk' }
+    angry: 'enojado/a',
+    bath: 'bañándose',
+    bite: 'mordiendo',
+    bleh: 'sacando la lengua',
+    blush: 'sonrojado/a',
+    bored: 'aburrido/a',
+    clap: 'aplaudiendo',
+    coffee: 'tomando café',
+    cry: 'llorando',
+    cuddle: 'acurrucándose',
+    dance: 'bailando',
+    drunk: 'borracho/a',
+    eat: 'comiendo',
+    happy: 'feliz',
+    hug: 'abrazando',
+    kill: 'matando',
+    kiss: 'besando',
+    laugh: 'riéndose',
+    lick: 'lamiendo',
+    slap: 'abofeteando',
+    sleep: 'durmiendo',
+    smoke: 'fumando',
+    spit: 'escupiendo',
+    step: 'pisando',
+    think: 'pensando',
+    love: 'enamorado/a',
+    pat: 'acariciando',
+    pout: 'haciendo pucheros',
+    punch: 'golpeando',
+    run: 'corriendo',
+    sad: 'triste',
+    scared: 'asustado/a',
+    seduce: 'seduciendo',
+    shy: 'tímido/a',
+    walk: 'caminando',
+    dramatic: 'dramático/a',
+    kisscheek: 'besando en la mejilla',
+    wink: 'guiñando el ojo',
+    cringe: 'avergonzándose',
+    smug: 'presumiendo',
+    smile: 'sonriendo',
+    highfive: 'chocando los cinco',
+    handhold: 'tomados de la mano',
+    bully: 'molestando',
+    wave: 'saludando',
+    impregnate: 'embarazando',
+    bonk: 'dando un palmazo'
   }
 
   const aliases = {
@@ -113,19 +130,22 @@ let handler = async (m, { conn, command, usedPrefix }) => {
     '5': 'highfive',
     'bullying': 'bully',
     'mano': 'handhold',
-    'hello': 'wave',
     'hello': 'wave'
   }
 
   const cmd = aliases[command] || command
-  const interaction = interactions[cmd]
+  const accion = interactions[cmd]
 
-  if (!interaction) return m.reply(t('anime:interactions.not_recognized', conn.user.jid))
+  if (!accion) return conn.sendMessage(m.chat, { text: '❌ Interacción no reconocida.' }, { quoted: m })
 
-  type = interaction.type
-  const isSelf = from === who
-  const translationKey = `anime:interactions.${type}_${isSelf ? 'self' : 'other'}`
-  str = t(translationKey, conn.user.jid, { from, who })
+  type = cmd
+  const esMismo = from === who
+
+  if (esMismo) {
+    mensaje = `✨ *${from}* está ${accion}`
+  } else {
+    mensaje = `💫 *${from}* está ${accion} a *${who}*`
+  }
 
   if (m.isGroup) {
     try {
@@ -133,27 +153,26 @@ let handler = async (m, { conn, command, usedPrefix }) => {
       const json = await res.json()
 
       if (!json.status || !json.result) {
-        return m.reply(t('anime:interactions.no_results', conn.user.jid))
+        return conn.sendMessage(m.chat, { text: '⚠️ No se encontró un GIF para esta interacción.' }, { quoted: m })
       }
 
-      conn.sendMessage(m.chat, { 
-        video: { url: json.result }, 
-        gifPlayback: true, 
-        caption: str, 
-        mentions: [userId] 
+      conn.sendMessage(m.chat, {
+        video: { url: json.result },
+        gifPlayback: true,
+        caption: mensaje,
+        mentions: [userId]
       }, { quoted: m })
     } catch (e) {
-      return m.reply(t('anime:interactions.error', conn.user.jid, { 
-        prefix: usedPrefix, 
-        error: e.message 
-      }))
+      conn.sendMessage(m.chat, { text: `❌ Error: ${e.message}` }, { quoted: m })
     }
+  } else {
+    conn.sendMessage(m.chat, { text: mensaje }, { quoted: m })
   }
 }
 
-handler.help = ['angry', 'enojado', 'bath', 'bañarse', 'bite', 'morder', 'bleh', 'lengua', 'blush', 'sonrojarse', 'bored', 'aburrido', 'clap', 'aplaudir', 'coffee', 'cafe', 'café', 'cry', 'llorar', 'cuddle', 'acurrucarse', 'dance', 'bailar', 'drunk', 'borracho', 'eat', 'comer', 'palmada', 'feliz', 'happy', 'hug', 'abrazar', 'kill', 'matar', 'kiss', 'muak', 'laugh', 'reirse', 'lick', 'lamer', 'slap', 'bofetada', 'sleep', 'dormir', 'smoke', 'fumar', 'spit', 'escupir', 'step', 'pisar', 'think', 'pensar', 'love', 'enamorado', 'enamorada', 'pat', 'palmadita', 'pout', 'pucheros', 'punch', 'pegar', 'golpear', 'preg', 'preñar', 'embarazar', 'run', 'correr', 'sad', 'triste', 'scared', 'asustada', 'asustado', 'seduce', 'seducir', 'shy', 'timido', 'timida', 'walk', 'caminar', 'dramatic', 'drama', 'kisscheek', 'beso', 'wink', 'guiñar', 'cringe', 'avergonzarse', 'smug', 'presumir', 'smile', 'sonreir', 'highfive', '5', 'bully', 'bullying', 'mano', 'handhold', 'hello', 'wave', 'hello']
+handler.help = ['angry', 'enojado', 'bath', 'bañarse', 'bite', 'morder', 'bleh', 'lengua', 'blush', 'sonrojarse', 'bored', 'aburrido', 'clap', 'aplaudir', 'coffee', 'cafe', 'café', 'cry', 'llorar', 'cuddle', 'acurrucarse', 'dance', 'bailar', 'drunk', 'borracho', 'eat', 'comer', 'palmada', 'feliz', 'happy', 'hug', 'abrazar', 'kill', 'matar', 'kiss', 'muak', 'laugh', 'reirse', 'lick', 'lamer', 'slap', 'bofetada', 'sleep', 'dormir', 'smoke', 'fumar', 'spit', 'escupir', 'step', 'pisar', 'think', 'pensar', 'love', 'enamorado', 'enamorada', 'pat', 'palmadita', 'pout', 'pucheros', 'punch', 'pegar', 'golpear', 'preg', 'preñar', 'embarazar', 'run', 'correr', 'sad', 'triste', 'scared', 'asustada', 'asustado', 'seduce', 'seducir', 'shy', 'timido', 'timida', 'walk', 'caminar', 'dramatic', 'drama', 'kisscheek', 'beso', 'wink', 'guiñar', 'cringe', 'avergonzarse', 'smug', 'presumir', 'smile', 'sonreir', 'highfive', '5', 'bully', 'bullying', 'mano', 'handhold', 'hello', 'wave']
 handler.tags = ['anime']
-handler.command = ['angry', 'enojado', 'bath', 'bañarse', 'bite', 'morder', 'bleh', 'lengua', 'blush', 'sonrojarse', 'bored', 'aburrido', 'clap', 'aplaudir', 'coffee', 'cafe', 'café', 'cry', 'llorar', 'cuddle', 'acurrucarse', 'dance', 'bailar', 'drunk', 'borracho', 'eat', 'comer', 'palmada', 'feliz', 'happy', 'hug', 'abrazar', 'kill', 'matar', 'kiss', 'muak', 'laugh', 'reirse', 'lick', 'lamer', 'slap', 'bofetada', 'sleep', 'dormir', 'smoke', 'fumar', 'spit', 'escupir', 'step', 'pisar', 'think', 'pensar', 'love', 'enamorado', 'enamorada', 'pat', 'palmadita', 'pout', 'pucheros', 'punch', 'pegar', 'golpear', 'preg', 'preñar', 'embarazar', 'run', 'correr', 'sad', 'triste', 'scared', 'asustada', 'asustado', 'seduce', 'seducir', 'shy', 'timido', 'timida', 'walk', 'caminar', 'dramatic', 'drama', 'kisscheek', 'beso', 'wink', 'guiñar', 'cringe', 'avergonzarse', 'smug', 'presumir', 'smile', 'sonreir', 'highfive', '5', 'bully', 'bullying', 'mano', 'handhold', 'hello', 'wave', 'hello']
+handler.command = ['angry', 'enojado', 'bath', 'bañarse', 'bite', 'morder', 'bleh', 'lengua', 'blush', 'sonrojarse', 'bored', 'aburrido', 'clap', 'aplaudir', 'coffee', 'cafe', 'café', 'cry', 'llorar', 'cuddle', 'acurrucarse', 'dance', 'bailar', 'drunk', 'borracho', 'eat', 'comer', 'palmada', 'feliz', 'happy', 'hug', 'abrazar', 'kill', 'matar', 'kiss', 'muak', 'laugh', 'reirse', 'lick', 'lamer', 'slap', 'bofetada', 'sleep', 'dormir', 'smoke', 'fumar', 'spit', 'escupir', 'step', 'pisar', 'think', 'pensar', 'love', 'enamorado', 'enamorada', 'pat', 'palmadita', 'pout', 'pucheros', 'punch', 'pegar', 'golpear', 'preg', 'preñar', 'embarazar', 'run', 'correr', 'sad', 'triste', 'scared', 'asustada', 'asustado', 'seduce', 'seducir', 'shy', 'timido', 'timida', 'walk', 'caminar', 'dramatic', 'drama', 'kisscheek', 'beso', 'wink', 'guiñar', 'cringe', 'avergonzarse', 'smug', 'presumir', 'smile', 'sonreir', 'highfive', '5', 'bully', 'bullying', 'mano', 'handhold', 'hello', 'wave']
 handler.group = true
 
 export default handler
