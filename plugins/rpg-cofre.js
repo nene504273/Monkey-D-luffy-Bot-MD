@@ -19,7 +19,6 @@ const handler = async (m, { conn }) => {
   const ai = Math.floor(Math.random() * 40);
   const expp = Math.floor(Math.random() * 5000);
 
-  // Variable "moneda" (debe estar definida, usa lo que tengas, ej: '💰')
   const moneda = global.moneda || '💰';
 
   global.db.data.users[m.sender].coin += dia;
@@ -42,13 +41,16 @@ const handler = async (m, { conn }) => {
 ╰━━━━━━━━━━━━⬣`;
 
   try {
-    // Envío correcto de imagen con caption
+    // Intenta enviar la imagen con el caption
     await conn.sendMessage(m.chat, { 
       image: { url: img }, 
       caption: texto 
     }, { quoted: m });
   } catch (error) {
-    throw `❌ Ocurrió un error al enviar el cofre.`;
+    // Si falla (imagen no accesible), envía solo el texto y muestra el error en consola
+    console.error('Error al enviar la imagen del cofre:', error);
+    await conn.sendMessage(m.chat, { text: texto }, { quoted: m });
+    // No lanzamos error, el cofre ya fue reclamado, solo informamos la alternativa
   }
 };
 
