@@ -63,21 +63,28 @@ let handler = async (m, { conn, command, usedPrefix }) => {
 
   if (!m.isGroup) return conn.sendMessage(m.chat, { text: mensaje }, { quoted: m })
 
-  // Envía el GIF/video sin parsear JSON
   try {
-    const res = await fetch(`https://api.alyacore.xyz/anime/interaction?type=${type}&key=${apikey}`)
-    if (!res.ok) throw new Error(`HTTP ${res.status}`)
-    
-    const contentType = res.headers.get('content-type') || ''
-    if (contentType.includes('text/html')) throw new Error('La API devolvió HTML en vez de un video')
+    // 1. Obtenemos la URL del video desde la API (CORREGIDA)
+    const apiRes = await fetch(`https://api.alyacore.xyz/sfw/interaction?inter=${type}&key=${apikey}`)
+    if (!apiRes.ok) throw new Error(`HTTP ${apiRes.status}`)
 
-    const buffer = await res.buffer()
+    const json = await apiRes.json()
+    if (!json.status || !json.result) throw new Error('La API no devolvió un resultado válido')
+
+    // 2. Descargamos el video desde la URL proporcionada por la API
+    const videoRes = await fetch(json.result)
+    if (!videoRes.ok) throw new Error(`Error al descargar el video: HTTP ${videoRes.status}`)
+
+    const buffer = await videoRes.buffer()
+
+    // 3. Enviamos el GIF
     await conn.sendMessage(m.chat, {
       video: buffer,
       gifPlayback: true,
       caption: mensaje,
       mentions: [userId]
     }, { quoted: m })
+
   } catch (e) {
     conn.sendMessage(m.chat, { text: `❌ Error al obtener la interacción: ${e.message}` }, { quoted: m })
   }
