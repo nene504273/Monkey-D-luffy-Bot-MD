@@ -105,7 +105,7 @@ ${finalMessage}
 `.trim();
 
       // ✅ NUEVA IMAGEN PARA SUB-BOTS
-      const imgUrl = 'https://api.dix.lat/media/img_1776264090977_CG00XZwb5x.jpg';
+      const imgUrl = 'https://cdn.adoolab.xyz/dl/c8dadfd1.jpeg';
 
       try {
         // Enviar imagen con caption
