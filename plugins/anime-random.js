@@ -63,35 +63,29 @@ let handler = async (m, { conn, command, usedPrefix }) => {
 
   if (!m.isGroup) return conn.sendMessage(m.chat, { text: mensaje }, { quoted: m })
 
-  // 💥 OBTENEMOS EL VIDEO DIRECTAMENTE (SIN JSON)
+  // Envía el GIF/video sin parsear JSON
   try {
     const res = await fetch(`https://api.alyacore.xyz/anime/interaction?type=${type}&key=${apikey}`)
     if (!res.ok) throw new Error(`HTTP ${res.status}`)
-
-    // Verificamos el tipo de contenido para evitar HTML
+    
     const contentType = res.headers.get('content-type') || ''
-    if (contentType.includes('text/html')) {
-      throw new Error('La API devolvió HTML en lugar de un video')
-    }
+    if (contentType.includes('text/html')) throw new Error('La API devolvió HTML en vez de un video')
 
-    // Convertimos la respuesta en buffer (video/gif)
     const buffer = await res.buffer()
-
     await conn.sendMessage(m.chat, {
       video: buffer,
       gifPlayback: true,
       caption: mensaje,
       mentions: [userId]
     }, { quoted: m })
-
   } catch (e) {
     conn.sendMessage(m.chat, { text: `❌ Error al obtener la interacción: ${e.message}` }, { quoted: m })
   }
 }
 
-handler.help = ['angry', 'enojado', 'bath', 'bañarse', ...]  // (mantén igual los arrays)
+handler.help = ['angry', 'enojado', 'bath', 'bañarse', 'bite', 'morder', 'bleh', 'lengua', 'blush', 'sonrojarse', 'bored', 'aburrido', 'clap', 'aplaudir', 'coffee', 'cafe', 'café', 'cry', 'llorar', 'cuddle', 'acurrucarse', 'dance', 'bailar', 'drunk', 'borracho', 'eat', 'comer', 'palmada', 'feliz', 'happy', 'hug', 'abrazar', 'kill', 'matar', 'kiss', 'muak', 'laugh', 'reirse', 'lick', 'lamer', 'slap', 'bofetada', 'sleep', 'dormir', 'smoke', 'fumar', 'spit', 'escupir', 'step', 'pisar', 'think', 'pensar', 'love', 'enamorado', 'enamorada', 'pat', 'palmadita', 'pout', 'pucheros', 'punch', 'pegar', 'golpear', 'preg', 'preñar', 'embarazar', 'run', 'correr', 'sad', 'triste', 'scared', 'asustada', 'asustado', 'seduce', 'seducir', 'shy', 'timido', 'timida', 'walk', 'caminar', 'dramatic', 'drama', 'kisscheek', 'beso', 'wink', 'guiñar', 'cringe', 'avergonzarse', 'smug', 'presumir', 'smile', 'sonreir', 'highfive', '5', 'bully', 'bullying', 'mano', 'handhold', 'hello', 'wave']
 handler.tags = ['anime']
-handler.command = ['angry', 'enojado', 'bath', 'bañarse', ...] // (mantén igual)
+handler.command = ['angry', 'enojado', 'bath', 'bañarse', 'bite', 'morder', 'bleh', 'lengua', 'blush', 'sonrojarse', 'bored', 'aburrido', 'clap', 'aplaudir', 'coffee', 'cafe', 'café', 'cry', 'llorar', 'cuddle', 'acurrucarse', 'dance', 'bailar', 'drunk', 'borracho', 'eat', 'comer', 'palmada', 'feliz', 'happy', 'hug', 'abrazar', 'kill', 'matar', 'kiss', 'muak', 'laugh', 'reirse', 'lick', 'lamer', 'slap', 'bofetada', 'sleep', 'dormir', 'smoke', 'fumar', 'spit', 'escupir', 'step', 'pisar', 'think', 'pensar', 'love', 'enamorado', 'enamorada', 'pat', 'palmadita', 'pout', 'pucheros', 'punch', 'pegar', 'golpear', 'preg', 'preñar', 'embarazar', 'run', 'correr', 'sad', 'triste', 'scared', 'asustada', 'asustado', 'seduce', 'seducir', 'shy', 'timido', 'timida', 'walk', 'caminar', 'dramatic', 'drama', 'kisscheek', 'beso', 'wink', 'guiñar', 'cringe', 'avergonzarse', 'smug', 'presumir', 'smile', 'sonreir', 'highfive', '5', 'bully', 'bullying', 'mano', 'handhold', 'hello', 'wave']
 handler.group = true
 
 export default handler
