@@ -13,7 +13,9 @@ const handler = async (m, { conn }) => {
     return;
   }
 
-  const img = 'https://api.dix.lat/media/img_1777808769637_uoC-rorTf.jpg';
+  // ✅ Nueva imagen para el cofre
+  const img = 'https://cdn.adoolab.xyz/dl/a4d76445.jpeg';
+
   const dia = Math.floor(Math.random() * 100);
   const tok = Math.floor(Math.random() * 10);
   const ai = Math.floor(Math.random() * 40);
@@ -41,16 +43,13 @@ const handler = async (m, { conn }) => {
 ╰━━━━━━━━━━━━⬣`;
 
   try {
-    // Intenta enviar la imagen con el caption
     await conn.sendMessage(m.chat, { 
       image: { url: img }, 
       caption: texto 
     }, { quoted: m });
   } catch (error) {
-    // Si falla (imagen no accesible), envía solo el texto y muestra el error en consola
     console.error('Error al enviar la imagen del cofre:', error);
     await conn.sendMessage(m.chat, { text: texto }, { quoted: m });
-    // No lanzamos error, el cofre ya fue reclamado, solo informamos la alternativa
   }
 };
 
