@@ -70,7 +70,7 @@ global.avatar = 'https://qu.ax/RYjEw.jpeg'
 //*─ׄ─ׅ─ׄ─⭒─ׄ─ׅ─ׄ─⭒─ׄ─ׅ─ׄ─⭒─ׄ─ׅ─ׄ─⭒─ׄ─ׅ─ׄ─⭒─ׄ─ׅ─ׄ─*
 
 global.gp1 = 'https://chat.whatsapp.com/JyuryyTY5wiDGsXTHjYPSR'
-global.comunidad1 = 'https://chat.whatsapp.com/E9xIdGkHYOoB4Pq8eMzO05'
+global.comunidad1 = 'https://chat.whatsapp.com/JgRSyLzk5zLGCF4AvEHLAC'
 global.channel = 'https://whatsapp.com/channel/0029VbBNkDqInlqSR3MtNN0u'
 global.channel2 = 'https://whatsapp.com/channel/0029VbBNkDqInlqSR3MtNN0u'
 global.md = 'https://github.com/nene504273/Monkey-D-luffy-Bot-MD'
