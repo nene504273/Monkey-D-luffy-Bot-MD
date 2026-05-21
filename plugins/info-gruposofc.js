@@ -1,6 +1,6 @@
 let handler = async (m, { conn }) => {
   // ⚠️ Cambia esta URL por la imagen que quieras usar
-  let banner = 'https://i.imgur.com/xxxxx.jpg'  // o './imagenes/banner.jpg' si es local
+  let banner = 'https://cdn.adoolab.xyz/dl/c6dfb38f.jpeg'  // o './imagenes/banner.jpg' si es local
 
   let texto = `*¡Hola! Te invito a unirte a los grupos oficiales del Bot para convivir con la comunidad.....*
 
