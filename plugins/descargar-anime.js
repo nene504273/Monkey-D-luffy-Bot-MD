@@ -55,31 +55,28 @@ ${epsText}
   }
 };
 
-// handler.before para capturar la selección del episodio
+// handler.before mejorado: soporta formatos como "• Episodio 1" o "capítulo 2"
 handler.before = async (m, { conn }) => {
   conn.anime = conn.anime || {};
   const session = conn.anime[m.sender];
   if (!session || !m.quoted || m.quoted.id !== session.key.id) return;
 
-  const epNum = parseInt(m.text.trim());
-  if (isNaN(epNum)) return m.reply('Número de episodio inválido.');
+  // Extraer número de episodio (soporta "1", "• Episodio 1", "capítulo 2", etc.)
+  const match = m.text.trim().match(/(\d+)/);
+  const epNum = match ? parseInt(match[1]) : NaN;
+
+  if (isNaN(epNum) || epNum < 1 || epNum > session.episodes.length) {
+    return m.reply(`⚠️ Episodio no válido. Responde solo con el número (ej: 1, 2...).`);
+  }
 
   const episode = session.episodes.find(e => e.num === epNum);
   if (!episode) return m.reply(`Episodio ${epNum} no encontrado.`);
 
-  // Aquí necesitarías el endpoint de descarga a partir de episode.url
   m.reply(`⏳ Preparando descarga de ${session.title} - Episodio ${epNum}...`);
-
-  // TODO: implementar llamada a API de descarga usando episode.url
-  // Ejemplo hipotético:
-  // const videoUrl = await getDownloadLink(episode.url);
-  // const videoBuffer = await fetch(videoUrl).buffer();
-  // await conn.sendFile(m.chat, videoBuffer, 'anime.mp4', '', m);
-
-  // Por ahora solo limpiamos la sesión
+  // Aquí más adelante irá la lógica de descarga real
   clearTimeout(session.timeout);
   delete conn.anime[m.sender];
-  m.reply('⚠️ Descarga no implementada aún. Se necesita el endpoint de video.');
+  // m.reply('Descarga no implementada aún...');
 };
 
 handler.command = ['anime2', 'animedl2'];
