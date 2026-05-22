@@ -14,13 +14,13 @@
 
 <div align="center">
   <a href="https://github.com/nene504273/Monkey-D-Luffy-Bot-MD">
-    <img src="https://img.shields.io/github/v/release/nene504273/Monkey-D-Luffy-Bot-MD?style=for-the-badge&color=FF0000&label=Versión&logo=github" alt="Version">
+    <img src="https://img.shields.io/badge/Version-3.0.0-FF0000?style=for-the-badge&logo=github&logoColor=white" alt="Version">
   </a>
   <a href="https://github.com/nene504273/Monkey-D-Luffy-Bot-MD/network/members">
-    <img src="https://img.shields.io/github/forks/nene504273/Monkey-D-Luffy-Bot-MD?style=for-the-badge&color=FFD700&logo=github&label=Forks" alt="Forks">
+    <img src="https://img.shields.io/github/forks/nene504273/Monkey-D-Luffy-Bot-MD?style=for-the-badge&color=FFD700&logo=github" alt="Forks">
   </a>
   <a href="https://github.com/nene504273/Monkey-D-Luffy-Bot-MD/stargazers">
-    <img src="https://img.shields.io/github/stars/nene504273/Monkey-D-Luffy-Bot-MD?style=for-the-badge&color=0077ff&logo=github&label=Stars" alt="Stars">
+    <img src="https://img.shields.io/github/stars/nene504273/Monkey-D-Luffy-Bot-MD?style=for-the-badge&color=blue&logo=github" alt="Stars">
   </a>
   <br>
   <a href="https://whatsapp.com/channel/0029VbBNkDqInlqSR3MtNN0u">
@@ -68,10 +68,10 @@ termux-setup-storage
 # 2. Actualizar paquetes
 apt update && apt upgrade -y
 
-# 3. Instalar dependencias (corregido: yarn, no yarr)
+# 3. Instalar dependencias
 pkg install git nodejs ffmpeg imagemagick yarn -y
 
-# 4. Clonar repositorio (línea corregida)
+# 4. Clonar repositorio
 git clone https://github.com/nene504273/Monkey-D-Luffy-Bot-MD
 cd Monkey-D-Luffy-Bot-MD
 
@@ -81,3 +81,90 @@ npm install
 
 # 6. Iniciar el bot
 npm start
+
+🔄 COMANDOS ÚTILES TERMUX
+
+<details>
+<summary><b>🌀 REINICIAR SI SE DETIENE</b></summary>
+
+```bash
+cd Monkey-D-Luffy-Bot-MD
+npm start
+```
+
+</details>
+
+<details>
+<summary><b>🔁 ACTIVAR 24/7 CON PM2</b></summary>
+
+```bash
+termux-wake-lock
+npm i -g pm2
+pm2 start index.js
+pm2 save
+pm2 logs
+```
+
+</details>
+
+<details>
+<summary><b>🆕 NUEVO QR (BORRAR SESIÓN)</b></summary>
+
+```bash
+cd Monkey-D-Luffy-Bot-MD
+rm -rf session
+npm start
+```
+
+</details>
+
+<details>
+<summary><b>⬆️ ACTUALIZAR BOT</b></summary>
+
+```bash
+git pull
+npm install
+npm start
+```
+
+</details>
+
+---
+
+🤝 CONECTA CONMIGO
+
+📧 Correo: salassantos675@gmail.com
+
+---
+
+🛠️ TECNOLOGÍAS QUE USO
+
+<p align="left">
+  <img src="https://img.shields.io/badge/JavaScript-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black" />
+  <img src="https://img.shields.io/badge/Node.js-339933?style=for-the-badge&logo=node.js&logoColor=white" />
+  <img src="https://img.shields.io/badge/Baileys_MD-25D366?style=for-the-badge&logo=whatsapp&logoColor=white" />
+</p>
+
+---
+
+👑 CREADOR & CRÉDITOS
+
+<div align="center">
+  <img src="https://github.com/nene504273.png" width="130" height="130" style="border-radius:50%; border:4px solid #FF0000;" />
+  <h3>ɴ͡ᴇ͜ɴᴇ❀᭄☂️</h3>
+  <p><strong>Desarrollador Principal & Capitán de la Tripulación</strong></p>
+</div>
+
+<p align="center">
+  <i>⭐ Dale una estrella al repositorio si te gusta mi trabajo ⭐</i>
+</p>
+
+---
+
+<div align="center">
+  <img src="https://media1.tenor.com/m/K24L1kZ10nEAAAAC/luffy-gear-5-one-piece.gif" width="100%" />
+  <h3>¡GRACIAS POR NAVEGAR CON NOSOTROS! 🎉</h3>
+  <sub>© 2026 Monkey D. Luffy Bot</sub>
+</div>
+```
+
