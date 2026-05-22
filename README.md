@@ -1,9 +1,16 @@
-```markdown
 <div align="center">
   <img src="https://i.pinimg.com/originals/73/69/6e/73696e022df7cd5cb3d999c6875361dd.gif" alt="Luffy Banner" width="100%" style="border-radius: 15px; box-shadow: 0 0 20px rgba(255, 0, 0, 0.6);">
 </div>
 
-<h1 align="center">🏴‍☠️ Monkey D. Luffy Bot - MD 🏴‍☠️</h1>
+<h1 align="center">
+  🏴‍☠️ Monkey D. Luffy Bot - MD 🏴‍☠️
+</h1>
+
+<div align="center">
+  <a href="https://git.io/typing-svg">
+    <img src="https://readme-typing-svg.demolab.com?font=Fira+Code&weight=700&size=28&pause=1000&color=F70000&center=true&vCenter=true&width=500&lines=YO+SERE+EL+REY+DE+LOS+PIRATAS;GEAR+5+ACTIVADO+%E2%9A%A1;BOT+MULTIFUNCIONAL+WHATSAPP;CREADO+POR+%C9%B4%CD%A1%E1%B4%87%CD%9C%C9%B4%E1%B4%87%E2%9D%80%E1%AD%84%E2%98%82%EF%B8%8F" alt="Typing SVG" />
+  </a>
+</div>
 
 <div align="center">
   <a href="https://github.com/nene504273/Monkey-D-Luffy-Bot-MD">
@@ -19,15 +26,11 @@
   <a href="https://whatsapp.com/channel/0029VbBNkDqInlqSR3MtNN0u">
     <img src="https://img.shields.io/badge/Canal%20Oficial-25D366?style=for-the-badge&logo=whatsapp&logoColor=white" alt="Canal">
   </a>
-  <a href="https://chat.whatsapp.com/JyuryyTY5wiDGsXTHjYPSR">
+  <a href="https://chat.whatsapp.com/GoCTBX17WRV9PqwHGXm43G?mode=gi_t">
     <img src="https://img.shields.io/badge/Grupo%20del%20Bot-25D366?style=for-the-badge&logo=whatsapp&logoColor=white" alt="Grupo Bot">
   </a>
   <a href="https://chat.whatsapp.com/JgRSyLzk5zLGCF4AvEHLAC">
     <img src="https://img.shields.io/badge/Comunidad-25D366?style=for-the-badge&logo=whatsapp&logoColor=white" alt="Comunidad">
-  </a>
-  <br>
-  <a href="https://git.io/typing-svg">
-    <img src="https://readme-typing-svg.demolab.com?font=Fira+Code&weight=700&size=28&pause=1000&color=F70000&center=true&vCenter=true&width=500&lines=YO+SERE+EL+REY+DE+LOS+PIRATAS;GEAR+5+ACTIVADO+%E2%9A%A1;BOT+MULTIFUNCIONAL+WHATSAPP;CREADO+POR+%C9%B4%CD%A1%E1%B4%87%CD%9C%C9%B4%E1%B4%87%E2%9D%80%E1%AD%84%E2%98%82%EF%B8%8F" alt="Typing SVG" />
   </a>
 </div>
 
@@ -35,19 +38,19 @@
 
 ## 🌊 DESCRIPCIÓN
 
-**Monkey D. Luffy Bot** es un bot multifuncional para WhatsApp inspirado en la libertad y el poder del futuro Rey de los Piratas. Diseñado para administrar grupos, descargar multimedia, jugar RPG y entrenar a tus nakamas con un estilo anime.
+**Monkey D. Luffy Bot** es un bot multifuncional para WhatsApp inspirado en la libertad y el poder del futuro Rey de los Piratas. Diseñado para administrar grupos, descargar multimedia, jugar RPG y entrenar a tus nakamas con estilo anime.
 
 > *"¡No voy a perder contra nadie, porque voy a ser el Rey de los Bots!"* 🦸‍♂️
 
 ---
 
-## ⚡ CARACTERÍSTICAS
+## ⚡ CARACTERÍSTICAS DEL PIRATA
 
 | Función       | Descripción                                    | Estado |
 |---------------|------------------------------------------------|--------|
 | 🛡️ Seguridad  | Antilink, Antifake, Bienvenidas y Despedidas   | ✅     |
 | 📥 Descargas  | YouTube, TikTok, Instagram (sin marca de agua) | ✅     |
-| 🎭 Stickers   | Creados desde imágenes, videos y GIFs          | ✅     |
+| 🎭 Stickers   | Creación desde imágenes, videos y GIFs         | ✅     |
 | 🎮 Juegos     | RPG, Matemáticas, Adivinanzas                  | ✅     |
 | 🤖 IA         | Chatbot inteligente tipo *Gear 5*              | ✅     |
 | ⚡ Velocidad   | Respuestas rápidas estilo *Gear 2*             | ✅     |
@@ -78,9 +81,8 @@ npm install
 
 # 6. Iniciar el bot
 npm start
-```
 
-### 🔄 COMANDOS ÚTILES EN TERMUX
+🔄 COMANDOS ÚTILES TERMUX
 
 <details>
 <summary><b>🌀 REINICIAR SI SE DETIENE</b></summary>
@@ -89,6 +91,7 @@ npm start
 cd Monkey-D-Luffy-Bot-MD
 npm start
 ```
+
 </details>
 
 <details>
@@ -101,6 +104,7 @@ pm2 start index.js
 pm2 save
 pm2 logs
 ```
+
 </details>
 
 <details>
@@ -111,6 +115,7 @@ cd Monkey-D-Luffy-Bot-MD
 rm -rf session
 npm start
 ```
+
 </details>
 
 <details>
@@ -121,17 +126,18 @@ git pull
 npm install
 npm start
 ```
+
 </details>
 
 ---
 
-## 🤝 CONECTA CONMIGO
+🤝 CONECTA CONMIGO
 
 📧 Correo: salassantos675@gmail.com
 
 ---
 
-## 🛠️ TECNOLOGÍAS QUE USO
+🛠️ TECNOLOGÍAS QUE USO
 
 <p align="left">
   <img src="https://img.shields.io/badge/JavaScript-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black" />
@@ -141,7 +147,7 @@ npm start
 
 ---
 
-## 👑 CREADOR & CRÉDITOS
+👑 CREADOR & CRÉDITOS
 
 <div align="center">
   <img src="https://github.com/nene504273.png" width="130" height="130" style="border-radius:50%; border:4px solid #FF0000;" />
@@ -161,4 +167,3 @@ npm start
   <sub>© 2026 Monkey D. Luffy Bot</sub>
 </div>
 ```
-
