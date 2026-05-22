@@ -19,10 +19,18 @@ let handler = async (m, { command, usedPrefix, conn, text }) => {
     m.react('🔍');
     const data = await fetchAnimeData(text);
 
-    // data contiene title, image, description, episodesList, etc.
+    // data esperado: { title, image, description, episodios, episodesList: [{ num, url }] }
     const { title, image, description, episodios, episodesList } = data;
 
-    let epsText = episodesList.map(e => `• Episodio ${e.num}`).join('\n');
+    // Mostrar máximo 30 capítulos en la lista, con aviso si hay más
+    const MAX_LIST = 30;
+    let epsText = episodesList
+      .slice(0, MAX_LIST)
+      .map(e => `• Episodio ${e.num}`)
+      .join('\n');
+    if (episodesList.length > MAX_LIST) {
+      epsText += `\n... y ${episodesList.length - MAX_LIST} episodios más`;
+    }
 
     let caption = `
 ≡ 🌷 *Título:* ${title}
@@ -32,7 +40,7 @@ let handler = async (m, { command, usedPrefix, conn, text }) => {
 
 ${epsText}
 
-> Responde a este mensaje con el número del episodio para descargarlo (próximamente).
+> Responde a este mensaje con el número del episodio (ej: \`1\`, \`5\`, \`• Episodio 3\`) para iniciar la descarga.
 `.trim();
 
     // Enviar imagen de portada
@@ -43,9 +51,12 @@ ${epsText}
     conn.anime = conn.anime || {};
     conn.anime[m.sender] = {
       title,
-      episodes: episodesList,  // array { num, url }
+      episodes: episodesList,    // array { num, url }
       key: sent.key,
-      timeout: setTimeout(() => delete conn.anime[m.sender], 600_000)
+      timeout: setTimeout(() => {
+        // Limpiar sesión tras 10 minutos de inactividad
+        if (conn.anime && conn.anime[m.sender]) delete conn.anime[m.sender];
+      }, 600_000)
     };
 
     m.react('✅');
@@ -55,28 +66,34 @@ ${epsText}
   }
 };
 
-// handler.before mejorado: soporta formatos como "• Episodio 1" o "capítulo 2"
+// ----- Intercepta la respuesta para seleccionar episodio -----
 handler.before = async (m, { conn }) => {
   conn.anime = conn.anime || {};
   const session = conn.anime[m.sender];
+  
+  // Solo actuar si hay sesión activa y el mensaje citado coincide con el de la portada
   if (!session || !m.quoted || m.quoted.id !== session.key.id) return;
 
-  // Extraer número de episodio (soporta "1", "• Episodio 1", "capítulo 2", etc.)
-  const match = m.text.trim().match(/(\d+)/);
+  const input = m.text.trim();
+
+  // Extraer el número: admite "5", "episodio 5", "• Episodio 5", "capítulo 5", etc.
+  const match = input.match(/\b(\d+)\b/);
   const epNum = match ? parseInt(match[1]) : NaN;
 
   if (isNaN(epNum) || epNum < 1 || epNum > session.episodes.length) {
-    return m.reply(`⚠️ Episodio no válido. Responde solo con el número (ej: 1, 2...).`);
+    return m.reply(`⚠️ Episodio no válido. Responde solo con el número (ej: 1, 2…) o algo como "• Episodio 5".`);
   }
 
   const episode = session.episodes.find(e => e.num === epNum);
-  if (!episode) return m.reply(`Episodio ${epNum} no encontrado.`);
+  if (!episode) return m.reply(`❌ El episodio ${epNum} no se encontró en la lista.`);
 
-  m.reply(`⏳ Preparando descarga de ${session.title} - Episodio ${epNum}...`);
-  // Aquí más adelante irá la lógica de descarga real
-  clearTimeout(session.timeout);
-  delete conn.anime[m.sender];
-  // m.reply('Descarga no implementada aún...');
+  // Aquí puedes conectar la lógica de descarga (próximamente)
+  // Por ahora notificamos y mantenemos la sesión para usar la URL
+  m.reply(`⏳ Preparando descarga de *${session.title}* - Episodio ${epNum}...\n🔗 URL: ${episode.url}`);
+  
+  // Opcional: mantén la sesión unos segundos más si vas a procesar descarga asincrónica
+  // clearTimeout(session.timeout);
+  // (No borramos la sesión aún, la descarga puede tomar tiempo)
 };
 
 handler.command = ['anime2', 'animedl2'];
