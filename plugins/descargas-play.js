@@ -28,7 +28,7 @@ const handler = async (m, { text, conn, args, command }) => {
           timestamp: 'N/A',
           views: null,
           ago: 'N/A',
-          author: { url: 'Desconocido' }
+          author: { url: 'Desconocido', name: 'Desconocido' }
         }
       }
     } else {
@@ -45,28 +45,43 @@ const handler = async (m, { text, conn, args, command }) => {
 
   let { title, thumbnail, timestamp, views, ago, url, author } = ytplay2
   const vistas = formatViews(views)
-  const canalLink = author?.url || 'Desconocido'
+  const canal = author?.name || author?.url || 'Desconocido'
 
+  // Información que irá como caption DEBAJO de la miniatura
   const infoMessage = `¡! ׂׂૢ *Download Youtube*
-✩̣̣̣̣̣ͯ┄•͙✧⃝•͙┄✩ͯ•͙͙✧⃝•͙͙✩ͯ
+✩̣̣̣̣̣̣ͯ┄•͙✧⃝•͙┄✩ͯ•͙͙✧⃝•͙͙✩ͯ
 
 ❍ *Título* › *${title || 'Desconocido'}*
 ❍ *Vistas* › *${vistas}*
 ❍ *Duración* › *${timestamp}*
 ❍ *Publicado* › *${ago}*
-❍ *Canal* › *${canalLink}*
+❍ *Canal* › *${canal}*
 ❍ *Enlace* › *${url}*
 
 ──⇌••⇋──
 
 ${dev}`
 
-  await conn.reply(m.chat, infoMessage, m)
+  // ── Enviar SOLO la imagen con el caption (sin texto adicional) ──
+  if (thumbnail) {
+    try {
+      const imgRes = await fetch(thumbnail)
+      const buffer = await imgRes.buffer()
+      await conn.sendMessage(m.chat, {
+        image: buffer,
+        caption: infoMessage
+      }, { quoted: m })
+    } catch {
+      // Si no se puede obtener la imagen, se manda el texto
+      await conn.reply(m.chat, infoMessage, m)
+    }
+  } else {
+    await conn.reply(m.chat, infoMessage, m)
+  }
 
-  // Descarga de audio (play, yta, ytmp3, playaudio)
+  // ── Descarga de audio ──
   if (['play', 'yta', 'ytmp3', 'playaudio'].includes(command)) {
     try {
-      // --- Cambio: nuevo endpoint de audio ---
       const apiUrl = `https://api.alyacore.xyz/dl/youtubeplayv2?query=${encodeURIComponent(url)}&type=mp3&quality=auto&key=${apikey}`
       let api = await (await fetch(apiUrl)).json()
 
@@ -90,15 +105,13 @@ ${dev}`
     }, { quoted: m })
 
     await m.react(done)
-
   } 
 
-  // Descarga de video (play2, ytv, ytmp4, mp4)
+  // ── Descarga de video ──
   else if (['play2', 'ytv', 'ytmp4', 'mp4'].includes(command)) {
     try {
       await conn.reply(m.chat, `❍ Descargando video en calidad automática...`, m)
 
-      // --- Cambio: nuevo endpoint de video ---
       const apiUrl = `https://api.alyacore.xyz/dl/youtubeplayv2?query=${encodeURIComponent(url)}&type=mp4&quality=auto&key=${apikey}`
       const api = await (await fetch(apiUrl)).json()
 
