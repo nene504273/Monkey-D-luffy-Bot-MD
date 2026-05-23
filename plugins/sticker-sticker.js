@@ -47,8 +47,9 @@ let handler = async (m, { conn, args, usedPrefix, command }) => {
     console.error(e);
     if (!stiker) stiker = e;
   } finally {
-    if (stiker) {
-      conn.sendFile(m.chat, stiker, 'sticker.webp', '', m);
+    if (stiker && Buffer.isBuffer(stiker)) {
+      // Envía como sticker, no como archivo
+      await conn.sendMessage(m.chat, { sticker: stiker }, { quoted: m });
     } else {
       return conn.reply(m.chat, `${emoji} Por favor, envía una imagen o video para hacer un sticker.`, m);
     }
