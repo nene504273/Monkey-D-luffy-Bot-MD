@@ -26,7 +26,7 @@
   <a href="https://whatsapp.com/channel/0029VbBNkDqInlqSR3MtNN0u">
     <img src="https://img.shields.io/badge/Canal%20Oficial-25D366?style=for-the-badge&logo=whatsapp&logoColor=white" alt="Canal">
   </a>
-  <a href="https://chat.whatsapp.com/GoCTBX17WRV9PqwHGXm43G?mode=gi_t">
+  <a href="https://chat.whatsapp.com/JyuryyTY5wiDGsXTHjYPSR?mode=gi_t">
     <img src="https://img.shields.io/badge/Grupo%20del%20Bot-25D366?style=for-the-badge&logo=whatsapp&logoColor=white" alt="Grupo Bot">
   </a>
   <a href="https://chat.whatsapp.com/JgRSyLzk5zLGCF4AvEHLAC">
