@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="https://i.pinimg.com/originals/73/69/6e/73696e022df7cd5cb3d999c6875361dd.gif" alt="Luffy Banner" width="100%" style="border-radius: 15px; box-shadow: 0 0 20px rgba(255, 0, 0, 0.6);">
+  <img src="https://i.pinimg.com/1200x/07/3e/49/073e493df533fd56aa4ab1edc85c47d7.jpg" alt="Luffy Banner" width="100%" style="border-radius: 15px; box-shadow: 0 0 20px rgba(255, 0, 0, 0.6);">
 </div>
 
 <h1 align="center">
