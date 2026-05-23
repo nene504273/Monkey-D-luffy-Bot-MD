@@ -17,7 +17,8 @@ const handler = async (m, { conn, args, usedPrefix, command }) => {
 
     // ✅ Verificar si el autor del mensaje es un owner
     const senderNum = m.sender.split('@')[0];
-    const owners = global.owner.map(([num]) => num.replace(/[^0-9]/g, '')); // solo dígitos
+    // 👇 Fix: si global.owner no existe, usamos array vacío
+    const owners = (global.owner || []).map(([num]) => num.replace(/[^0-9]/g, ''));
 
     const esOwner = owners.includes(senderNum);
 
