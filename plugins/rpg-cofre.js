@@ -14,7 +14,7 @@ const handler = async (m, { conn }) => {
   }
 
   // ✅ Nueva imagen para el cofre
-  const img = 'https://cdn.adoolab.xyz/dl/a4d76445.jpeg';
+  const img = 'https://cdn.adoolab.xyz/dl/0ee7af03.jpeg';
 
   const dia = Math.floor(Math.random() * 100);
   const tok = Math.floor(Math.random() * 10);
