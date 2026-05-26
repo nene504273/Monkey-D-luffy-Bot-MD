@@ -105,7 +105,7 @@ ${finalMessage}
 `.trim();
 
       // ✅ NUEVA IMAGEN PARA SUB-BOTS
-      const imgUrl = 'https://cdn.adoolab.xyz/dl/c8dadfd1.jpeg';
+      const imgUrl = 'https://cdn.adoolab.xyz/dl/3b119eba.jpeg';
 
       try {
         // Enviar imagen con caption
