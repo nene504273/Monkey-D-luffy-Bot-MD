@@ -1,4 +1,3 @@
-
 import axios from 'axios'
 import sharp from 'sharp'
 
