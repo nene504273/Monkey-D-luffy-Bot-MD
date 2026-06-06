@@ -1,3 +1,4 @@
+
 import axios from 'axios'
 import sharp from 'sharp'
 
@@ -11,7 +12,6 @@ class StickerLy {
     if (!data.status || !data.resultados?.length) return []
 
     const q = query.toLowerCase().trim()
-    // Filtra paquetes con nombres basura y ordena por coincidencia + popularidad
     return data.resultados
       .map(p => ({
         name: p.name || 'Sin nombre',
@@ -76,7 +76,6 @@ let handler = async (m, { conn, text, usedPrefix, command }) => {
         await m.react('❌')
         return m.reply(`No se encontraron paquetes para "${text}"`)
       }
-      // Elige el más relevante (el primero tras el ordenamiento)
       pack = await api.detail(results[0].url)
     }
 
@@ -95,15 +94,28 @@ let handler = async (m, { conn, text, usedPrefix, command }) => {
       const s = pack.stickers[i]
       try {
         const res = await axios.get(s.imageUrl, { responseType: 'arraybuffer', timeout: 15000 })
-        const buf = Buffer.from(res.data)
-        if (i === 0) {
-          try {
-            coverBuffer = await sharp(buf, { animated: false })
-              .resize(512, 512, { fit: 'contain', background: { r:0,g:0,b:0,alpha:0 } })
-              .webp({ quality: 60 }).toBuffer()
-          } catch { coverBuffer = buf }
+        let buf = Buffer.from(res.data)
+
+        // Convertir a webp si no lo es (solo para imágenes estáticas)
+        if (!res.headers['content-type']?.startsWith('image/webp')) {
+          buf = await sharp(buf, { animated: false })
+            .webp({ quality: 80 })
+            .toBuffer()
         }
-        stickersArray.push({ media: buf, isAnimated: s.isAnimated, emojis: ['🎀'] })
+
+        // La portada (primer sticker) se guarda aparte
+        if (i === 0) {
+          coverBuffer = await sharp(buf, { animated: false })
+            .resize(512, 512, { fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } })
+            .webp({ quality: 60 })
+            .toBuffer()
+        }
+
+        stickersArray.push({
+          sticker: buf,               // ← propiedad corregida
+          isAnimated: s.isAnimated,
+          emojis: ['🎀']
+        })
       } catch (e) {
         console.log(`Error sticker ${i+1}: ${e.message}`)
       }
@@ -132,7 +144,7 @@ let handler = async (m, { conn, text, usedPrefix, command }) => {
   }
 }
 
-handler.help = ['stickerly <texto/url>']
+handler.help = ['stickerly <nombre/url>']
 handler.tags = ['descargas']
 handler.command = ['stickerly', 'sl', 'dlsticker']
 handler.group = false
