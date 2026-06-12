@@ -28,8 +28,18 @@ let handler = async (message, { conn, text, usedPrefix, command }) => {
     conn.reply(message.chat, `${emoji2} Descargando Su Video, espere un momento...`, message);
 
     let results = [];
-    let { data: response } = await axios.get('https://apis-starlights-team.koyeb.app/starlight/tiktoksearch?text=' + text);
+    
+    // 🛠️ SOLUCIÓN: Se agregó encodeURIComponent() para evitar el error 400
+    let { data: response } = await axios.get('https://apis-starlights-team.koyeb.app/starlight/tiktoksearch?text=' + encodeURIComponent(text));
+    
     let searchResults = response.data;
+    
+    // Validar si la API devolvió resultados antes de continuar
+    if (!searchResults || searchResults.length === 0) {
+       await message.react('❌');
+       return conn.reply(message.chat, 'No se encontraron resultados para tu búsqueda.', message);
+    }
+
     shuffleArray(searchResults);
     let selectedResults = searchResults.splice(0, 7);
 
@@ -66,7 +76,10 @@ let handler = async (message, { conn, text, usedPrefix, command }) => {
     await message.react(done);
     await conn.relayMessage(message.chat, responseMessage.message, { messageId: responseMessage.key.id });
   } catch (error) {
-    await conn.reply(message.chat, error.toString(), message);
+    await message.react('❌');
+    // Manejo de error más limpio para ver qué pasa en la consola
+    console.error("Error en tiktoksearch:", error?.response?.data || error.message);
+    await conn.reply(message.chat, `Ocurrió un error: ${error.message}`, message);
   }
 };
 
