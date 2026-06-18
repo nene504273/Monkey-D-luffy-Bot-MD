@@ -44,4 +44,3 @@ function tts(text, lang = 'es') {
       reject(e);
     }
   });
-}
