@@ -1,48 +1,71 @@
 import axios from 'axios';
 
-const defaultVoice = 'es_002'; // Voz estándar de TikTok en Español (Femenina)
 const emoji = '🔊';
 
-const handler = async (m, { conn, args, usedPrefix, command }) => {
+const handler = async (m, { conn, args }) => {
+  let lang = 'es';
   let text = args.join(' ');
-  let voice = defaultVoice;
 
-  // Soporte para cambiar de idioma/voz si ponen el código al principio (ej: #tts en hello)
+  // Detectar si el usuario especificó un idioma (ej: #tts en Hola)
   if (args[0] && args[0].length === 2) {
-    const lang = args[0].toLowerCase();
-    if (lang === 'en') voice = 'en_us_001'; // Inglés Femenino
-    if (lang === 'es') voice = 'es_002';    // Español Femenino
-    if (lang === 'br' || lang === 'pt') voice = 'br_003'; // Portugués
+    lang = args[0].toLowerCase();
     text = args.slice(1).join(' ');
   }
 
-  // Si no hay texto directo, revisa si respondieron a un mensaje de texto
+  // Si no hay texto directo, usar el texto del mensaje al que se respondió
   if (!text && m.quoted?.text) text = m.quoted.text;
   
-  if (!text) throw `${emoji} Por favor, ingresa un texto o responde a un mensaje para convertirlo a voz de TikTok.`;
+  if (!text) return m.reply(`${emoji} Por favor, ingresa un texto o responde a un mensaje para convertirlo a voz.`);
+
+  // Reacción de espera
+  await m.react('⏳');
 
   try {
-    // Generar el audio con el scraper de TikTok
-    let audioBuffer = await generateTikTokTTS(text, voice);
+    let audioBuffer;
     
-    if (audioBuffer) {
-      // Enviamos el buffer directo en memoria como nota de voz (PTT)
-      await conn.sendFile(m.chat, audioBuffer, 'tts.opus', null, m, true);
-    } else {
-      throw new Error("No se recibió respuesta de audio válida.");
-    }
-  } catch (e) {
-    console.error("Error en TikTok TTS Principal:", e.message);
-    
-    // Sistema de contingencia: Si falló con una voz personalizada, intenta con la voz por defecto
+    // ---------------------------------------------------------
+    // INTENTO 1: API de Voz de TikTok (Femenina)
+    // ---------------------------------------------------------
     try {
-      let backupBuffer = await generateTikTokTTS(text, defaultVoice);
-      if (backupBuffer) {
-        await conn.sendFile(m.chat, backupBuffer, 'tts.opus', null, m, true);
-      }
-    } catch (err) {
-      m.reply(`❌ Ocurrió un error al conectar con el servidor de voz de TikTok: ${err.message}`);
+        let voiceId = lang === 'en' ? 'en_us_001' : lang === 'pt' ? 'br_003' : 'es_002';
+        // Usamos un endpoint de TikTok TTS diferente y en GET
+        let tiktokUrl = `https://aemt.me/tiktoktts?text=${encodeURIComponent(text)}&voice=${voiceId}`;
+        
+        let resTikTok = await axios.get(tiktokUrl, { 
+            responseType: 'arraybuffer', 
+            timeout: 8000 
+        });
+        audioBuffer = Buffer.from(resTikTok.data);
+        
+    } catch (errTikTok) {
+        console.log("Fallo la API de TikTok TTS, pasando automáticamente a Google TTS...");
+        
+        // ---------------------------------------------------------
+        // INTENTO 2 (Respaldo Inmortal): Google TTS Direct Stream
+        // ---------------------------------------------------------
+        // Si TikTok falla por error 404 o 500, entra aquí de inmediato sin dar error al usuario
+        let googleUrl = `https://translate.google.com/translate_tts?ie=UTF-8&tl=${lang}&client=tw-ob&q=${encodeURIComponent(text)}`;
+        
+        let resGoogle = await axios.get(googleUrl, { 
+            responseType: 'arraybuffer', 
+            timeout: 8000 
+        });
+        audioBuffer = Buffer.from(resGoogle.data);
     }
+
+    // ---------------------------------------------------------
+    // ENVÍO DEL AUDIO AL CHAT
+    // ---------------------------------------------------------
+    if (audioBuffer) {
+      await conn.sendFile(m.chat, audioBuffer, 'tts.opus', null, m, true);
+      await m.react('✅');
+    } else {
+      throw new Error("Ningún servidor de voz respondió.");
+    }
+
+  } catch (error) {
+    await m.react('❌');
+    m.reply(`❌ Error al generar la voz: ${error.message}`);
   }
 };
 
@@ -53,30 +76,3 @@ handler.register = true;
 handler.command = ['tts'];
 
 export default handler;
-
-// --- Función Scraper para la API de Voz de TikTok ---
-async function generateTikTokTTS(text, voiceId) {
-  try {
-    const form = new URLSearchParams();
-    form.append('text', text);
-    form.append('voice', voiceId);
-
-    // Consultamos el endpoint de recursos TTS de TikWM
-    const { data } = await axios.post('https://www.tikwm.com/api/resources/tts', form, {
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-      },
-      timeout: 12000
-    });
-
-    // La API devuelve un string base64 del archivo de audio en data.data
-    if (data.code === 0 && data.data) {
-      return Buffer.from(data.data, 'base64');
-    }
-    
-    throw new Error(data.msg || 'Error en la respuesta de la API');
-  } catch (error) {
-    throw new Error(`Scraper TTS falló: ${error.message}`);
-  }
-}
