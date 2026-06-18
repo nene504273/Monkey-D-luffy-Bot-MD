@@ -5,7 +5,7 @@ const handler = async (m, { text, conn, args, command }) => {
   if (!args[0]) {
     return conn.reply(m.chat, `${emoji} Por favor, proporciona un nombre o enlace de YouTube.`, m)
   }
-  const apikey = "LUFFY-GEAR4"
+  const apikey = "LUFFY-GEAR6"
   const input = args.join(' ')
   let ytplay2 = null
 
