@@ -52,15 +52,17 @@ const handler = async (m, { conn, args }) => {
     }
 
     // ---------------------------------------------------------
-    // ENVÍO DEL AUDIO AL CHAT (Corregido para WhatsApp Oficial)
+    // ENVÍO DEL AUDIO AL CHAT (Corregido para decodificación de WhatsApp)
     // ---------------------------------------------------------
     if (audioBuffer) {
-      // 🛠️ SOLUCIÓN: Usamos sendMessage directo y bloqueamos el externalAdReply
+      // 🛠️ SOLUCIÓN: Cambiamos el mimetype a audio/mp4 (o audio/ogg), que es compatible con PTT nativo
       await conn.sendMessage(m.chat, { 
           audio: audioBuffer, 
-          ptt: true, // Esto lo envía como Nota de Voz
-          mimetype: 'audio/mpeg',
-          contextInfo: null // Esto le prohíbe a tu base inyectar el diseño 'external' que bugea el mensaje
+          ptt: true, 
+          mimetype: 'audio/mp4', 
+          contextInfo: {
+              externalAdReply: null // Forzamos la desactivación de anuncios sin romper el contextInfo
+          }
       }, { quoted: m });
       
       await m.react('✅');
