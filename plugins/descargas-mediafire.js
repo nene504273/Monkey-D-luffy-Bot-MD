@@ -1,9 +1,7 @@
 import fetch from 'node-fetch'
 
-// Ajustamos los parámetros al formato correcto del handler de tu bot
 let handler = async (m, { conn: client, text, args, command }) => {
   
-  // El handler ya te da el 'text' listo, no hace falta usar args.join(' ')
   if (!text) {
     return m.reply(`❍ Uso: /${command} <enlace de mediafire>`)
   }
@@ -18,13 +16,14 @@ let handler = async (m, { conn: client, text, args, command }) => {
     const res = await fetch(`https://api.alyacore.xyz/dl/mediafire?url=${encodeURIComponent(text)}&key=LUFFY-GEAR4`)
     const json = await res.json()
 
-    if (!json.status || !json.data) {
-      throw new Error(`❍ No se encontró el archivo`)
+    // Validación adaptada a tu API ('result' en lugar de 'data')
+    if (!json.status || !json.result) {
+      throw new Error(`❍ No se encontró el archivo o la API devolvió un error`)
     }
 
-    const file = json.data
+    const file = json.result
 
-    let size = (file.peso || '').toUpperCase()
+    let size = (file.filesize || '').toUpperCase()
     let sizeMB = 0
 
     if (size.includes('GB')) {
@@ -36,13 +35,13 @@ let handler = async (m, { conn: client, text, args, command }) => {
     const MAX_MB = 1000
 
     if (sizeMB > MAX_MB) {
-      return m.reply(`❍ El archivo excede el límite de ${MAX_MB} MB. Descárgalo directamente: ${file.dl}`)
+      return m.reply(`❍ El archivo excede el límite de ${MAX_MB} MB. Descárgalo directamente: ${file.download}`)
     }
 
-    const fileRes = await fetch(file.dl)
+    const fileRes = await fetch(file.download)
 
     if (!fileRes.ok) {
-      return m.reply(`❍ Error al descargar. Intenta directamente: ${file.dl}`)
+      return m.reply(`❍ Error al descargar el archivo. Intenta directamente: ${file.download}`)
     }
 
     const buffer = Buffer.from(await fileRes.arrayBuffer())
@@ -53,19 +52,28 @@ let handler = async (m, { conn: client, text, args, command }) => {
       type = await fileTypeFromBuffer(buffer)
     } catch {}
 
-    let mimetype = type?.mime || file.tipo || 'application/octet-stream'
+    let mimetype = type?.mime || 'application/octet-stream'
 
-    if (file.title?.endsWith('.apk')) {
+    // Forzar el mimetype si es un APK
+    if (file.download?.includes('.apk') || file.filename?.endsWith('.apk')) {
       mimetype = 'application/vnd.android.package-archive'
+    }
+
+    // Corrección de extensión: Si el filename no tiene punto pero la descarga sí, se la añadimos
+    let fileName = file.filename
+    if (!fileName.includes('.') && file.download.includes('.')) {
+      const parts = file.download.split('.')
+      const ext = parts.pop().split('?')[0] // Extrae 'apk', 'zip', etc.
+      fileName = `${fileName}.${ext}`
     }
 
     const caption = `¡! ׂׂૢ *Descarga de Mediafire*
 ✩̣̣̣̣̣ͯ┄•͙✧⃝•͙┄✩ͯ•͙͙✧⃝•͙͙✩ͯ
 
-❍ *Nombre* › *${file.title}*
-❍ *Tamaño* › *${file.peso}*
-❍ *Fecha* › *${file.fecha}*
-❍ *Tipo* › *${mimetype}*
+❍ *Nombre* › *${fileName}*
+❍ *Tamaño* › *${file.filesize}*
+❍ *Fecha* › *${file.uploaded}*
+❍ *Tipo* › *${file.filetype || mimetype}*
 
 ──⇌••⇋──
 
@@ -73,7 +81,7 @@ ${dev}`
 
     await client.sendMessage(m.chat, {
       document: buffer,
-      fileName: file.title,
+      fileName: fileName,
       mimetype,
       caption
     }, { quoted: m })
@@ -86,7 +94,7 @@ ${dev}`
   }
 }
 
-// Configuración requerida por tu handler.js abajo
+// Configuración para que el handler lo lea perfectamente abajo
 handler.command = ['mf', 'mediafire']
 handler.category = 'downloader'
 
