@@ -1,8 +1,9 @@
 import fetch from 'node-fetch'
 
-let handler = async (client, m, args, command) => {
-  const text = args.join(' ')
-
+// Ajustamos los parámetros al formato correcto del handler de tu bot
+let handler = async (m, { conn: client, text, args, command }) => {
+  
+  // El handler ya te da el 'text' listo, no hace falta usar args.join(' ')
   if (!text) {
     return m.reply(`❍ Uso: /${command} <enlace de mediafire>`)
   }
@@ -68,7 +69,7 @@ let handler = async (client, m, args, command) => {
 
 ──⇌••⇋──
 
-\${dev}`
+${dev}`
 
     await client.sendMessage(m.chat, {
       document: buffer,
@@ -85,6 +86,8 @@ let handler = async (client, m, args, command) => {
   }
 }
 
+// Configuración requerida por tu handler.js abajo
 handler.command = ['mf', 'mediafire']
-handler.category = 'downloader' 
+handler.category = 'downloader'
+
 export default handler
