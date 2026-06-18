@@ -11,7 +11,7 @@ let handler = async (m, { conn, text, usedPrefix, command }) => {
 
   try {
     // *** CORRECCIÓN: Nuevo endpoint de búsqueda ***
-    const apiUrl = `https://api.alyacore.xyz/search/pinterestvideo?query=${encodeURIComponent(text)}&key=LUFFY-GEAR4`
+    const apiUrl = `https://api.alyacore.xyz/search/pinterestvideo?query=${encodeURIComponent(text)}&key=LUFFY-GEAR6`
     
     const response = await fetch(apiUrl)
     
