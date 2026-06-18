@@ -1,7 +1,7 @@
 import fetch from 'node-fetch'
 
 const API_URL = 'https://api.alyacore.xyz/dl/tiktokmp3'
-const API_KEY = 'LUFFY-GEAR4'
+const API_KEY = 'LUFFY-GEAR6'
 
 const handler = async (m, { conn, text }) => {
     if (!text?.trim()) {
