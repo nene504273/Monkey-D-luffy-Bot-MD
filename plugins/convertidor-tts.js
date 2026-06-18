@@ -1,42 +1,47 @@
-import gtts from 'node-gtts';
-import { readFileSync, unlinkSync, existsSync, mkdirSync } from 'fs';
-import { join, dirname } from 'path';
-import { fileURLToPath } from 'url';
+import axios from 'axios';
 
-const defaultLang = 'es';
-const emoji = '🔊'; // 🛠️ CORRECCIÓN: Definimos el emoji que faltaba
-
-// Configuración segura de rutas para ES Modules
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+const defaultVoice = 'es_002'; // Voz estándar de TikTok en Español (Femenina)
+const emoji = '🔊';
 
 const handler = async (m, { conn, args, usedPrefix, command }) => {
-  let lang = args[0];
-  let text = args.slice(1).join(' ');
+  let text = args.join(' ');
+  let voice = defaultVoice;
 
-  if ((args[0] || '').length !== 2) {
-    lang = defaultLang;
-    text = args.join(' ');
+  // Soporte para cambiar de idioma/voz si ponen el código al principio (ej: #tts en hello)
+  if (args[0] && args[0].length === 2) {
+    const lang = args[0].toLowerCase();
+    if (lang === 'en') voice = 'en_us_001'; // Inglés Femenino
+    if (lang === 'es') voice = 'es_002';    // Español Femenino
+    if (lang === 'br' || lang === 'pt') voice = 'br_003'; // Portugués
+    text = args.slice(1).join(' ');
   }
 
-  // Si no hay texto pero se citó un mensaje, usa el texto del mensaje citado
+  // Si no hay texto directo, revisa si respondieron a un mensaje de texto
   if (!text && m.quoted?.text) text = m.quoted.text;
   
-  // Validación inicial de texto
-  if (!text) throw `${emoji} Por favor, ingresa una frase o texto para convertir a voz.`;
+  if (!text) throw `${emoji} Por favor, ingresa un texto o responde a un mensaje para convertirlo a voz de TikTok.`;
 
-  let res;
   try {
-    res = await tts(text, lang);
+    // Generar el audio con el scraper de TikTok
+    let audioBuffer = await generateTikTokTTS(text, voice);
+    
+    if (audioBuffer) {
+      // Enviamos el buffer directo en memoria como nota de voz (PTT)
+      await conn.sendFile(m.chat, audioBuffer, 'tts.opus', null, m, true);
+    } else {
+      throw new Error("No se recibió respuesta de audio válida.");
+    }
   } catch (e) {
-    console.error("Error en TTS principal:", e);
-    text = args.join(' ');
-    if (!text) throw `${emoji} Por favor, ingresa una frase.`;
-    res = await tts(text, defaultLang);
-  } finally {
-    if (res) {
-      // El parámetro 'true' al final fuerza el envío como nota de voz (PTT)
-      await conn.sendFile(m.chat, res, 'tts.opus', null, m, true);
+    console.error("Error en TikTok TTS Principal:", e.message);
+    
+    // Sistema de contingencia: Si falló con una voz personalizada, intenta con la voz por defecto
+    try {
+      let backupBuffer = await generateTikTokTTS(text, defaultVoice);
+      if (backupBuffer) {
+        await conn.sendFile(m.chat, backupBuffer, 'tts.opus', null, m, true);
+      }
+    } catch (err) {
+      m.reply(`❌ Ocurrió un error al conectar con el servidor de voz de TikTok: ${err.message}`);
     }
   }
 };
@@ -49,30 +54,29 @@ handler.command = ['tts'];
 
 export default handler;
 
-function tts(text, lang = 'es') {
-  return new Promise((resolve, reject) => {
-    try {
-      const speech = gtts(lang);
-      const tmpDir = join(__dirname, '../tmp');
+// --- Función Scraper para la API de Voz de TikTok ---
+async function generateTikTokTTS(text, voiceId) {
+  try {
+    const form = new URLSearchParams();
+    form.append('text', text);
+    form.append('voice', voiceId);
 
-      // 🛠️ SEGURIDAD: Crea la carpeta tmp si no existe para evitar que el bot se apague
-      if (!existsSync(tmpDir)) {
-        mkdirSync(tmpDir, { recursive: true });
-      }
+    // Consultamos el endpoint de recursos TTS de TikWM
+    const { data } = await axios.post('https://www.tikwm.com/api/resources/tts', form, {
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+      },
+      timeout: 12000
+    });
 
-      const filePath = join(tmpDir, `${Date.now()}.wav`);
-      
-      speech.save(filePath, text, () => {
-        try {
-          const buffer = readFileSync(filePath);
-          unlinkSync(filePath); // Elimina el archivo temporal después de leerlo
-          resolve(buffer);
-        } catch (err) {
-          reject(err);
-        }
-      });
-    } catch (e) {
-      reject(e);
+    // La API devuelve un string base64 del archivo de audio en data.data
+    if (data.code === 0 && data.data) {
+      return Buffer.from(data.data, 'base64');
     }
-  });
+    
+    throw new Error(data.msg || 'Error en la respuesta de la API');
+  } catch (error) {
+    throw new Error(`Scraper TTS falló: ${error.message}`);
+  }
 }
