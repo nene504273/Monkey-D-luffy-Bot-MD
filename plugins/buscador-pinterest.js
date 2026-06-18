@@ -57,7 +57,7 @@ const handler = async (m, { conn, args, command, usedPrefix }) => {
 
     // Nueva API de Pinterest
     const response = await fetch(
-      `https://api.alyacore.xyz/search/pinterest?query=${encodeURIComponent(query)}&limit=${limit}&key=LUFFY-GEAR4`
+      `https://api.alyacore.xyz/search/pinterest?query=${encodeURIComponent(query)}&limit=${limit}&key=LUFFY-GEAR6`
     )
     const json = await response.json()
 
