@@ -28,7 +28,6 @@ const handler = async (m, { conn, args }) => {
     // ---------------------------------------------------------
     try {
         let voiceId = lang === 'en' ? 'en_us_001' : lang === 'pt' ? 'br_003' : 'es_002';
-        // Usamos un endpoint de TikTok TTS diferente y en GET
         let tiktokUrl = `https://aemt.me/tiktoktts?text=${encodeURIComponent(text)}&voice=${voiceId}`;
         
         let resTikTok = await axios.get(tiktokUrl, { 
@@ -41,9 +40,8 @@ const handler = async (m, { conn, args }) => {
         console.log("Fallo la API de TikTok TTS, pasando automáticamente a Google TTS...");
         
         // ---------------------------------------------------------
-        // INTENTO 2 (Respaldo Inmortal): Google TTS Direct Stream
+        // INTENTO 2 (Respaldo): Google TTS Direct Stream
         // ---------------------------------------------------------
-        // Si TikTok falla por error 404 o 500, entra aquí de inmediato sin dar error al usuario
         let googleUrl = `https://translate.google.com/translate_tts?ie=UTF-8&tl=${lang}&client=tw-ob&q=${encodeURIComponent(text)}`;
         
         let resGoogle = await axios.get(googleUrl, { 
@@ -54,10 +52,17 @@ const handler = async (m, { conn, args }) => {
     }
 
     // ---------------------------------------------------------
-    // ENVÍO DEL AUDIO AL CHAT
+    // ENVÍO DEL AUDIO AL CHAT (Corregido para WhatsApp Oficial)
     // ---------------------------------------------------------
     if (audioBuffer) {
-      await conn.sendFile(m.chat, audioBuffer, 'tts.opus', null, m, true);
+      // 🛠️ SOLUCIÓN: Usamos sendMessage directo y bloqueamos el externalAdReply
+      await conn.sendMessage(m.chat, { 
+          audio: audioBuffer, 
+          ptt: true, // Esto lo envía como Nota de Voz
+          mimetype: 'audio/mpeg',
+          contextInfo: null // Esto le prohíbe a tu base inyectar el diseño 'external' que bugea el mensaje
+      }, { quoted: m });
+      
       await m.react('✅');
     } else {
       throw new Error("Ningún servidor de voz respondió.");
