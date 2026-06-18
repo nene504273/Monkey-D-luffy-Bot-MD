@@ -85,11 +85,6 @@ let handler = async (client, m, args, command) => {
   }
 }
 
-// Asignación de propiedades al handler
 handler.command = ['mf', 'mediafire']
 handler.category = 'downloader' 
-// Nota: Si tu bot usa 'tags' en lugar de 'category', puedes cambiarlo aquí abajo:
-// handler.tags = ['downloader']
-// handler.help = ['mediafire']
-
 export default handler
