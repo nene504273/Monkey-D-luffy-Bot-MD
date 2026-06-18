@@ -16,7 +16,6 @@ let handler = async (m, { conn: client, text, args, command }) => {
     const res = await fetch(`https://api.alyacore.xyz/dl/mediafire?url=${encodeURIComponent(text)}&key=LUFFY-GEAR4`)
     const json = await res.json()
 
-    // Validación adaptada a tu API ('result' en lugar de 'data')
     if (!json.status || !json.result) {
       throw new Error(`❍ No se encontró el archivo o la API devolvió un error`)
     }
@@ -38,13 +37,25 @@ let handler = async (m, { conn: client, text, args, command }) => {
       return m.reply(`❍ El archivo excede el límite de ${MAX_MB} MB. Descárgalo directamente: ${file.download}`)
     }
 
-    const fileRes = await fetch(file.download)
+    // CAMBIO CLAVE: Engañamos a Mediafire simulando un navegador real
+    const fileRes = await fetch(file.download, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
+        'Accept-Language': 'es-ES,es;q=0.9'
+      }
+    })
 
     if (!fileRes.ok) {
       return m.reply(`❍ Error al descargar el archivo. Intenta directamente: ${file.download}`)
     }
 
     const buffer = Buffer.from(await fileRes.arrayBuffer())
+
+    // FILTRO DE SEGURIDAD: Si el archivo es sospechosamente pequeño y es HTML, Mediafire nos bloqueó
+    if (buffer.length < 100000 && buffer.toString().includes('<!DOCTYPE html>')) {
+      return m.reply(`❍ Mediafire bloqueó el acceso automatizado a este archivo. Descárgalo manualmente desde aquí:\n${file.download}`)
+    }
 
     let type = null
     try {
@@ -54,16 +65,14 @@ let handler = async (m, { conn: client, text, args, command }) => {
 
     let mimetype = type?.mime || 'application/octet-stream'
 
-    // Forzar el mimetype si es un APK
     if (file.download?.includes('.apk') || file.filename?.endsWith('.apk')) {
       mimetype = 'application/vnd.android.package-archive'
     }
 
-    // Corrección de extensión: Si el filename no tiene punto pero la descarga sí, se la añadimos
     let fileName = file.filename
     if (!fileName.includes('.') && file.download.includes('.')) {
       const parts = file.download.split('.')
-      const ext = parts.pop().split('?')[0] // Extrae 'apk', 'zip', etc.
+      const ext = parts.pop().split('?')[0]
       fileName = `${fileName}.${ext}`
     }
 
@@ -77,7 +86,7 @@ let handler = async (m, { conn: client, text, args, command }) => {
 
 ──⇌••⇋──
 
-${dev}`
+\${dev}`
 
     await client.sendMessage(m.chat, {
       document: buffer,
@@ -94,7 +103,6 @@ ${dev}`
   }
 }
 
-// Configuración para que el handler lo lea perfectamente abajo
 handler.command = ['mf', 'mediafire']
 handler.category = 'downloader'
 
