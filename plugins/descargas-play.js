@@ -47,7 +47,6 @@ const handler = async (m, { text, conn, args, command }) => {
   const vistas = formatViews(views)
   const canal = author?.name || author?.url || 'Desconocido'
 
-  // Información que irá como caption DEBAJO de la miniatura
   const infoMessage = `¡! ׂׂૢ *Download Youtube*
 ✩̣̣̣̣̣̣ͯ┄•͙✧⃝•͙┄✩ͯ•͙͙✧⃝•͙͙✩ͯ
 
@@ -62,7 +61,6 @@ const handler = async (m, { text, conn, args, command }) => {
 
 ${dev}`
 
-  // ── Enviar SOLO la imagen con el caption (sin texto adicional) ──
   if (thumbnail) {
     try {
       const imgRes = await fetch(thumbnail)
@@ -72,46 +70,48 @@ ${dev}`
         caption: infoMessage
       }, { quoted: m })
     } catch {
-      // Si no se puede obtener la imagen, se manda el texto
       await conn.reply(m.chat, infoMessage, m)
     }
   } else {
     await conn.reply(m.chat, infoMessage, m)
   }
 
-  // ── Descarga de audio ──
+  // ── Descarga de audio (NUEVA API) ──
   if (['play', 'yta', 'ytmp3', 'playaudio'].includes(command)) {
     try {
-      const apiUrl = `https://api.alyacore.xyz/dl/youtubeplayv2?query=${encodeURIComponent(url)}&type=mp3&quality=auto&key=${apikey}`
+      // ✅ Ahora usamos el endpoint youtubeplay (sin v2)
+      const apiUrl = `https://api.alyacore.xyz/dl/youtubeplay?query=${encodeURIComponent(url)}&key=${apikey}`
       let api = await (await fetch(apiUrl)).json()
 
       if (!api.status) throw new Error('La API no devolvió status=true')
 
-      var fileName = api.data?.title || 'audio'
-      var dl = api.data?.dl
+      // ✅ Extraemos del nuevo formato: api.result.dl, api.result.fileName
+      const fileName = api.result?.fileName || api.result?.title || 'audio'
+      const dl = api.result?.dl
 
       if (!dl) throw new Error('No se generó enlace de descarga (audio)')
+
+      await conn.sendMessage(m.chat, {
+        audio: { url: dl },
+        fileName: fileName.endsWith('.mp3') ? fileName : fileName + '.mp3',
+        mimetype: 'audio/mpeg',
+        ptt: false
+      }, { quoted: m })
+
+      await m.react(done)
 
     } catch (e) {
       await m.react(error)
       return conn.reply(m.chat, `${msm} Error al descargar el audio.`, m)
     }
-
-    await conn.sendMessage(m.chat, {
-      audio: { url: dl },
-      fileName: fileName + '.mp3',
-      mimetype: 'audio/mpeg',
-      ptt: false
-    }, { quoted: m })
-
-    await m.react(done)
   } 
 
-  // ── Descarga de video ──
+  // ── Descarga de video (se mantiene con la API v2) ──
   else if (['play2', 'ytv', 'ytmp4', 'mp4'].includes(command)) {
     try {
       await conn.reply(m.chat, `❍ Descargando video en calidad automática...`, m)
 
+      // La API v2 sigue funcionando para video
       const apiUrl = `https://api.alyacore.xyz/dl/youtubeplayv2?query=${encodeURIComponent(url)}&type=mp4&quality=auto&key=${apikey}`
       const api = await (await fetch(apiUrl)).json()
 
