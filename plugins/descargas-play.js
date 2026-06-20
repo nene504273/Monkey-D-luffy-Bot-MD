@@ -87,7 +87,7 @@ ${dev}`
       const dl = api.result?.dl
       if (!dl) throw new Error('No se generó enlace de descarga (audio)')
 
-      // Descargar buffer
+      // Descargar buffer para evitar bloqueo de WhatsApp
       const audioRes = await fetch(dl)
       const audioBuffer = await audioRes.buffer()
 
@@ -106,27 +106,26 @@ ${dev}`
     }
   } 
 
-  // ── Descarga de video (API ytmp4 con calidad fija 360) ──
+  // ── Descarga de video (API ytmp4, calidad 480p) ──
   else if (['play2', 'ytv', 'ytmp4', 'mp4'].includes(command)) {
     try {
-      await conn.reply(m.chat, `❍ Descargando video en calidad 360p...`, m)
+      await conn.reply(m.chat, `❍ Descargando video en calidad 480p...`, m)
 
-      // Usamos la nueva API con calidad=360 (puedes cambiarla a 480, 720, etc.)
-      const apiUrl = `https://api.alyacore.xyz/dl/ytmp4?url=${encodeURIComponent(url)}&quality=360&key=${apikey}`
+      // Puedes cambiar "480" por "360", "720", etc.
+      const apiUrl = `https://api.alyacore.xyz/dl/ytmp4?url=${encodeURIComponent(url)}&quality=480&key=${apikey}`
       const api = await (await fetch(apiUrl)).json()
 
-      if (!api.status) {
-        throw new Error(api.message || 'La API no devolvió status=true')
-      }
+      if (!api.status) throw new Error(api.message || 'La API no devolvió status=true')
 
-      const dl = api.result?.dl
+      const dl = api.data?.dl
       if (!dl) throw new Error('No se generó el enlace de descarga (video)')
 
-      // Descargar video como buffer
+      // Descargar buffer
       const videoRes = await fetch(dl)
       const videoBuffer = await videoRes.buffer()
 
-      const fileName = (api.result?.title || 'video') + '_360p.mp4'
+      const quality = api.data?.quality || '480'
+      const fileName = (title || 'video') + `_${quality}p.mp4`
 
       await conn.sendMessage(m.chat, {
         document: videoBuffer,
