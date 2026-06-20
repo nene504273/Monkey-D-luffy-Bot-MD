@@ -76,10 +76,9 @@ ${dev}`
     await conn.reply(m.chat, infoMessage, m)
   }
 
-  // ── Descarga de audio (NUEVA API + buffer) ──
+  // ── Descarga de audio (API youtubeplay) ──
   if (['play', 'yta', 'ytmp3', 'playaudio'].includes(command)) {
     try {
-      // Llamada a la API (youtubeplay sin v2)
       const apiUrl = `https://api.alyacore.xyz/dl/youtubeplay?query=${encodeURIComponent(url)}&key=${apikey}`
       const api = await (await fetch(apiUrl)).json()
 
@@ -88,15 +87,14 @@ ${dev}`
       const dl = api.result?.dl
       if (!dl) throw new Error('No se generó enlace de descarga (audio)')
 
-      // ✅ Descargar el audio como buffer
+      // Descargar buffer
       const audioRes = await fetch(dl)
       const audioBuffer = await audioRes.buffer()
 
-      // ✅ Enviar el audio como buffer (ya no se usa URL externa)
       await conn.sendMessage(m.chat, {
         audio: audioBuffer,
         mimetype: 'audio/mpeg',
-        fileName: api.result?.fileName || 'audio.mp3', // opcional, algunos clientes lo muestran
+        fileName: api.result?.fileName || 'audio.mp3',
         ptt: false
       }, { quoted: m })
 
@@ -108,25 +106,31 @@ ${dev}`
     }
   } 
 
-  // ── Descarga de video (se mantiene con la API v2) ──
+  // ── Descarga de video (API ytmp4 con calidad fija 360) ──
   else if (['play2', 'ytv', 'ytmp4', 'mp4'].includes(command)) {
     try {
-      await conn.reply(m.chat, `❍ Descargando video en calidad automática...`, m)
+      await conn.reply(m.chat, `❍ Descargando video en calidad 360p...`, m)
 
-      // API v2 sigue para video
-      const apiUrl = `https://api.alyacore.xyz/dl/youtubeplayv2?query=${encodeURIComponent(url)}&type=mp4&quality=auto&key=${apikey}`
+      // Usamos la nueva API con calidad=360 (puedes cambiarla a 480, 720, etc.)
+      const apiUrl = `https://api.alyacore.xyz/dl/ytmp4?url=${encodeURIComponent(url)}&quality=360&key=${apikey}`
       const api = await (await fetch(apiUrl)).json()
 
-      if (!api.status) throw new Error(api.message || 'La API no devolvió status=true')
+      if (!api.status) {
+        throw new Error(api.message || 'La API no devolvió status=true')
+      }
 
-      const { title: fileName, dl, quality } = api.data || {}
-      if (!dl) throw new Error('No se generó el enlace de descarga (video).')
+      const dl = api.result?.dl
+      if (!dl) throw new Error('No se generó el enlace de descarga (video)')
 
-      // Para video también recomiendo descargar el buffer si WhatsApp bloquea URLs externas,
-      // pero por ahora lo dejo así. Si falla, aplica la misma técnica.
+      // Descargar video como buffer
+      const videoRes = await fetch(dl)
+      const videoBuffer = await videoRes.buffer()
+
+      const fileName = (api.result?.title || 'video') + '_360p.mp4'
+
       await conn.sendMessage(m.chat, {
-        document: { url: dl },
-        fileName: (fileName || `video_${quality || 'auto'}p`) + '.mp4',
+        document: videoBuffer,
+        fileName: fileName,
         mimetype: 'video/mp4',
         caption: `${dev}`
       }, { quoted: m })
