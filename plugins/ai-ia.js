@@ -4,7 +4,7 @@ import axios from 'axios';
 // -------------------------------------------------------------------
 // --- CONFIGURACIÓN DE LA API DE CHATGPT ---
 // ¡CRÍTICO! Clave de API actualizada con la que proporcionaste:
-const apiKey = 'LUFFY-GEAR4'; 
+const apiKey = 'LUFFY-GEAR6'; 
 const chatGptApiUrl = 'https://api.alyacore.xyz/ai/chatgpt';
 
 // --- VARIABLES ASUMIDAS (Ajusta si es necesario) ---
