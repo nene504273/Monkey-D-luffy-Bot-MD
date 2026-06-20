@@ -1,6 +1,6 @@
 import fetch from 'node-fetch'
 
-const apikey = 'LUFFY-GEAR4'
+const apikey = 'LUFFY-GEAR6'
 
 let handler = async (m, { conn, command, usedPrefix }) => {
   let mentionedJid = await m.mentionedJid
