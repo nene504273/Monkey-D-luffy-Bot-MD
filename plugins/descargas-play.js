@@ -76,25 +76,27 @@ ${dev}`
     await conn.reply(m.chat, infoMessage, m)
   }
 
-  // ── Descarga de audio (NUEVA API) ──
+  // ── Descarga de audio (NUEVA API + buffer) ──
   if (['play', 'yta', 'ytmp3', 'playaudio'].includes(command)) {
     try {
-      // ✅ Ahora usamos el endpoint youtubeplay (sin v2)
+      // Llamada a la API (youtubeplay sin v2)
       const apiUrl = `https://api.alyacore.xyz/dl/youtubeplay?query=${encodeURIComponent(url)}&key=${apikey}`
-      let api = await (await fetch(apiUrl)).json()
+      const api = await (await fetch(apiUrl)).json()
 
       if (!api.status) throw new Error('La API no devolvió status=true')
 
-      // ✅ Extraemos del nuevo formato: api.result.dl, api.result.fileName
-      const fileName = api.result?.fileName || api.result?.title || 'audio'
       const dl = api.result?.dl
-
       if (!dl) throw new Error('No se generó enlace de descarga (audio)')
 
+      // ✅ Descargar el audio como buffer
+      const audioRes = await fetch(dl)
+      const audioBuffer = await audioRes.buffer()
+
+      // ✅ Enviar el audio como buffer (ya no se usa URL externa)
       await conn.sendMessage(m.chat, {
-        audio: { url: dl },
-        fileName: fileName.endsWith('.mp3') ? fileName : fileName + '.mp3',
+        audio: audioBuffer,
         mimetype: 'audio/mpeg',
+        fileName: api.result?.fileName || 'audio.mp3', // opcional, algunos clientes lo muestran
         ptt: false
       }, { quoted: m })
 
@@ -111,7 +113,7 @@ ${dev}`
     try {
       await conn.reply(m.chat, `❍ Descargando video en calidad automática...`, m)
 
-      // La API v2 sigue funcionando para video
+      // API v2 sigue para video
       const apiUrl = `https://api.alyacore.xyz/dl/youtubeplayv2?query=${encodeURIComponent(url)}&type=mp4&quality=auto&key=${apikey}`
       const api = await (await fetch(apiUrl)).json()
 
@@ -120,6 +122,8 @@ ${dev}`
       const { title: fileName, dl, quality } = api.data || {}
       if (!dl) throw new Error('No se generó el enlace de descarga (video).')
 
+      // Para video también recomiendo descargar el buffer si WhatsApp bloquea URLs externas,
+      // pero por ahora lo dejo así. Si falla, aplica la misma técnica.
       await conn.sendMessage(m.chat, {
         document: { url: dl },
         fileName: (fileName || `video_${quality || 'auto'}p`) + '.mp4',
