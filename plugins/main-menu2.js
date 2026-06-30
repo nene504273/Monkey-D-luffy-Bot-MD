@@ -7,65 +7,79 @@ const newsletterJid = '120363420846835529@newsletter';
 const newsletterName = '🏴‍☠️ luffy-gear5 🏴‍☠️'; 
 const packname = '🏴‍☠️ LUFFY-Bot  🏴‍☠️';
 const redes = 'https://github.com/nevi-dev';
-// ⭐ Video fijo que solicitaste
 const GIF_VIDEO_URL = 'https://cdn.dev-ander.xyz/upload_1776229736427.gif';
 
 let handler = async (m, { conn, usedPrefix, text, command }) => {
-  // 1. Lógica de Activación/Desactivación
-  let chat = global.db.data.chats[m.chat];
-  if (text === 'on') {
-    chat.audios = true;
-    return m.reply('🍖 **¡Digan "Whisky"! Audios encendidos.**');
-  }
-  if (text === 'off') {
-    chat.audios = false;
-    return m.reply('⚓ **Servicio de audios guardado en la bodega (Apagado).**');
-  }
-
-  // 2. Carga segura de Bases de Datos
-  let db_audios = [];
-  let miniaturaRandom = ''; // por si no hay miniatura
-
   try {
-    const audioPath = path.join(process.cwd(), 'src', 'database', 'audios.json');
-    if (fs.existsSync(audioPath)) {
-      db_audios = JSON.parse(fs.readFileSync(audioPath, 'utf-8'));
-    } else {
-      console.warn('⚠️ audios.json no encontrado, se usará lista vacía.');
+    // 1. Inicializar estado de audios para el chat (crea si no existe)
+    if (!global.db.data.chats) global.db.data.chats = {};
+    if (!global.db.data.chats[m.chat]) {
+      global.db.data.chats[m.chat] = {
+        audios: true, // por defecto activado
+        // puedes agregar más propiedades si quieres
+      };
     }
-  } catch (e) {
-    console.error('❌ Error leyendo audios.json:', e);
-    // No detenemos el comando, continuamos con array vacío
-  }
+    let chat = global.db.data.chats[m.chat];
 
-  // Intentamos obtener miniatura desde db.json (opcional)
-  try {
-    const dbPath = path.join(process.cwd(), 'src', 'database', 'db.json');
-    if (fs.existsSync(dbPath)) {
-      const enlacesMultimedia = JSON.parse(fs.readFileSync(dbPath, 'utf-8')).links;
-      if (enlacesMultimedia?.imagen?.length) {
-        miniaturaRandom = enlacesMultimedia.imagen[Math.floor(Math.random() * enlacesMultimedia.imagen.length)];
+    // 2. Comandos on / off
+    if (text === 'on') {
+      chat.audios = true;
+      return m.reply('🍖 **¡Digan "Whisky"! Audios encendidos.**');
+    }
+    if (text === 'off') {
+      chat.audios = false;
+      return m.reply('⚓ **Servicio de audios guardado en la bodega (Apagado).**');
+    }
+
+    // 3. Cargar base de datos de audios (con fallback seguro)
+    let db_audios = [];
+    try {
+      const audioPath = path.join(process.cwd(), 'src', 'database', 'audios.json');
+      if (fs.existsSync(audioPath)) {
+        const data = fs.readFileSync(audioPath, 'utf-8');
+        db_audios = JSON.parse(data);
+        if (!Array.isArray(db_audios)) db_audios = [];
+      } else {
+        console.warn('⚠️ audios.json no encontrado, se usará lista vacía.');
       }
+    } catch (e) {
+      console.error('❌ Error leyendo audios.json:', e.message);
+      // No detenemos, seguimos con []
     }
-  } catch (e) {
-    console.warn('⚠️ No se pudo cargar miniatura desde db.json.');
-  }
 
-  // 3. Construcción de la Lista
-  const listaAudios = db_audios.length 
-    ? db_audios.map((audio, index) => {
+    // 4. Obtener miniatura aleatoria (si existe)
+    let miniaturaRandom = 'https://i.imgur.com/9qoEM9U.jpeg'; // fallback por defecto
+    try {
+      const dbPath = path.join(process.cwd(), 'src', 'database', 'db.json');
+      if (fs.existsSync(dbPath)) {
+        const dbData = JSON.parse(fs.readFileSync(dbPath, 'utf-8'));
+        const imagenes = dbData?.links?.imagen;
+        if (Array.isArray(imagenes) && imagenes.length) {
+          miniaturaRandom = imagenes[Math.floor(Math.random() * imagenes.length)];
+        }
+      }
+    } catch (e) {
+      console.warn('⚠️ No se pudo cargar miniatura desde db.json, usando fallback.');
+    }
+
+    // 5. Construir lista de audios (con formato)
+    let listaAudios = '';
+    if (db_audios.length === 0) {
+      listaAudios = '⚠️ *No hay audios en la base de datos. Agrega algunos.*';
+    } else {
+      listaAudios = db_audios.map((audio, index) => {
         const keys = audio.keywords?.join(' / ') || 'sin palabras clave';
         const icon = audio.convert === false ? '📜' : '🎵';
         return `*${index + 1}.* ${icon} ${keys}`;
-      }).join('\n')
-    : '⚠️ *No hay audios en la base de datos. Agrega algunos.*';
+      }).join('\n');
+    }
 
-  // 4. Diseño del Mensaje
-  const horaRD = moment().tz("America/Santo_Domingo").format('h:mm A');
-  const estadoAudios = chat.audios ? '✅ NAVEGANDO' : '❌ ANCLADO';
-  const sep = '━━━━━━━━━━━━━━━━━━━━';
+    // 6. Preparar datos del mensaje
+    const horaRD = moment().tz('America/Santo_Domingo').format('h:mm A');
+    const estadoAudios = chat.audios ? '✅ NAVEGANDO' : '❌ ANCLADO';
+    const sep = '━━━━━━━━━━━━━━━━━━━━';
 
-  const encabezado = `
+    const encabezado = `
 🏴‍☠️ **${packname} | AUDIO MENU**
 ${sep}
 *— ¡Me voy a convertir en el Rey de los Audios!*
@@ -86,43 +100,52 @@ ${sep}
 *— ¡Vámonos! ¡A la siguiente aventura!*
 *${newsletterName}*`.trim();
 
-  // 5. Contexto (Info de reenvío y newsletter)
-  const contextInfo = {
-    mentionedJid: [m.sender],
-    isForwarded: true,
-    forwardingScore: 999,
-    forwardedNewsletterMessageInfo: { newsletterJid, newsletterName, serverMessageId: -1 },
-    externalAdReply: {
-      title: '🏴‍☠️ 𝐆𝐄𝐀𝐑 𝟓: 𝐀𝐔𝐃𝐈𝐎 𝐒𝐘𝐒𝐓𝐄𝐌',
-      body: `Tripulación: ${db_audios.length} comandos`,
-      thumbnailUrl: miniaturaRandom || 'https://i.imgur.com/9qoEM9U.jpeg', // fallback
-      sourceUrl: redes,
-      mediaType: 1,
-      renderLargerThumbnail: false
+    // 7. Contexto de reenvío (para el mensaje)
+    const contextInfo = {
+      mentionedJid: [m.sender],
+      isForwarded: true,
+      forwardingScore: 999,
+      forwardedNewsletterMessageInfo: {
+        newsletterJid,
+        newsletterName,
+        serverMessageId: -1
+      },
+      externalAdReply: {
+        title: '🏴‍☠️ 𝐆𝐄𝐀𝐑 𝟓: 𝐀𝐔𝐃𝐈𝐎 𝐒𝐘𝐒𝐓𝐄𝐌',
+        body: `Tripulación: ${db_audios.length} comandos`,
+        thumbnailUrl: miniaturaRandom,
+        sourceUrl: redes,
+        mediaType: 1,
+        renderLargerThumbnail: false
+      }
+    };
+
+    // 8. Enviar el mensaje (video o imagen de respaldo)
+    try {
+      const response = await fetch(GIF_VIDEO_URL);
+      if (!response.ok) throw new Error('HTTP ' + response.status);
+      const videoBuffer = await response.buffer();
+
+      await conn.sendMessage(m.chat, {
+        video: videoBuffer,
+        gifPlayback: true,
+        caption: encabezado,
+        contextInfo
+      }, { quoted: m });
+    } catch (videoError) {
+      console.error('❌ Error enviando video, se envía imagen:', videoError.message);
+      // Fallback a imagen
+      await conn.sendMessage(m.chat, {
+        image: { url: miniaturaRandom },
+        caption: encabezado,
+        contextInfo
+      }, { quoted: m });
     }
-  };
 
-  // 6. Envío del video fijo
-  try {
-    const response = await fetch(GIF_VIDEO_URL);
-    if (!response.ok) throw new Error('No se pudo descargar el GIF');
-    const videoBuffer = await response.buffer();
-
-    await conn.sendMessage(m.chat, {
-      video: videoBuffer,
-      gifPlayback: true,
-      caption: encabezado,
-      contextInfo
-    }, { quoted: m });
-
-  } catch (e) {
-    console.error('❌ Error enviando video, se envía imagen de respaldo:', e);
-    // Si falla el video, enviamos solo imagen
-    await conn.sendMessage(m.chat, { 
-      image: { url: miniaturaRandom || 'https://i.imgur.com/9qoEM9U.jpeg' }, 
-      caption: encabezado, 
-      contextInfo 
-    }, { quoted: m });
+  } catch (error) {
+    // Captura cualquier error inesperado y envía un mensaje de error amigable
+    console.error('❌ Error en handler menu2:', error);
+    await m.reply('⚠️ Ocurrió un error al mostrar el menú. Revisa la consola.');
   }
 };
 
