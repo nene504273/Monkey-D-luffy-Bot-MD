@@ -14,7 +14,7 @@ const handler = async (m, { conn, args }) => {
 
   // Si no hay texto directo, usar el texto del mensaje al que se respondió
   if (!text && m.quoted?.text) text = m.quoted.text;
-  
+
   if (!text) return m.reply(`${emoji} Por favor, ingresa un texto o responde a un mensaje para convertirlo a voz.`);
 
   // Reacción de espera
@@ -22,28 +22,24 @@ const handler = async (m, { conn, args }) => {
 
   try {
     let audioBuffer;
-    
-    // ---------------------------------------------------------
-    // INTENTO 1: API de Voz de TikTok (Femenina)
-    // ---------------------------------------------------------
+
+    // INTENTO 1: API de Voz de TikTok
     try {
         let voiceId = lang === 'en' ? 'en_us_001' : lang === 'pt' ? 'br_003' : 'es_002';
         let tiktokUrl = `https://aemt.me/tiktoktts?text=${encodeURIComponent(text)}&voice=${voiceId}`;
-        
+
         let resTikTok = await axios.get(tiktokUrl, { 
             responseType: 'arraybuffer', 
             timeout: 8000 
         });
         audioBuffer = Buffer.from(resTikTok.data);
-        
+
     } catch (errTikTok) {
         console.log("Fallo la API de TikTok TTS, pasando automáticamente a Google TTS...");
-        
-        // ---------------------------------------------------------
-        // INTENTO 2 (Respaldo): Google TTS Direct Stream
-        // ---------------------------------------------------------
+
+        // INTENTO 2: Google TTS Direct Stream
         let googleUrl = `https://translate.google.com/translate_tts?ie=UTF-8&tl=${lang}&client=tw-ob&q=${encodeURIComponent(text)}`;
-        
+
         let resGoogle = await axios.get(googleUrl, { 
             responseType: 'arraybuffer', 
             timeout: 8000 
@@ -51,20 +47,16 @@ const handler = async (m, { conn, args }) => {
         audioBuffer = Buffer.from(resGoogle.data);
     }
 
-    // ---------------------------------------------------------
-    // ENVÍO DEL AUDIO AL CHAT (Corregido para decodificación de WhatsApp)
-    // ---------------------------------------------------------
+    // ENVÍO DEL AUDIO CORREGIDO
     if (audioBuffer) {
-      // 🛠️ SOLUCIÓN: Cambiamos el mimetype a audio/mp4 (o audio/ogg), que es compatible con PTT nativo
+      // 🛠️ CORRECCIÓN: 
+      // 1. Eliminamos el mimetype manual (Baileys lo detectará como audio/mpeg).
+      // 2. Cambiamos 'ptt: true' a 'ptt: false' para que el MP3 se envíe correctamente.
       await conn.sendMessage(m.chat, { 
           audio: audioBuffer, 
-          ptt: true, 
-          mimetype: 'audio/mp4', 
-          contextInfo: {
-              externalAdReply: null // Forzamos la desactivación de anuncios sin romper el contextInfo
-          }
+          ptt: false
       }, { quoted: m });
-      
+
       await m.react('✅');
     } else {
       throw new Error("Ningún servidor de voz respondió.");
