@@ -1,6 +1,16 @@
 import fetch from 'node-fetch'
 import yts from 'yt-search'
 
+// ──── Define aquí los emojis y textos que usas ────
+const emoji = '🎵'          // emoji para mensajes normales
+const emoji2 = '⚠️'        // emoji de advertencia
+const msm = '❌'            // prefijo de error
+const rwait = '⏳'          // reacción "espera"
+const done = '✅'           // reacción "completado"
+const error = '❌'          // reacción "error"
+const dev = 'Dev: @tuusuario' // firma del bot (cambia a tu gusto)
+// ─────────────────────────────────────────────────
+
 const handler = async (m, { text, conn, args, command }) => {
   if (!args[0]) {
     return conn.reply(m.chat, `${emoji} Por favor, proporciona un nombre o enlace de YouTube.`, m)
@@ -76,7 +86,7 @@ ${dev}`
     await conn.reply(m.chat, infoMessage, m)
   }
 
-  // ── Descarga de audio (API youtubeplay) ──
+  // ── Descarga de audio ──
   if (['play', 'yta', 'ytmp3', 'playaudio'].includes(command)) {
     try {
       const apiUrl = `https://api.alyacore.xyz/dl/youtubeplay?query=${encodeURIComponent(url)}&key=${apikey}`
@@ -87,7 +97,6 @@ ${dev}`
       const dl = api.result?.dl
       if (!dl) throw new Error('No se generó enlace de descarga (audio)')
 
-      // Descargar buffer para evitar bloqueo de WhatsApp
       const audioRes = await fetch(dl)
       const audioBuffer = await audioRes.buffer()
 
@@ -106,12 +115,11 @@ ${dev}`
     }
   } 
 
-  // ── Descarga de video (API ytmp4, calidad 480p) ──
+  // ── Descarga de video ──
   else if (['play2', 'ytv', 'ytmp4', 'mp4'].includes(command)) {
     try {
       await conn.reply(m.chat, `❍ Descargando video en calidad 480p...`, m)
 
-      // Puedes cambiar "480" por "360", "720", etc.
       const apiUrl = `https://api.alyacore.xyz/dl/ytmp4?url=${encodeURIComponent(url)}&quality=480&key=${apikey}`
       const api = await (await fetch(apiUrl)).json()
 
@@ -120,7 +128,6 @@ ${dev}`
       const dl = api.data?.dl
       if (!dl) throw new Error('No se generó el enlace de descarga (video)')
 
-      // Descargar buffer
       const videoRes = await fetch(dl)
       const videoBuffer = await videoRes.buffer()
 
