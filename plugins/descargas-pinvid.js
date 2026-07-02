@@ -10,33 +10,46 @@ let handler = async (m, { conn, text, usedPrefix, command }) => {
   await conn.sendMessage(m.chat, { react: { text: '🕒', key: m.key } })
 
   try {
-    // *** CORRECCIÓN: Nuevo endpoint de búsqueda ***
     const apiUrl = `https://api.alyacore.xyz/search/pinterestvideo?query=${encodeURIComponent(text)}&key=LUFFY-GEAR6`
-    
     const response = await fetch(apiUrl)
-    
-    // *** MEJORA: Manejo más robusto de la respuesta ***
-    // Si la respuesta no es OK, lanzamos un error descriptivo.
+
     if (!response.ok) {
       throw new Error(`Error del servidor: ${response.status} ${response.statusText}`)
     }
-    
+
     const json = await response.json()
 
-    // *** CORRECCIÓN: Adaptación a la nueva estructura de la API ***
     if (!json.status || !json.data || !Array.isArray(json.data.videos) || json.data.videos.length === 0) {
       throw new Error('No se encontraron videos para esta búsqueda.')
     }
 
-    // *** NUEVO: Seleccionar un video aleatorio de la lista para variar ***
     const randomIndex = Math.floor(Math.random() * json.data.videos.length)
     const video = json.data.videos[randomIndex]
     const { title, dl, duration, likes, thumb, link } = video
 
+    // Descargar el video como buffer (evita problemas de redirección/CORS)
+    const videoRes = await fetch(dl)
+    if (!videoRes.ok) throw new Error('No se pudo descargar el video.')
+    const videoBuffer = await videoRes.buffer()
+
+    // Opcional: descargar miniatura para enviarla como thumbnail del video
+    let thumbnailBuffer = null
+    if (thumb) {
+      try {
+        const thumbRes = await fetch(thumb)
+        if (thumbRes.ok) thumbnailBuffer = await thumbRes.buffer()
+      } catch {}
+    }
+
     const caption = `🎬 *Título:* ${title || 'Sin título'}\n⏱ *Duración:* ${duration || 'N/A'}\n❤️ *Likes:* ${likes || 0}\n🔗 *Fuente:* ${link || 'No disponible'}`.trim()
 
-    // Enviar el video con su caption
-    await conn.sendFile(m.chat, dl, `${title || 'pinterest_video'}.mp4`, caption, m)
+    // Enviar video con buffer (mayor compatibilidad)
+    await conn.sendMessage(m.chat, {
+      video: videoBuffer,
+      caption: caption,
+      gifPlayback: false, // si es video normal
+      jpegThumbnail: thumbnailBuffer || undefined
+    }, { quoted: m })
 
     await conn.sendMessage(m.chat, { react: { text: '✅', key: m.key } })
 
