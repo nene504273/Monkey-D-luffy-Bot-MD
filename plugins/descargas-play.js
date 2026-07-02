@@ -8,7 +8,7 @@ const msm = '❌'            // prefijo de error
 const rwait = '⏳'          // reacción "espera"
 const done = '✅'           // reacción "completado"
 const error = '❌'          // reacción "error"
-const dev = 'Dev: @tuusuario' // firma del bot (cambia a tu gusto)
+const dev = 'Dev: ɴ͡ᴇ͜ɴᴇ❀᭄☂️' // firma del bot (cambia a tu gusto)
 // ─────────────────────────────────────────────────
 
 const handler = async (m, { text, conn, args, command }) => {
