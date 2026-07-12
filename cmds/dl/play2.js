@@ -14,7 +14,7 @@ export default {
       const text = args.join(' ')
       const query = text
 
-      // Búsqueda (sin cambios)
+      // Búsqueda
       const searchUrl = `https://api.alyacore.xyz/search/yt?query=${encodeURIComponent(query)}&key=LUFFY-FIX67`
       const searchRes = await fetch(searchUrl).then(r => r.json())
 
@@ -43,7 +43,7 @@ export default {
 
       await sock.sendMessage(msg.chat, { image: thumbBuffer, caption }, { quoted: msg })
 
-      // --- NUEVA DESCARGA ---
+      // Descarga con la API en calidad 720
       const dlEndpoint = `https://api.alyacore.xyz/dl/ytmp4?url=${encodeURIComponent(url)}&quality=720&key=LUFFY-FIX67`
       const res = await fetch(dlEndpoint).then(r => r.json())
 
@@ -51,16 +51,14 @@ export default {
         return msg.reply('《✧》 No se pudo descargar el *video*, intenta más tarde.')
       }
 
-      const videoBuffer = await getBuffer(res.data.dl)
-
+      // Envío como DOCUMENTO (archivo) y no como video reproducible
       const mensaje = {
-        video: { url: res.data.dl },
+        document: { url: res.data.dl },   // <--- Cambio clave
         fileName: `${title || 'video'}.mp4`,
         mimetype: 'video/mp4'
       }
 
       await sock.sendMessage(msg.chat, mensaje, { quoted: msg })
-      // --- FIN NUEVA DESCARGA ---
 
     } catch (e) {
       await msg.reply(msgglobal)
