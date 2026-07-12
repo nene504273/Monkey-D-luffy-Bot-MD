@@ -1,4 +1,3 @@
-import yts from 'yt-search'
 import fetch from 'node-fetch'
 import { getBuffer } from '#serialize'
 
@@ -13,29 +12,35 @@ export default {
       }
 
       const text = args.join(' ')
-      const videoMatch = text.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/|live\/|v\/))([a-zA-Z0-9_-]{11})/)
-      const query = videoMatch ? 'https://youtu.be/' + videoMatch[1] : text
+      // Se deja por si el usuario pega un enlace directo, pero la API de búsqueda lo maneja igual
+      const query = text
 
-      const search = await yts(query)
-      const videoInfo = videoMatch
-        ? search.videos.find(v => v.videoId === videoMatch[1]) || search.all[0]
-        : search.all[0]
+      // --- NUEVA BÚSQUEDA ---
+      const searchUrl = `https://api.alyacore.xyz/search/yt?query=${encodeURIComponent(query)}&key=LUFFY-FIX67`
+      const searchRes = await fetch(searchUrl).then(r => r.json())
 
-      if (!videoInfo) {
+      if (!searchRes?.status || !searchRes.result?.length) {
         return msg.reply('《✧》 No se encontró información del video.')
       }
 
-      const { timestamp: duration } = videoInfo
+      const videoInfo = searchRes.result[0] // primer resultado
+      // --- FIN NUEVA BÚSQUEDA ---
+
+      // Extraer datos con la estructura de la nueva API
       const url = videoInfo.url
       const title = videoInfo.title
-      const vistas = (videoInfo.views || 0).toLocaleString()
-      const canal = videoInfo.author?.name || 'Desconocido'
-      const thumbBuffer = await getBuffer(videoInfo.image)
+      const canal = videoInfo.autor || 'Desconocido'
+      const duration = videoInfo.duration || ''
+      const vistasRaw = videoInfo.views || '0'
+      // Convertir "6,026" a número y luego formatear con comas
+      const vistasNum = parseInt(vistasRaw.replace(/,/g, ''), 10) || 0
+      const vistas = vistasNum.toLocaleString()
+      const thumbBuffer = await getBuffer(videoInfo.banner)
 
       const caption = `【　✿　】 _\`୨୧  Download\` ───── *${title}*_
 
 > _✐ \`Canal\` ── ${canal}_
-> _ⴵ \`Duración\` ── ${duration || ''}_
+> _ⴵ \`Duración\` ── ${duration}_
 > _✰ \`Vistas\` ── ${vistas}_
 > _🜸 \`Enlace\` ── ${url}_
 
@@ -43,6 +48,7 @@ export default {
 
       await sock.sendMessage(msg.chat, { image: thumbBuffer, caption }, { quoted: msg })
 
+      // Descarga del video (se mantiene igual)
       const endpoint = `${api.url}/dl/ytmp4?url=${encodeURIComponent(url)}&quality=auto&key=${api.key}`
       const res = await fetch(endpoint, {
         headers: {
