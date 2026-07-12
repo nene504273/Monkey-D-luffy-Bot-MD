@@ -1,3 +1,4 @@
+import yts from 'yt-search'
 import fetch from 'node-fetch'
 import { getBuffer } from '#serialize'
 
@@ -12,30 +13,29 @@ export default {
       }
 
       const text = args.join(' ')
-      const query = text
+      const videoMatch = text.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/|live\/|v\/))([a-zA-Z0-9_-]{11})/)
+      const query = videoMatch ? 'https://youtu.be/' + videoMatch[1] : text
 
-      // Búsqueda
-      const searchUrl = `https://api.alyacore.xyz/search/yt?query=${encodeURIComponent(query)}&key=LUFFY-FIX67`
-      const searchRes = await fetch(searchUrl).then(r => r.json())
+      const search = await yts(query)
+      const videoInfo = videoMatch
+        ? search.videos.find(v => v.videoId === videoMatch[1]) || search.all[0]
+        : search.all[0]
 
-      if (!searchRes?.status || !searchRes.result?.length) {
+      if (!videoInfo) {
         return msg.reply('《✧》 No se encontró información del video.')
       }
 
-      const videoInfo = searchRes.result[0]
+      const { timestamp: duration } = videoInfo
       const url = videoInfo.url
       const title = videoInfo.title
-      const canal = videoInfo.autor || 'Desconocido'
-      const duration = videoInfo.duration || ''
-      const vistasRaw = videoInfo.views || '0'
-      const vistasNum = parseInt(vistasRaw.replace(/,/g, ''), 10) || 0
-      const vistas = vistasNum.toLocaleString()
-      const thumbBuffer = await getBuffer(videoInfo.banner)
+      const vistas = (videoInfo.views || 0).toLocaleString()
+      const canal = videoInfo.author?.name || 'Desconocido'
+      const thumbBuffer = await getBuffer(videoInfo.image)
 
       const caption = `【　✿　】 _\`୨୧  Download\` ───── *${title}*_
 
 > _✐ \`Canal\` ── ${canal}_
-> _ⴵ \`Duración\` ── ${duration}_
+> _ⴵ \`Duración\` ── ${duration || ''}_
 > _✰ \`Vistas\` ── ${vistas}_
 > _🜸 \`Enlace\` ── ${url}_
 
@@ -43,23 +43,27 @@ export default {
 
       await sock.sendMessage(msg.chat, { image: thumbBuffer, caption }, { quoted: msg })
 
-      // Descarga con la API en calidad 720
-      const dlEndpoint = `https://api.alyacore.xyz/dl/ytmp4?url=${encodeURIComponent(url)}&quality=720&key=LUFFY-FIX67`
-      const res = await fetch(dlEndpoint).then(r => r.json())
+      const endpoint = `${api.url}/dl/ytmp4?url=${encodeURIComponent(url)}&quality=auto&key=${api.key}`
+      const res = await fetch(endpoint, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Linux; Android 15; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36',
+          'Accept': 'application/json'
+        }
+      }).then(r => r.json())
 
-      if (!res?.status || !res.data?.dl) {
+      if (!res?.status || !res.result?.downloadUrl) {
         return msg.reply('《✧》 No se pudo descargar el *video*, intenta más tarde.')
       }
 
-      // Envío como DOCUMENTO (archivo) y no como video reproducible
+      const videoBuffer = await getBuffer(res.result.downloadUrl)
+
       const mensaje = {
-        document: { url: res.data.dl },   // <--- Cambio clave
-        fileName: `${title || 'video'}.mp4`,
+        video: { url: res.result.downloadUrl },
+        fileName: `${res.result?.title || 'video'}.mp4`,
         mimetype: 'video/mp4'
       }
 
       await sock.sendMessage(msg.chat, mensaje, { quoted: msg })
-
     } catch (e) {
       await msg.reply(msgglobal)
     }
