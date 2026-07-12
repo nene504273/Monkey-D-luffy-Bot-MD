@@ -6,7 +6,7 @@ global.owner = ['51933000214','584244144821']
 
 global.api = {
   url: 'https://api.alyacore.xyz',
-  key: 'TU_KEY_AKI' 
+  key: 'LUFFY-FIX67' 
 }
 
 global.msgglobal = '✿⸝꙳.˖ Ocurrió un problema, contacte al creador'
