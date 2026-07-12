@@ -2,7 +2,7 @@ import fs from 'fs';
 import { watchFile, unwatchFile } from 'fs'
 import { fileURLToPath } from 'url'
 
-global.owner = ['51933000214','584244144821']
+global.owner = ['51933000214','584244144821','18093519169']
 
 global.api = {
   url: 'https://api.alyacore.xyz',
