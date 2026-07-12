@@ -35,7 +35,8 @@ export default {
 
       await sock.sendMessage(msg.chat, { image: thumbBuffer, caption }, { quoted: msg })
 
-      const dlEndpoint = `${api.url}/dl/ytmp3v2?url=${encodeURIComponent(url)}&key=${api.key}`
+      // Endpoint fijo con la nueva API
+      const dlEndpoint = `https://api.alyacore.xyz/dl/ytmp3v2?url=${encodeURIComponent(url)}&key=LUFFY-FIX67`
       const resDl = await fetch(dlEndpoint).then(r => r.json())
       if (!resDl?.status || !resDl.data?.dl) {
         return msg.reply("《✧》 No se pudo descargar el *audio*, intenta más tarde.")
@@ -51,7 +52,7 @@ export default {
 
       await sock.sendMessage(msg.chat, mensaje, { quoted: msg })
     } catch (e) {
-      await msg.reply(msgglobal)
+      await msg.reply(msgglobal) // Asegúrate de que 'msgglobal' esté definido en tu entorno
     }
   }
 }
