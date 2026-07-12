@@ -289,7 +289,7 @@ export default {
       who = msg.quoted ? msg.quoted.sender : msg.sender
     }
 
-     const user = await db.getUser(who)
+    const user = await db.getUser(who)
     const fromName = msg.pushName || 'Alguien'
     const toName = user.name || 'alguien'
 
@@ -303,24 +303,35 @@ export default {
         : `${fromName} ${captionText} ${getRandomSymbol()}.`
 
     try {
-const response = await fetch(
-  `${api.url}/sfw/interaction?inter=${currentCommand}&key=${api.key}`
-)
+      // 1. Obtener la URL del video desde la API de Alyacore
+      const apiUrl = `https://api.alyacore.xyz/sfw/interaction?inter=${currentCommand}&key=Core`
+      const apiRes = await fetch(apiUrl)
+      const json = await apiRes.json()
 
-const videoBuffer = await response.buffer()
+      if (!json.status || !json.result) {
+        throw new Error('API no devolvió un resultado válido')
+      }
 
-await sock.sendMessage(
-  msg.chat,
-  {
-    video: videoBuffer, 
-    gifPlayback: true,
-    caption,
-    mentions: [who, msg.sender],
-  },
-  { quoted: msg },
-)
-    } catch {
-      await msg.reply(msgglobal)
+      const videoUrl = json.result
+
+      // 2. Descargar el video como buffer
+      const videoRes = await fetch(videoUrl)
+      const videoBuffer = await videoRes.buffer()
+
+      // 3. Enviar el mensaje con el video
+      await sock.sendMessage(
+        msg.chat,
+        {
+          video: videoBuffer,
+          gifPlayback: true,
+          caption,
+          mentions: [who, msg.sender],
+        },
+        { quoted: msg },
+      )
+    } catch (err) {
+      console.error(err)
+      await msg.reply(msgglobal) // Asegúrate de que `msgglobal` esté definido en tu contexto
     }
   },
 };
