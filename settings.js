@@ -21,8 +21,8 @@ global.mess = {
 }
 
 global.my = {
-ch: "120363420992828502@newsletter", // Oficial
-ch2: "120363405689107729@newsletter" // Api
+ch: "120363420846835529@newsletter", // Setzo
+ch2: "120363420846835529@newsletter" // Otro setzo
 }
 
 let file = fileURLToPath(import.meta.url)
