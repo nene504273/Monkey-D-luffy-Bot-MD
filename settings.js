@@ -14,14 +14,10 @@ global.dev = `ʙᴜɪʟᴛ ʙʏ ɴ͡ᴇ͜ɴᴇ❀᭄☂️`
 
 global.mess = {
   socket: '⚓🔗 Este comando solo puede ser ejecutado por un Socket. ¡Gomu Gomu no...!',
- 
- admin: '👑⚔️ Este comando solo puede ser ejecutado por los Administradores del Grupo. ¡Rey de los Piratas!',
- 
- botAdmin: '🤖👒 Este comando solo puede ser ejecutado si el Socket es Administrador del Grupo. ¡Shishishi!',
- 
- nsfw: '🔞🚫 Los comandos de *NSFW* están desactivados en este grupo. ¡No es divertido!',
- 
- comandooff: '💤❌ Estos comandos están desactivados en este grupo. ¡Zzz... Shishishi!'
+  admin: '👑⚔️ Este comando solo puede ser ejecutado por los Administradores del Grupo. ¡Rey de los Piratas!',
+  botAdmin: '🤖👒 Este comando solo puede ser ejecutado si el Socket es Administrador del Grupo. ¡Shishishi!',
+  nsfw: '🔞🚫 Los comandos de *NSFW* están desactivados en este grupo. ¡No es divertido!',
+  comandooff: '💤❌ Estos comandos están desactivados en este grupo. ¡Zzz... Shishishi!'
 }
 
 global.my = {
