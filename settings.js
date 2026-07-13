@@ -9,15 +9,19 @@ global.api = {
   key: 'LUFFY-FIX67' 
 }
 
-global.msgglobal = '✿⸝꙳.˖ Ocurrió un problema, contacte al creador'
-global.dev = `ʙᴜɪʟᴛ ʙʏ ɪ'ᴍ ᴅɪᴇɢᴏ ♡`
+global.msgglobal = '🏴‍☠️👒 Ocurrió un problema, contacte al creador. ¡Shishishi!'
+global.dev = `ʙᴜɪʟᴛ ʙʏ ɴ͡ᴇ͜ɴᴇ❀᭄☂️`
 
 global.mess = {
-  socket: '(∩´͈ ᴖ `͈∩ ྀི) Este comando solo puede ser ejecutado por un Socket.',
-  admin: '٩ʕ◕౪◕ʔو Este comando solo puede ser ejecutado por los Administradores del Grupo.',
-  botAdmin: '(𓂂꜆◕⩊◕꜀𓂂) Este comando solo puede ser ejecutado si el Socket es Administrador del Grupo.',
-  nsfw: '(•ૢ⚈͒⌄⚈͒•ૢ) Los comandos de *NSFW* están desactivados en este grupo.',
-  comandooff: 'ღゝ◡╹ )ノ Estos comandos estan desactivados en este grupo.'
+  socket: '⚓🔗 Este comando solo puede ser ejecutado por un Socket. ¡Gomu Gomu no...!',
+ 
+ admin: '👑⚔️ Este comando solo puede ser ejecutado por los Administradores del Grupo. ¡Rey de los Piratas!',
+ 
+ botAdmin: '🤖👒 Este comando solo puede ser ejecutado si el Socket es Administrador del Grupo. ¡Shishishi!',
+ 
+ nsfw: '🔞🚫 Los comandos de *NSFW* están desactivados en este grupo. ¡No es divertido!',
+ 
+ comandooff: '💤❌ Estos comandos están desactivados en este grupo. ¡Zzz... Shishishi!'
 }
 
 global.my = {
