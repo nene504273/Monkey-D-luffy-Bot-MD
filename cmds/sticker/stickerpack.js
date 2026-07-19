@@ -1,136 +1,84 @@
-import axios from 'axios'
-import sharp from 'sharp'
-
-const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms))
-
-const toBuffer = async (url) =>
-  Buffer.from((await axios.get(url, { responseType: 'arraybuffer' })).data)
-
-const toWebp = async (buffer, isAnimated = false) => {
-  const base = sharp(buffer, isAnimated ? { animated: true } : {})
-    .resize(512, 512, { fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } })
-    .webp({ quality: 80, ...(isAnimated ? { loop: 0 } : {}) })
-  return base.toBuffer()
-}
-
-const withRetry = async (fn, attempt = 1) => {
-  try {
-    return await fn()
-  } catch (e) {
-    if (e.response?.status === 429 && attempt <= 3) {
-      await delay((e.response.headers['retry-after'] || 5) * 1000)
-      return withRetry(fn, attempt + 1)
-    }
-    throw e
-  }
-}
-
-const searchStickerly = (query) =>
-  withRetry(async () => {
-    const { data } = await axios.get('https://api.alyacore.xyz/stickerly/search', {
-      params: { query, key: global.apikey }
-    })
-    return data
-  })
-
-const getPackDetail = (url) =>
-  withRetry(async () => {
-    const { data } = await axios.get('https://api.alyacore.xyz/stickerly/detail', {
-      params: { url, key: global.apikey }
-    })
-    return data
-  })
-
+import db from "#db"
 export default {
-  command: ['stickerpack', 'spack'],
-  category: 'utils',
-  run: async (client, m, args, command, text, prefix) => {
-    // --- CORRECCIÓN: método react seguro ---
-    if (typeof m.react !== 'function') {
-      m.react = async (emoji) => {
-        try {
-          await client.sendMessage(m.chat, { react: { text: emoji, key: m.key } })
-        } catch {}
-      }
-    }
-    // ----------------------------------------
+  command: ['report', 'reporte', 'sug', 'suggest'],
+  category: 'info',
+  run: async ({ msg, sock, args, command, text, usedPrefix: prefix }) => {
+    const texto = args.join(' ').trim()
+    const now = Date.now()
 
     try {
-      if (!text)
-        return client.reply(
-          m.chat,
-          `❖ Ingresa un texto para buscar stickers.\n> Ejemplo: *${prefix + command} Alya Kujou*`,
-          m
-        )
+      const userData = await db.getUser(msg.sender)
 
-      await m.react('🕒')
+      const cooldown = userData.sugCooldown || 0
+      const restante = cooldown - now
+      if (restante > 0) {
+        return msg.reply(`《✤》 Espera *${msToTime(restante)}* para volver a usar este comando.`)
+      }
 
-      const user = globalThis.db.data.users[m.sender] || {}
-      const name = user.name || m.sender.split('@')[0]
-      const packName = user.metadatos || global.dev
-      const author = user.metadatos2 || `@${name}`
+      if (!texto) {
+        return msg.reply(`《✤》 Debes *escribir* el *reporte* o *sugerencia*.`)
+      }
 
-      const search = await searchStickerly(text)
-      const resultados = search.resultados || search.result || []
-      const freePacks = resultados.filter(p => !p.isPaid)
+      if (texto.length < 10) {
+        return msg.reply('✿ Tu mensaje es *demasiado corto*. Explica mejor tu reporte/sugerencia (mínimo 10 caracteres)')
+      }
 
-      if (!freePacks.length)
-        return client.reply(m.chat, `❖ No se encontraron stickers gratuitos para *${text}*.`, m)
+      const fecha = new Date()
+      const opcionesFecha = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }
+      const fechaLocal = fecha.toLocaleDateString('es-MX', opcionesFecha)
 
-      const bestPack = freePacks[0]
-      const detail = await getPackDetail(bestPack.url)
+      const tipo = (command === 'report' || command === 'reporte') ? '🆁ҽ𝕡σɾƚҽ' : '🆂մց𝕖ɾҽ𝚗cíᥲ'
+      const tipo2 = (command === 'report' || command === 'reporte') ? 'ꕥ Reporte' : 'ꕥ Sugerencia'
+      const displayName = msg.pushName || 'Usuario desconocido'
+      const numero = msg.sender.split('@')[0]
+      const pp = await sock.profilePictureUrl(msg.sender, 'image').catch(() => 'https://cdn.sockywa.xyz/files/1755559736781.jpeg')
 
-      if (!detail.status || !detail.detalles?.stickers?.length)
-        return client.reply(m.chat, `❖ No se pudo obtener el paquete de stickers.`, m)
+      let reportMsg =
+        `🫗۫᷒ᰰ⃘ׅ᷒  ۟　\`${tipo}\`　ׅ　ᩡ\n\n` +
+        `𖹭  ׄ  ְ 🍒 *Nombre*\n> ${displayName}\n\n` +
+        `𖹭  ׄ  ְ 🦩 *Número*\n> wa.me/${numero}\n\n` +
+        `𖹭  ׄ  ְ 🌱 *Fecha*\n> ${fechaLocal}\n\n` +
+        `𖹭  ׄ  ְ 🍓 *Mensaje*\n> ${texto}\n\n` +
+        dev
 
-      const { detalles } = detail
-      const stickers = detalles.stickers.slice(0, 30)
-
-      const stickerList = (
-        await Promise.allSettled(
-          stickers.map(async (s) => {
-            const buf = await toBuffer(s.imageUrl)
-            const webp = await toWebp(buf, s.isAnimated)
-            return {
-              sticker: webp,
-              isAnimated: s.isAnimated || false,
-              isLottie: false,
-              emojis: ['🎭']
-            }
-          })
-        )
-      )
-        .filter(r => r.status === 'fulfilled')
-        .map(r => r.value)
-
-      if (!stickerList.length)
-        return client.reply(m.chat, `❖ No se pudieron procesar los stickers.`, m)
-
-      const cover = await sharp(await toBuffer(detalles.thumbnailUrl))
-        .resize(96, 96, { fit: 'cover' })
-        .webp({ quality: 80 })
-        .toBuffer()
-
-      await client.sendMessage(
-        m.chat,
-        {
-          stickerPack: {
-            name: packName,
-            publisher: author,
-            description: `${detalles.name} • ${global.botname}`,
-            cover,
-            stickers: stickerList
+      try {
+        await global.sock.reply('120363416930479619@g.us', reportMsg, msg)
+      } catch {
+        try {
+          for (const nums of global.mods) {
+            await sock.reply(`${nums}@s.whatsapp.net`, reportMsg, msg)
           }
-        },
-        { quoted: m }
+        } catch {}
+      }
+
+      userData.sugCooldown = now + 24 * 60 * 60000
+      await db.updateUser(msg.sender, 'sugCooldown', userData.sugCooldown)
+
+      msg.reply(
+        `《✤》 Gracias por tu *${(command === 'report' || command === 'reporte') ? 'reporte' : 'sugerencia'}*\n\n> Tu mensaje fue enviado correctamente a los moderadores`
       )
-
-      await m.react('✔️')
-
-    } catch (e) {
-      console.error('[spack]', e)
-      try { await m.react('✖️') } catch {}
-      return client.reply(m.chat, '❖ Ocurrió un error al procesar el stickerpack.', m)
+    } catch {
+      msg.reply(msgglobal)
     }
-  }
+  },
+}
+
+const msToTime = (duration) => {
+  const seconds = Math.floor((duration / 1000) % 60)
+  const minutes = Math.floor((duration / (1000 * 60)) % 60)
+  const hours = Math.floor((duration / (1000 * 60 * 60)) % 24)
+  const days = Math.floor(duration / (1000 * 60 * 60 * 24))
+
+  const s = seconds.toString().padStart(2, '0')
+  const msg = minutes.toString().padStart(2, '0')
+  const h = hours.toString().padStart(2, '0')
+  const d = days.toString()
+
+  const parts = []
+  if (days > 0) parts.push(`${d} día${d > 1 ? 's' : ''}`)
+  if (hours > 0) parts.push(`${h} hora${h > 1 ? 's' : ''}`)
+  if (minutes > 0) parts.push(`${msg} minuto${msg > 1 ? 's' : ''}`)
+  parts.push(`${s} segundo${s > 1 ? 's' : ''}`)
+
+  return parts.join(', ')
 }
