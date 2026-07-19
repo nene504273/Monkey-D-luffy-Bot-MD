@@ -45,6 +45,16 @@ export default {
   command: ['stickerpack', 'spack'],
   category: 'utils',
   run: async (client, m, args, command, text, prefix) => {
+    // --- CORRECCIÓN: método react seguro ---
+    if (typeof m.react !== 'function') {
+      m.react = async (emoji) => {
+        try {
+          await client.sendMessage(m.chat, { react: { text: emoji, key: m.key } })
+        } catch {}
+      }
+    }
+    // ----------------------------------------
+
     try {
       if (!text)
         return client.reply(
@@ -60,14 +70,12 @@ export default {
       const packName = user.metadatos || global.dev
       const author = user.metadatos2 || `@${name}`
 
-
       const search = await searchStickerly(text)
       const resultados = search.resultados || search.result || []
       const freePacks = resultados.filter(p => !p.isPaid)
 
       if (!freePacks.length)
         return client.reply(m.chat, `❖ No se encontraron stickers gratuitos para *${text}*.`, m)
-
 
       const bestPack = freePacks[0]
       const detail = await getPackDetail(bestPack.url)
@@ -77,7 +85,6 @@ export default {
 
       const { detalles } = detail
       const stickers = detalles.stickers.slice(0, 30)
-
 
       const stickerList = (
         await Promise.allSettled(
@@ -98,7 +105,6 @@ export default {
 
       if (!stickerList.length)
         return client.reply(m.chat, `❖ No se pudieron procesar los stickers.`, m)
-
 
       const cover = await sharp(await toBuffer(detalles.thumbnailUrl))
         .resize(96, 96, { fit: 'cover' })
@@ -123,8 +129,8 @@ export default {
 
     } catch (e) {
       console.error('[spack]', e)
-      await m.react('✖️')
-      return m.reply(msgglobal)
+      try { await m.react('✖️') } catch {}
+      return client.reply(m.chat, '❖ Ocurrió un error al procesar el stickerpack.', m)
     }
   }
 }
