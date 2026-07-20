@@ -41,11 +41,24 @@ const getPackDetail = (url) =>
     return data
   })
 
+// Función auxiliar para reaccionar (compatible con Baileys)
+const react = async (client, m, emoji) => {
+  if (!m?.key) return
+  try {
+    await client.sendMessage(m.chat, { react: { text: emoji, key: m.key } })
+  } catch (_) { /* ignorar errores de reacción */ }
+}
+
 export default {
   command: ['stickerpack', 'spack'],
   category: 'utils',
   run: async (client, m, args, command, text, prefix) => {
     try {
+      // Validar que el mensaje existe
+      if (!m || !m.chat) {
+        return console.error('[spack] Mensaje inválido')
+      }
+
       if (!text)
         return client.reply(
           m.chat,
@@ -53,13 +66,12 @@ export default {
           m
         )
 
-      await m.react('🕒')
+      await react(client, m, '🕒')
 
       const user = globalThis.db.data.users[m.sender] || {}
       const name = user.name || m.sender.split('@')[0]
       const packName = user.metadatos || global.dev
       const author = user.metadatos2 || `@${name}`
-
 
       const search = await searchStickerly(text)
       const resultados = search.resultados || search.result || []
@@ -67,7 +79,6 @@ export default {
 
       if (!freePacks.length)
         return client.reply(m.chat, `❖ No se encontraron stickers gratuitos para *${text}*.`, m)
-
 
       const bestPack = freePacks[0]
       const detail = await getPackDetail(bestPack.url)
@@ -77,7 +88,6 @@ export default {
 
       const { detalles } = detail
       const stickers = detalles.stickers.slice(0, 30)
-
 
       const stickerList = (
         await Promise.allSettled(
@@ -99,7 +109,6 @@ export default {
       if (!stickerList.length)
         return client.reply(m.chat, `❖ No se pudieron procesar los stickers.`, m)
 
-
       const cover = await sharp(await toBuffer(detalles.thumbnailUrl))
         .resize(96, 96, { fit: 'cover' })
         .webp({ quality: 80 })
@@ -119,12 +128,12 @@ export default {
         { quoted: m }
       )
 
-      await m.react('✔️')
+      await react(client, m, '✔️')
 
     } catch (e) {
       console.error('[spack]', e)
-      await m.react('✖️')
-      return m.reply(msgglobal)
+      await react(client, m, '✖️')
+      return m.reply(msgglobal) // si msgglobal es un string, usa client.reply en su lugar
     }
   }
 }
