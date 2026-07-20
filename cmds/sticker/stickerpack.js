@@ -41,12 +41,26 @@ const getPackDetail = (url) =>
     return data
   })
 
-// Función auxiliar para reaccionar (compatible con Baileys)
+// Función para enviar mensajes de texto (fallback si no existe client.reply)
+const sendText = async (client, chat, text, quoted) => {
+  try {
+    if (typeof client.reply === 'function') {
+      return await client.reply(chat, text, quoted)
+    } else {
+      return await client.sendMessage(chat, { text }, { quoted })
+    }
+  } catch (e) {
+    console.error('[sendText]', e)
+    throw e
+  }
+}
+
+// Función para reaccionar (compatible)
 const react = async (client, m, emoji) => {
   if (!m?.key) return
   try {
     await client.sendMessage(m.chat, { react: { text: emoji, key: m.key } })
-  } catch (_) { /* ignorar errores de reacción */ }
+  } catch (_) { /* ignorar */ }
 }
 
 export default {
@@ -54,73 +68,87 @@ export default {
   category: 'utils',
   run: async (client, m, args, command, text, prefix) => {
     try {
-      // Validar que el mensaje existe
       if (!m || !m.chat) {
-        return console.error('[spack] Mensaje inválido')
+        console.error('[spack] Mensaje inválido')
+        return
       }
 
-      if (!text)
-        return client.reply(
+      if (!text) {
+        return sendText(
+          client,
           m.chat,
           `❖ Ingresa un texto para buscar stickers.\n> Ejemplo: *${prefix + command} Alya Kujou*`,
           m
         )
+      }
 
       await react(client, m, '🕒')
 
-      const user = globalThis.db.data.users[m.sender] || {}
+      const user = globalThis.db?.data?.users?.[m.sender] || {}
       const name = user.name || m.sender.split('@')[0]
-      const packName = user.metadatos || global.dev
+      const packName = user.metadatos || global.dev || 'Sticker Pack'
       const author = user.metadatos2 || `@${name}`
 
       const search = await searchStickerly(text)
       const resultados = search.resultados || search.result || []
       const freePacks = resultados.filter(p => !p.isPaid)
 
-      if (!freePacks.length)
-        return client.reply(m.chat, `❖ No se encontraron stickers gratuitos para *${text}*.`, m)
+      if (!freePacks.length) {
+        return sendText(client, m.chat, `❖ No se encontraron stickers gratuitos para *${text}*.`, m)
+      }
 
       const bestPack = freePacks[0]
       const detail = await getPackDetail(bestPack.url)
 
-      if (!detail.status || !detail.detalles?.stickers?.length)
-        return client.reply(m.chat, `❖ No se pudo obtener el paquete de stickers.`, m)
+      if (!detail.status || !detail.detalles?.stickers?.length) {
+        return sendText(client, m.chat, `❖ No se pudo obtener el paquete de stickers.`, m)
+      }
 
       const { detalles } = detail
-      const stickers = detalles.stickers.slice(0, 30)
+      const stickers = detalles.stickers.slice(0, 30) // límite de 30
 
-      const stickerList = (
-        await Promise.allSettled(
-          stickers.map(async (s) => {
-            const buf = await toBuffer(s.imageUrl)
-            const webp = await toWebp(buf, s.isAnimated)
-            return {
-              sticker: webp,
-              isAnimated: s.isAnimated || false,
-              isLottie: false,
-              emojis: ['🎭']
-            }
-          })
-        )
+      // Procesar cada sticker con manejo individual de errores
+      const stickerResults = await Promise.allSettled(
+        stickers.map(async (s) => {
+          const buf = await toBuffer(s.imageUrl)
+          const webp = await toWebp(buf, s.isAnimated)
+          return {
+            sticker: webp,
+            isAnimated: s.isAnimated || false,
+            isLottie: false,
+            emojis: ['🎭']
+          }
+        })
       )
+
+      const stickerList = stickerResults
         .filter(r => r.status === 'fulfilled')
         .map(r => r.value)
 
-      if (!stickerList.length)
-        return client.reply(m.chat, `❖ No se pudieron procesar los stickers.`, m)
+      if (!stickerList.length) {
+        return sendText(client, m.chat, `❖ No se pudieron procesar los stickers.`, m)
+      }
 
-      const cover = await sharp(await toBuffer(detalles.thumbnailUrl))
-        .resize(96, 96, { fit: 'cover' })
-        .webp({ quality: 80 })
-        .toBuffer()
+      // Generar cover
+      let cover
+      try {
+        cover = await sharp(await toBuffer(detalles.thumbnailUrl))
+          .resize(96, 96, { fit: 'cover' })
+          .webp({ quality: 80 })
+          .toBuffer()
+      } catch (_) {
+        // Si falla el cover, usamos un buffer vacío o el primer sticker
+        cover = stickerList[0]?.sticker || Buffer.alloc(0)
+      }
 
+      // Enviar el sticker pack
       await client.sendMessage(
         m.chat,
         {
           stickerPack: {
             name: packName,
             publisher: author,
-            description: `${detalles.name} • ${global.botname}`,
+            description: `${detalles.name} • ${global.botname || 'Bot'}`,
             cover,
             stickers: stickerList
           }
@@ -131,9 +159,15 @@ export default {
       await react(client, m, '✔️')
 
     } catch (e) {
-      console.error('[spack]', e)
+      console.error('[spack ERROR]', e)
       await react(client, m, '✖️')
-      return m.reply(msgglobal) // si msgglobal es un string, usa client.reply en su lugar
+      // Enviar mensaje de error genérico o personalizado
+      const errorMsg = global.msgglobal || '❌ Ocurrió un error al procesar el sticker pack.'
+      try {
+        await sendText(client, m.chat, errorMsg, m)
+      } catch (_) {
+        console.error('[spack] No se pudo enviar el mensaje de error')
+      }
     }
   }
 }
