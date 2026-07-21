@@ -1,96 +1,106 @@
-import db from "#db"
+import db from "#db";
 import fs from 'fs';
 import path from 'path';
-import ws from 'ws';
 import { fileURLToPath } from 'url';
 
 const filename = fileURLToPath(import.meta.url);
 const dirname = path.dirname(filename);
 
+const bannerImage = 'https://h.uguu.se/LVWkJOez.jpeg';
+
 export default {
   command: ['bots', 'sockets'],
   category: 'socket',
   run: async ({ msg, sock }) => {
-    const botId = sock.user.id.split(':')[0] + '@s.whatsapp.net'
-    const bot = await db.getSettings(botId)
-    const botname2 = bot.namebot2
-    const from = msg.key.remoteJid
-    const groupMetadata = msg.isGroup ? await sock.groupMetadata(from).catch(() => {}) : ''
-    const groupParticipants = groupMetadata?.participants?.map((p) => p.phoneNumber || p.jid || p.lid || p.id) || []
+    const botId = sock.user.id.split(':')[0] + '@s.whatsapp.net';
+    const from = msg.key.remoteJid;
 
-    const mainBotJid = global?.sock ? global?.sock?.user?.id?.split(':')[0] + '@s.whatsapp.net' : ''
-    const isMainBotInGroup = groupParticipants.includes(mainBotJid)
+    const groupMetadata = msg.isGroup
+      ? await sock.groupMetadata(from).catch(() => {})
+      : '';
+    const groupParticipants =
+      groupMetadata?.participants?.map(
+        (p) => p.phoneNumber || p.jid || p.lid || p.id
+      ) || [];
 
-    const basePath = path.join(dirname, '../../Sessions')
-    const folders = {
-      Subs: 'Subs'
-    }
+    const mainBotJid = global?.sock
+      ? global?.sock?.user?.id?.split(':')[0] + '@s.whatsapp.net'
+      : '';
+    const isMainBotInGroup = groupParticipants.includes(mainBotJid);
+
+    const basePath = path.join(dirname, '../../Sessions');
+    const folders = { Subs: 'Subs' };
 
     const getBotsFromFolder = (folderName) => {
-      const folderPath = path.join(basePath, folderName)
-      if (!fs.existsSync(folderPath)) return []
+      const folderPath = path.join(basePath, folderName);
+      if (!fs.existsSync(folderPath)) return [];
       return fs
         .readdirSync(folderPath)
         .filter((dir) => {
-          const credsPath = path.join(folderPath, dir, 'creds.json')
-          return fs.existsSync(credsPath)
+          const credsPath = path.join(folderPath, dir, 'creds.json');
+          return fs.existsSync(credsPath);
         })
-        .map((id) => id.replace(/\D/g, ''))
-    }
+        .map((id) => id.replace(/\D/g, ''));
+    };
 
-    const subs = getBotsFromFolder(folders.Subs)
+    const subs = getBotsFromFolder(folders.Subs);
 
-    const categorizedBots = { Owner: [], Sub: [] }
-    const mentionedJid = []
+    const categorizedBots = { Capitán: [], Nakamas: [] };
+    const mentionedJid = [];
 
     const formatBot = async (number, label) => {
-      const jid = number + '@s.whatsapp.net'
-      if (!groupParticipants.includes(jid)) return null
-      mentionedJid.push(jid)
-      const data = await db.getSettings(jid)
-      const name = data?.namebot2 || 'Bot'
-      const handle = `@${number}`
-      return `- [${label} *${name}*] › ${handle}`
-    }
+      const jid = number + '@s.whatsapp.net';
+      if (!groupParticipants.includes(jid)) return null;
+      mentionedJid.push(jid);
+      const data = await db.getSettings(jid);
+      const name = data?.namebot2 || 'Tripulante';
+      return `- [${label} *${name}*] › @${number}`;
+    };
 
+    // Capitán (Owner)
     if (db.getSettings(mainBotJid)) {
-      const name = (await db.getSettings(mainBotJid))?.namebot2
-      const handle = `@${mainBotJid.split('@')[0]}`
+      const name = (await db.getSettings(mainBotJid))?.namebot2 || 'Luffy';
       if (isMainBotInGroup) {
-        mentionedJid.push(mainBotJid)
-        categorizedBots.Owner.push(`- [Owner *${name}*] › ${handle}`)
+        mentionedJid.push(mainBotJid);
+        categorizedBots.Capitán.push(
+          `- [👒 *Capitán* ${name}] › @${mainBotJid.split('@')[0]}`
+        );
       }
     }
 
+    // Nakamas (Subs)
     for (const num of subs) {
-      const line = await formatBot(num, 'Sub')
-      if (line) categorizedBots.Sub.push(line)
+      const line = await formatBot(num, `🍖 Nakama`);
+      if (line) categorizedBots.Nakamas.push(line);
     }
 
-    const totalCounts = {
-      Owner: 1,
-      Sub: subs.length,
-    }
-
-    const totalBots = totalCounts.Owner + totalCounts.Sub
+    const totalBots = 1 + subs.length;
     const totalInGroup =
-      categorizedBots.Owner.length +
-      categorizedBots.Sub.length
+      categorizedBots.Capitán.length + categorizedBots.Nakamas.length;
 
-    let message = `ꕥ Números de Sockets activos *(${totalBots})*\n\n`
-    message += `ੈ❖‧₊˚ Principales › *${totalCounts.Owner}*\n`
-    message += `ੈ✿‧₊˚ Subs › *${totalCounts.Sub}*\n\n`
-    message += `➭ *Bots en el grupo ›* ${totalInGroup}\n`
+    let mensaje = `🏴‍☠️ *¡TRIPULACIÓN DE LUFFY!* ⚓\n\n`;
+    mensaje += `⚓ Capitán › *1*\n`;
+    mensaje += `🍖 Nakamas › *${subs.length}*\n\n`;
+    mensaje += `💀 *Piratas en el grupo ›* ${totalInGroup}\n`;
 
-    for (const category of ['Owner', 'Sub']) {
-      if (categorizedBots[category].length) {
-        message += categorizedBots[category].join('\n') + '\n'
-      }
+    if (categorizedBots.Capitán.length > 0) {
+      mensaje += categorizedBots.Capitán.join('\n') + '\n';
+    }
+    if (categorizedBots.Nakamas.length > 0) {
+      mensaje += categorizedBots.Nakamas.join('\n') + '\n';
     }
 
-    await sock.sendMessage(msg.chat, { 
-      text: message, 
-      contextInfo: { mentionedJid } 
-    }, { quoted: msg })
-  },
+    mensaje += `\n_— “¡No importa cuántos barcos tengas, lo que importa es la tripulación!”_\n`;
+    mensaje += `_Monkey D. Luffy_`;
+
+    await sock.sendMessage(
+      msg.chat,
+      {
+        image: { url: bannerImage },
+        caption: mensaje,
+        contextInfo: { mentionedJid }
+      },
+      { quoted: msg }
+    );
+  }
 };
