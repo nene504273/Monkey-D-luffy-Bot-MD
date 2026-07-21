@@ -4,7 +4,7 @@ import sharp from 'sharp';
 
 const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 const toBuffer = async (url) => Buffer.from((await axios.get(url, { responseType: 'arraybuffer', timeout: 15000 })).data);
-const key = api.key
+const key = global.api.key
 
 const toWebp = async (buffer, isAnimated = false) => {
   if (isAnimated) {
@@ -23,7 +23,7 @@ const isStickerUrl = (url) => {
 
 const searchPacks = async (query, attempt = 1) => {
   try {
-    const { data } = await axios.get(`${api.url}/stickerly/search`, { params: { query, key }, timeout: 10000 });
+    const { data } = await axios.get(`${global.api.url}/stickerly/search`, { params: { query, key }, timeout: 10000 });
     return data;
   } catch (e) {
     if (e.response?.status === 429 && attempt <= 3) { await delay((e.response.headers['retry-after'] || 5) * 1000); return searchPacks(query, attempt + 1); }
@@ -33,7 +33,7 @@ const searchPacks = async (query, attempt = 1) => {
 
 const downloadPack = async (url, attempt = 1) => {
   try {
-    const { data } = await axios.get(`${api.url}/stickerly/detail`, { params: { url, key }, timeout: 10000 });
+    const { data } = await axios.get(`${global.api.url}/stickerly/detail`, { params: { url, key }, timeout: 10000 });
     return data;
   } catch (e) {
     if (e.response?.status === 429 && attempt <= 3) { await delay((e.response.headers['retry-after'] || 5) * 1000); return downloadPack(url, attempt + 1); }
