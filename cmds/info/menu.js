@@ -22,6 +22,7 @@ export default {
         const totalreg = Object.keys(await db.getUser()).length;
         const venezuelaTime = moment().tz('America/Caracas').format('HH:mm:ss');
 
+        // Agrupar comandos por categoría
         const categories = {};
         for (const cmd of commands) {
             const cat = cmd.category || 'otros';
@@ -47,11 +48,18 @@ export default {
 
         const sortedCategories = Object.keys(categories).sort();
         for (const cat of sortedCategories) {
+            // 🔥 Filtrar solo comandos que tengan la propiedad 'command' con al menos un elemento
+            const validCmds = categories[cat].filter(cmd => cmd.command && cmd.command.length > 0);
+            if (validCmds.length === 0) continue; // omitir categorías vacías
+
             menuText += `✿ㅤ໋︵ּㅤׄ⏜ּㅤ֯✿ִㅤ⃞ׄ🧭⃞ㅤִ❀֯ㅤּ⏜ׄㅤּ︵  ✿\n`;
             menuText += `┄ ֺ 〪ᨘ✿🥂 〫࣫〇ׁ┄ \`${cat.toUpperCase()}\` ┄〇ׁ🥂✿ ׅ ۬┄\n`;
 
-            const cmds = categories[cat].sort((a, b) => a.command[0].localeCompare(b.command[0]));
+            // Ordenar por el primer nombre del comando
+            const cmds = validCmds.sort((a, b) => a.command[0].localeCompare(b.command[0]));
+
             for (const cmd of cmds) {
+                // Construir los alias con el prefijo
                 const aliases = cmd.alias
                     .map(a => prefix + a.split(/[\/#!+.\-]+/).pop().toLowerCase())
                     .join(' › ');
