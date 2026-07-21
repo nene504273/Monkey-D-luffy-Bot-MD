@@ -57,6 +57,7 @@ export default {
     run: async ({ msg, sock, args, command, text, usedPrefix: prefix }) => {
     try {
       if (!text) return sock.reply(msg.chat, `《✧》 Ingresa un texto para buscar packs de stickers o una URL de sticker.ly.`, msg);
+      await msg.react('🕒');
       const name = await db.getUser(msg.sender).name || msg.sender.split('@')[0];
       let packData;
       const stickerMatch = text.match(/(?:sticker\.ly\/s\/)([a-zA-Z0-9]+)(?:\s|$)/);
@@ -120,8 +121,10 @@ export default {
           }
         })).then(results => results.filter(r => r !== null))]);      
       if (!stickerResults.length) return sock.reply(msg.chat, `《✧》 No se pudieron procesar los stickers del pack.`, msg);
-      await sock.sendMessage(msg.chat, { stickerPack: { name: packName, publisher: author?.name || author?.username || `@${name}`, description: 'Sᴛᴇʟʟᴀʀ 🧠 Wᴀʙᴏᴛ', cover, stickers: stickerResults }}, { quoted: msg });      
+      await sock.sendMessage(msg.chat, { stickerPack: { name: packName, publisher: author?.name || author?.username || `@${name}`, description: 'Sᴛᴇʟʟᴀʀ 🧠 Wᴀʙᴏᴛ', cover, stickers: stickerResults }}, { quoted: msg });
+      await msg.react('✔️');
     } catch (e) {
+      await msg.react('✖️');
       return msg.reply(msgglobal);
     }
   }
