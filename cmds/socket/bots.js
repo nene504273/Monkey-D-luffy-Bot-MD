@@ -1,104 +1,96 @@
-import db from "#db";
+import db from "#db"
 import fs from 'fs';
 import path from 'path';
+import ws from 'ws';
 import { fileURLToPath } from 'url';
 
 const filename = fileURLToPath(import.meta.url);
 const dirname = path.dirname(filename);
-const bannerImage = 'https://h.uguu.se/LVWkJOez.jpeg'; // Imagen del Jolly Roger
 
 export default {
   command: ['bots', 'sockets'],
   category: 'socket',
   run: async ({ msg, sock }) => {
-    // ─── Datos del barco actual ───
-    const botId = sock.user.id.split(':')[0] + '@s.whatsapp.net';
-    const from = msg.key.remoteJid;
+    const botId = sock.user.id.split(':')[0] + '@s.whatsapp.net'
+    const bot = await db.getSettings(botId)
+    const botname2 = bot.namebot2
+    const from = msg.key.remoteJid
+    const groupMetadata = msg.isGroup ? await sock.groupMetadata(from).catch(() => {}) : ''
+    const groupParticipants = groupMetadata?.participants?.map((p) => p.phoneNumber || p.jid || p.lid || p.id) || []
 
-    // Obtener participantes si es grupo
-    const groupMetadata = msg.isGroup
-      ? await sock.groupMetadata(from).catch(() => {})
-      : '';
-    const groupParticipants =
-      groupMetadata?.participants?.map(p => p.phoneNumber || p.jid || p.lid || p.id) || [];
+    const mainBotJid = global?.sock ? global?.sock?.user?.id?.split(':')[0] + '@s.whatsapp.net' : ''
+    const isMainBotInGroup = groupParticipants.includes(mainBotJid)
 
-    // Identificar al Capitán (bot principal)
-    const mainBotJid = global?.sock
-      ? global?.sock?.user?.id?.split(':')[0] + '@s.whatsapp.net'
-      : '';
-    const isMainBotInGroup = groupParticipants.includes(mainBotJid);
-
-    // ─── Cargar Sub‑botes (Sessions/Subs) ───
-    const basePath = path.join(dirname, '../../Sessions');
+    const basePath = path.join(dirname, '../../Sessions')
+    const folders = {
+      Subs: 'Subs'
+    }
 
     const getBotsFromFolder = (folderName) => {
-      const folderPath = path.join(basePath, folderName);
-      if (!fs.existsSync(folderPath)) return [];
+      const folderPath = path.join(basePath, folderName)
+      if (!fs.existsSync(folderPath)) return []
       return fs
         .readdirSync(folderPath)
-        .filter(dir => fs.existsSync(path.join(folderPath, dir, 'creds.json')))
-        .map(id => id.replace(/\D/g, ''));
-    };
-
-    const subs = getBotsFromFolder('Subs');
-
-    // ─── Agrupar tripulación ───
-    const categorizedBots = { Capitán: [], Nakamas: [] };
-    const mentionedJid = [];
-
-    // Función para formatear un Nakama
-    const formatNakama = async (number) => {
-      const jid = number + '@s.whatsapp.net';
-      if (!groupParticipants.includes(jid)) return null;
-
-      mentionedJid.push(jid);
-      const data = await db.getSettings(jid);
-      let name = data?.namebot2 || 'Nakama';
-
-      // ¡Ningún Alya a bordo!
-      if (name.toLowerCase().includes('alya')) name = 'Nakama Desconocido';
-
-      return `- [🍖 Nakama *${name}*] › @${number}`;
-    };
-
-    // ─── Capitán (siempre Luffy) ───
-    if (isMainBotInGroup) {
-      mentionedJid.push(mainBotJid);
-      categorizedBots.Capitán.push(
-        `- [👒 *Capitán* Luffy] › @${mainBotJid.split('@')[0]}`
-      );
+        .filter((dir) => {
+          const credsPath = path.join(folderPath, dir, 'creds.json')
+          return fs.existsSync(credsPath)
+        })
+        .map((id) => id.replace(/\D/g, ''))
     }
 
-    // ─── Reclutar Nakamas ───
+    const subs = getBotsFromFolder(folders.Subs)
+
+    const categorizedBots = { Owner: [], Sub: [] }
+    const mentionedJid = []
+
+    const formatBot = async (number, label) => {
+      const jid = number + '@s.whatsapp.net'
+      if (!groupParticipants.includes(jid)) return null
+      mentionedJid.push(jid)
+      const data = await db.getSettings(jid)
+      const name = data?.namebot2 || 'Bot'
+      const handle = `@${number}`
+      return `- [${label} *${name}*] › ${handle}`
+    }
+
+    if (db.getSettings(mainBotJid)) {
+      const name = (await db.getSettings(mainBotJid))?.namebot2
+      const handle = `@${mainBotJid.split('@')[0]}`
+      if (isMainBotInGroup) {
+        mentionedJid.push(mainBotJid)
+        categorizedBots.Owner.push(`- [Owner *${name}*] › ${handle}`)
+      }
+    }
+
     for (const num of subs) {
-      const line = await formatNakama(num);
-      if (line) categorizedBots.Nakamas.push(line);
+      const line = await formatBot(num, 'Sub')
+      if (line) categorizedBots.Sub.push(line)
     }
 
-    const totalSubs = subs.length;
-    const totalEnGrupo = categorizedBots.Capitán.length + categorizedBots.Nakamas.length;
+    const totalCounts = {
+      Owner: 1,
+      Sub: subs.length,
+    }
 
-    // ─── Armar el mensaje pirata ───
-    let mensaje = `🏴‍☠️ *¡TRIPULACIÓN DE LUFFY!* ⚓\n\n`;
-    mensaje += `⚓ Capitán › *1*\n`;
-    mensaje += `🍖 Nakamas › *${totalSubs}*\n\n`;
-    mensaje += `💀 *Piratas en el grupo ›* ${totalEnGrupo}\n`;
+    const totalBots = totalCounts.Owner + totalCounts.Sub
+    const totalInGroup =
+      categorizedBots.Owner.length +
+      categorizedBots.Sub.length
 
-    if (categorizedBots.Capitán.length) mensaje += categorizedBots.Capitán.join('\n') + '\n';
-    if (categorizedBots.Nakamas.length) mensaje += categorizedBots.Nakamas.join('\n') + '\n';
+    let message = `ꕥ Números de Sockets activos *(${totalBots})*\n\n`
+    message += `ੈ❖‧₊˚ Principales › *${totalCounts.Owner}*\n`
+    message += `ੈ✿‧₊˚ Subs › *${totalCounts.Sub}*\n\n`
+    message += `➭ *Bots en el grupo ›* ${totalInGroup}\n`
 
-    mensaje += `\n_— “¡No importa cuántos barcos tengas, lo que importa es la tripulación!”_\n`;
-    mensaje += `_Monkey D. Luffy_`;
+    for (const category of ['Owner', 'Sub']) {
+      if (categorizedBots[category].length) {
+        message += categorizedBots[category].join('\n') + '\n'
+      }
+    }
 
-    // ─── Enviar con el Jolly Roger ───
-    await sock.sendMessage(
-      msg.chat,
-      {
-        image: { url: bannerImage },
-        caption: mensaje,
-        contextInfo: { mentionedJid }
-      },
-      { quoted: msg }
-    );
-  }
+    await sock.sendMessage(msg.chat, { 
+      text: message, 
+      contextInfo: { mentionedJid } 
+    }, { quoted: msg })
+  },
 };
