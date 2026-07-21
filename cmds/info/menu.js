@@ -22,8 +22,8 @@ export default {
         const uptime = clockString(Date.now() - (sock.uptime || Date.now()));
         const totalreg = Object.keys(await db.getUser()).length;
         const venezuelaTime = moment().tz('America/Caracas').format('HH:mm:ss');
+        const link = global.api?.url || '';
 
-        // Agrupar comandos por categoría
         const categories = {};
         for (const cmd of commands) {
             const cat = cmd.category || 'otros';
@@ -43,20 +43,19 @@ export default {
         menuText += `> ⌑ׄ🎖️〪𝆭݀₊ _Alianza:_ ${totalreg} Piratas\n`;
         menuText += `> ⌑ׄ⏳〪𝆭݀₊ _Activo:_ ${uptime}\n`;
         menuText += `> ⌑ׄ🕒〪𝆭݀₊ _Hora:_ ${venezuelaTime} (VZLA)\n`;
+        menuText += `> ⌑ׄ🔗〪𝆭݀₊ _API:_ ${link}\n`;
         menuText += `╰ׅ━ׁ┉ׅ─ׁ┉ׅ─ׁ┉ׅ─ׁ 𝆭˳ּ👒 ׁ─ׅ┉ׁ─ׅ┉ׁ─ׅ┉ׁ━ִ╯\n\n`;
 
         menuText += `* ˳࣪𫆪𫇭֦˚ּ ⠶ 𝗟𝗶𝘀𝘁𝗮 𝗱𝗲 𝗧𝗲𝘀𝗼𝗿𝗼𝘀 ᩡ\n\n`;
 
         const sortedCategories = Object.keys(categories).sort();
         for (const cat of sortedCategories) {
-            // NO filtramos, usamos todos los comandos como en tu menú original
             const cmds = categories[cat];
             if (cmds.length === 0) continue;
 
             menuText += `✿ㅤ໋︵ּㅤׄ⏜ּㅤ֯✿ִㅤ⃞ׄ🧭⃞ㅤִ❀֯ㅤּ⏜ׄㅤּ︵  ✿\n`;
             menuText += `┄ ֺ 〪ᨘ✿🥂 〫࣫〇ׁ┄ \`${cat.toUpperCase()}\` ┄〇ׁ🥂✿ ׅ ۬┄\n`;
 
-            // Ordenar con protección por si command o alias no existen
             cmds.sort((a, b) => {
                 const aName = (a.alias?.[0] || a.command?.[0] || '').toLowerCase();
                 const bName = (b.alias?.[0] || b.command?.[0] || '').toLowerCase();
@@ -64,9 +63,8 @@ export default {
             });
 
             for (const cmd of cmds) {
-                // Usamos alias si existe; si no, command (como hacías antes)
                 const names = cmd.alias || cmd.command || [];
-                if (names.length === 0) continue; // sin nombres no se muestra
+                if (names.length === 0) continue;
 
                 const aliases = names
                     .map(a => prefix + a.split(/[\/#!+.\-]+/).pop().toLowerCase())
@@ -80,8 +78,6 @@ export default {
         menuText += `> *“Si no arriesgas tu vida, no puedes crear un futuro.”*\n`;
         menuText += `> _— Monkey D. Luffy_\n`;
         menuText += `.   ╙᷼─ໍ۪┅֟፝─̥࣪:¨᜔⠣۟⠜¨᜔:࣪─࣮࣪͡┅ꊥ᜔۫⚓ꊥ᜔┅࣮࣪͡─:࣪¨᜔⠣۟⠜¨᜔:࣪─̥፝֟┅۪─᷼ໍ╜`;
-
-        const link = global.api?.url || '';
 
         const contextInfo = {
             mentionedJid: [msg.sender],
@@ -109,7 +105,7 @@ export default {
             : undefined;
 
         await sock.sendMessage(msg.chat, {
-            text: link ? `${menuText}\n\n${link}` : menuText,
+            text: menuText,
             linkPreview,
             contextInfo
         }, { quoted: msg });
