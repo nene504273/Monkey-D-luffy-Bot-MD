@@ -11,7 +11,6 @@ export default {
   category: 'info',
   run: async ({ msg, sock, args, command, text, usedPrefix: prefix }) => {
     try {
-
       const now = new Date();
       const colombianTime = new Date(
         now.toLocaleString('en-US', { timeZone: 'America/Bogota' })
@@ -26,18 +25,21 @@ export default {
       const tiempo2 = moment.tz('America/Bogota').format('hh:mm A');
 
       const botId = sock?.user?.id.split(':')[0] + '@s.whatsapp.net' || '';
+
+      // ── Estilo único para el nombre del bot ─────────
+      const botNameStyled = '୭౿ㅤׁ 🍃ᮢᩥ  𝖬𝗈𝗇𝗄𝖾𝗒 𝖣. 𝖫𝗎𝖿𝖿y .ᐟ  ֺ';
+
+      // Canal (nombre e ID fijos)
+      const channelName = '𝖫𝗎𝖿𝖿𝗒';
+      const channelId = '120363420846835529@newsletter';
+
       const botSettings = await db.getSettings(botId);
-      const botname = botSettings.namebot || '';
-      const botname2 = botSettings.namebot2 || '';
       const banner = botSettings.banner || '';
-      const owner = botSettings.owner || '';
       const link = botSettings.link || '';
 
       const isOficialBot =
-        botId === global?.sock ? global?.sock?.user?.id?.split(':')[0] + '@s.whatsapp.net' : ''
-      const botType = isOficialBot
-        ? 'Owner'
-        : 'Sub Bot';
+        botId === global?.sock ? global?.sock?.user?.id?.split(':')[0] + '@s.whatsapp.net' : '';
+      const botType = isOficialBot ? 'Owner' : 'Sub Bot';
 
       const userr = await db.getUser();
       const users = Object.keys(userr).length || 0;
@@ -47,30 +49,17 @@ export default {
         : 'Desconocido';
       const device = getDevice(msg.key.id);
 
-      const own = await db.getUser(owner);
-
-      let menu = `> *¡ʜᴏʟᴀ!* ${msg.pushName}, como está tu día?, mucho gusto mi nombre es *${botname2}* ʚ♡⃛ɞ(ू•ᴗ•ू❁)*
-
-   ⌒࣪᷼⏜͡  ۪  ࿚ꨪᰰ࿙  ࣭࣪⢏࣭۟⢢࣭ׄ᎐፝֟᎐࣭ׄ⡔࣭۟⡹࣭ׄ  ࿚ꨪᰰ࿙  ۪  ͡⏜ׄ᷼⌒
-
-: ̗̀〄 *ᴅᴇᴠᴇʟᴏᴘᴇʀ ::* ${
-        owner
-          ? !isNaN(owner.replace(/@s\.whatsapp\.net$/, ''))
-            ? `${own.name}`
-            : owner
-          : 'Oculto por privacidad'
-      }
-: ̗̀ꕥ *ᴛɪᴘᴏ ::* ${botType}
-: ̗̀☄︎ *sɪsᴛᴇᴍᴀ/ᴏᴘʀ ::* ${device}
-
-: ̗̀❖ *ᴛɪᴍᴇ ::* ${tiempo}, ${tiempo2}
-: ̗̀❖ *ᴜsᴇʀs ::* ${users.toLocaleString()}
-: ̗̀❖ *ᴍɪ ᴛɪᴇᴍᴘᴏ ::* ${time}
-: ̗̀❖ *ᴜʀʟ ::* ${link}
-
-   ⌒࣪᷼⏜͡  ۪  ࿚ꨪᰰ࿙  ࣭࣪⢏࣭۟⢢࣭ׄ᎐፝֟᎐࣭ׄ⡔࣭۟⡹࣭ׄ  ࿚ꨪᰰ࿙  ۪  ͡⏜ׄ᷼⌒
-
-⋆｡ﾟ☁︎ ｡° *ᴄᴏᴍ꯭ᴀ꯭ɴᴅᴏs* ﾟ｡˚₊ 𓂃\n`;
+      // ── Menú principal (con el estilo decorado) ────
+      let menu = `\n≿────── ≪🍖≫ ──────≾\n`;
+      menu += `¡Hola ${msg.pushName}! Soy *${botNameStyled}*\n`;
+      menu += `⏣ *Desarrollador:* Diego\n`;
+      menu += `⏣ *Tipo:* ${botType}\n`;
+      menu += `⏣ *Dispositivo:* ${device}\n`;
+      menu += `⏣ *Hora:* ${tiempo}, ${tiempo2}\n`;
+      menu += `⏣ *Usuarios:* ${users.toLocaleString()}\n`;
+      menu += `⏣ *Activo:* ${time}\n`;
+      menu += `⏣ *Canal:* ${channelName} (newsletter)\n`;
+      menu += `≿────── ≪🍖≫ ──────≾\n\n`;
 
       const categoryArg = args[0]?.toLowerCase();
       const categories = {};
@@ -82,39 +71,28 @@ export default {
       }
 
       if (categoryArg && !categories[categoryArg]) {
-        return msg.reply(
-          `《✤》 La categoría *${categoryArg}* no fue encontrada.`
-        );
+        return msg.reply(`《✤》 La categoría *${categoryArg}* no fue encontrada.`);
       }
 
       for (const [category, cmds] of Object.entries(categories)) {
         if (categoryArg && category.toLowerCase() !== categoryArg) continue;
         const catName = category.charAt(0).toUpperCase() + category.slice(1);
-         menu += `\n╭╼ׅࣶ፝֟╾╌ֵ╾͜─ํ͜┈ְ ࣭࣪⢏࣭ࣧ⢢࣭ׄ᎐፝֟͟͝᎐࣭ׄ⡔࣭ࣧ⡹࣭࣭ׄ࣪ ְ┈ํ͜─͜╼ꨪᰰ╾࣮╌╼ࣶׅ፝֟╾╮\n│❀ *${catName} ☆(ﾉ◕ヮ◕)ﾉ*\n├╾ׅ╴ׂ╌╶ׅ╌ׂ─ 〫─ׂ┄ׅ╴ׂ╌ׅ╶╼.  ╾ׅ╴ׂ╌╶ׅ╌ׂ\n`;
+        menu += `╭─◂ ${catName} ▸───────────\n`;
         cmds.forEach((cmd) => {
-          const cleanPrefix = prefix
           const aliases = cmd.alias
-            .map((a) => {
-              const aliasClean = a
-                .split(/[\/#!+.\-]+/)
-                .pop()
-                .toLowerCase()
-              return `${prefix}${aliasClean}`
-            })
-            .join(' › ')
-          menu += `│✿ ${aliases} ${cmd.uso ? `+ ${cmd.uso}` : ''}\n`
-          menu += `> ✺ ${cmd.desc}\n`
-        })
-          menu += `╰╼ׅࣶ፝֟╾╌ֵ╾͜─ํ͜┈ְ ࣭࣪⢏࣭ࣧ⢢࣭ׄ᎐፝֟͟͝᎐࣭ׄ⡔࣭ࣧ⡹࣭ׄ ְ┈ํ͜─͜╼ꨪᰰ╾࣮╌╼ࣶׅ፝֟╾╯ \n`
+            .map((a) => `${prefix}${a.split(/[\/#!+.\-]+/).pop().toLowerCase()}`)
+            .join(' › ');
+          menu += `│ ✦ ${aliases} ${cmd.uso ? `+ ${cmd.uso}` : ''}\n`;
+          menu += `│   ↳ ${cmd.desc}\n`;
+        });
+        menu += `╰────────────────────\n\n`;
       }
 
-      menu += `\n> *${botname2} desarrollado por Diego* ૮(˶ᵔᵕᵔ˶)ა`;
+      menu += `≿────── ≪🍖≫ ──────≾\n*${botNameStyled}* – ¡Rumbo al One Piece!`;
+
+      const contextBase = { mentionedJid: null, isForwarded: false };
 
       const isVideo = banner.includes('.mp4') || banner.includes('.gif') || banner.includes('.webm');
-      const contextBase = {
-        mentionedJid: null,
-        isForwarded: false
-      };
 
       if (isVideo) {
         await sock.sendMessage(
@@ -123,10 +101,25 @@ export default {
           { quoted: msg }
         );
       } else {
-        await sock.sendMessage(msg.chat, { 
-          text: menu.trim(), 
-          linkPreview: link && banner ? (await prepareWAMessageMedia({ image: { url: banner } }, { upload: sock.waUploadToServer, mediaTypeOverride: 'thumbnail-link' }).then(({ imageMessage }) => ({ 'canonical-url': link, 'matched-text': link, title: botname, description: `${botname2}, ©ㅤׄ  𝖡𝗎𝗂𝗅𝗍 𝗐𝗂𝗍𝗁 💫 𝖻𝗒 Nene ꛆ𖹭`, jpegThumbnail: imageMessage?.jpegThumbnail ? Buffer.from(imageMessage.jpegThumbnail) : undefined, highQualityThumbnail: imageMessage || undefined }))) : undefined, 
-          contextInfo: contextBase
+        // En el link preview también usamos el estilo
+        await sock.sendMessage(msg.chat, {
+          text: menu.trim(),
+          linkPreview: link && banner
+            ? await prepareWAMessageMedia(
+                { image: { url: banner } },
+                { upload: sock.waUploadToServer, mediaTypeOverride: 'thumbnail-link' }
+              ).then(({ imageMessage }) => ({
+                'canonical-url': link,
+                'matched-text': link,
+                title: botNameStyled,             // Solo el estilo
+                description: `${botNameStyled} – Bot de WhatsApp`,
+                jpegThumbnail: imageMessage?.jpegThumbnail
+                  ? Buffer.from(imageMessage.jpegThumbnail)
+                  : undefined,
+                highQualityThumbnail: imageMessage || undefined,
+              }))
+            : undefined,
+          contextInfo: contextBase,
         }, { quoted: msg });
       }
     } catch (e) {
