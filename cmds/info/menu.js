@@ -1,52 +1,54 @@
-import db from "#db"
-import { getDevice, prepareWAMessageMedia } from 'baileys';
-import fs from 'fs';
-import fetch from 'node-fetch';
-import axios from 'axios';
-import moment from 'moment-timezone';
-import { commands } from '../../lib/system/comandos.js';
+import db from "#db";
+import { getDevice } from "baileys";
+import fs from "fs";
+import fetch from "node-fetch";
+import axios from "axios";
+import moment from "moment-timezone";
+import { commands } from "../../lib/system/comandos.js";
 
 export default {
-  command: ['allmenu', 'help', 'menu'],
-  category: 'info',
+  command: ["allmenu", "help", "menu"],
+  category: "info",
   run: async ({ msg, sock, args, command, text, usedPrefix: prefix }) => {
     try {
       const now = new Date();
       const colombianTime = new Date(
-        now.toLocaleString('en-US', { timeZone: 'America/Bogota' })
+        now.toLocaleString("en-US", { timeZone: "America/Bogota" })
       );
       const tiempo = colombianTime
-        .toLocaleDateString('en-GB', {
-          day: '2-digit',
-          month: 'short',
-          year: 'numeric',
+        .toLocaleDateString("en-GB", {
+          day: "2-digit",
+          month: "short",
+          year: "numeric",
         })
-        .replace(/,/g, '');
-      const tiempo2 = moment.tz('America/Bogota').format('hh:mm A');
+        .replace(/,/g, "");
+      const tiempo2 = moment.tz("America/Bogota").format("hh:mm A");
 
-      const botId = sock?.user?.id.split(':')[0] + '@s.whatsapp.net' || '';
+      const botId = sock?.user?.id.split(":")[0] + "@s.whatsapp.net" || "";
 
       // ── Estilo único para Luffy ──
-      const botNameStyled = '୭౿ㅤׁ 🍃ᮢᩥ  𝖬𝗈𝗇𝗄𝖾𝗒 𝖣. 𝖫𝗎𝖿𝖿y .ᐟ  ֺ';
+      const botNameStyled = "୭౿ㅤׁ 🍃ᮢᩥ  𝖬𝗈𝗇𝗄𝖾𝗒 𝖣. 𝖫𝗎𝖿𝖿y .ᐟ  ֺ";
 
       // ── Canal ──
-      const channelName = '𝖫𝗎𝖿𝖿𝗒';
-      const channelId = '120363420846835529@newsletter';
+      const channelName = "𝖫𝗎𝖿𝖿𝗒";
+      const channelId = "120363420846835529@newsletter";
 
       // 🖼️ Imagen fija (banner)
-      const banner = 'https://cdn.dev-ander.xyz/a/y7PO.png';
-      const link = (await db.getSettings(botId)).link || '';   // El resto de la info de DB
+      const banner = "https://cdn.dev-ander.xyz/a/y7PO.png";
+      const link = (await db.getSettings(botId)).link || "";
 
       const isOficialBot =
-        botId === global?.sock ? global?.sock?.user?.id?.split(':')[0] + '@s.whatsapp.net' : '';
-      const botType = isOficialBot ? 'Owner' : 'Sub Bot';
+        botId === global?.sock
+          ? global?.sock?.user?.id?.split(":")[0] + "@s.whatsapp.net"
+          : "";
+      const botType = isOficialBot ? "Owner" : "Sub Bot";
 
       const userr = await db.getUser();
       const users = Object.keys(userr).length || 0;
 
       const time = sock.uptime
         ? formatearMs(Date.now() - sock.uptime)
-        : 'Desconocido';
+        : "Desconocido";
       const device = getDevice(msg.key.id);
 
       // ── Menú con estilo Luffy ──
@@ -65,7 +67,7 @@ export default {
       const categories = {};
 
       for (const command of commands) {
-        const category = command.category || 'otros';
+        const category = command.category || "otros";
         if (!categories[category]) categories[category] = [];
         categories[category].push(command);
       }
@@ -80,9 +82,12 @@ export default {
         menu += `╭─◂ ${catName} ▸───────────\n`;
         cmds.forEach((cmd) => {
           const aliases = cmd.alias
-            .map((a) => `${prefix}${a.split(/[\/#!+.\-]+/).pop().toLowerCase()}`)
-            .join(' › ');
-          menu += `│ ✦ ${aliases} ${cmd.uso ? `+ ${cmd.uso}` : ''}\n`;
+            .map(
+              (a) =>
+                `${prefix}${a.split(/[\/#!+.\-]+/).pop().toLowerCase()}`
+            )
+            .join(" › ");
+          menu += `│ ✦ ${aliases} ${cmd.uso ? `+ ${cmd.uso}` : ""}\n`;
           menu += `│   ↳ ${cmd.desc}\n`;
         });
         menu += `╰────────────────────\n\n`;
@@ -100,32 +105,36 @@ export default {
         },
       };
 
-      // Enviamos la imagen siempre como vista previa (no es video)
+      // ── Obtener la imagen como buffer ──
+      const imageResponse = await axios.get(banner, {
+        responseType: "arraybuffer",
+      });
+      const imageBuffer = Buffer.from(imageResponse.data);
+
+      // URL que se usará para la vista previa (si no hay link, usamos el banner)
+      const previewUrl = link || banner;
+
+      // ── Enviar mensaje con vista previa de enlace ──
       await sock.sendMessage(
         msg.chat,
         {
           text: menu.trim(),
-          linkPreview: link
-            ? await prepareWAMessageMedia(
-                { image: { url: banner } },
-                { upload: sock.waUploadToServer, mediaTypeOverride: 'thumbnail-link' }
-              ).then(({ imageMessage }) => ({
-                'canonical-url': link,
-                'matched-text': link,
-                title: botNameStyled,
-                description: `${botNameStyled} – Bot de WhatsApp`,
-                jpegThumbnail: imageMessage?.jpegThumbnail
-                  ? Buffer.from(imageMessage.jpegThumbnail)
-                  : undefined,
-                highQualityThumbnail: imageMessage || undefined,
-              }))
-            : undefined,
+          linkPreview: {
+            "canonical-url": previewUrl,
+            "matched-text": previewUrl,
+            title: botNameStyled,
+            description: `${botNameStyled} – Bot de WhatsApp`,
+            jpegThumbnail: imageBuffer,
+          },
           contextInfo: contextBase,
         },
         { quoted: msg }
       );
     } catch (e) {
-      await msg.reply(msgglobal);
+      console.error(e);
+      await msg.reply(
+        "❌ Ocurrió un error al generar el menú. Por favor, intenta de nuevo más tarde."
+      );
     }
   },
 };
@@ -137,5 +146,5 @@ function formatearMs(ms) {
   const dias = Math.floor(horas / 24);
   return [dias && `${dias}d`, `${horas % 24}h`, `${minutos % 60}m`, `${segundos % 60}s`]
     .filter(Boolean)
-    .join(' ');
+    .join(" ");
 }
