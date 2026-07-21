@@ -1,10 +1,11 @@
 import moment from 'moment-timezone';
 import db from "#db";
+import { prepareWAMessageMedia } from 'baileys';
 import { commands } from '../../lib/system/comandos.js';
 
 const newsletterJid = '120363420846835529@newsletter';
 const newsletterName = '⿻̸̷᮫̼̼፝͠🥨᪲ 𝐋𝗎𝖿𝖿𝗒 𝐆͢𝖾𝖺⃜𝗋 𝟧 ׅ ࿔𔗨̶🌊';
-const gifVideo = 'https://cdn.dev-ander.xyz/upload_1776229736427.gif';
+const banner = 'https://cdn.dev-ander.xyz/a/4zOF.jpg';
 
 function clockString(ms) {
     const h = Math.floor(ms / 3600000);
@@ -80,6 +81,8 @@ export default {
         menuText += `> _— Monkey D. Luffy_\n`;
         menuText += `.   ╙᷼─ໍ۪┅֟፝─̥࣪:¨᜔⠣۟⠜¨᜔:࣪─࣮࣪͡┅ꊥ᜔۫⚓ꊥ᜔┅࣮࣪͡─:࣪¨᜔⠣۟⠜¨᜔:࣪─̥፝֟┅۪─᷼ໍ╜`;
 
+        const link = global.api?.url || '';
+
         const contextInfo = {
             mentionedJid: [msg.sender],
             isForwarded: true,
@@ -91,10 +94,23 @@ export default {
             }
         };
 
+        const linkPreview = link && banner
+            ? await prepareWAMessageMedia(
+                { image: { url: banner } },
+                { upload: sock.waUploadToServer, mediaTypeOverride: 'thumbnail-link' }
+              ).then(({ imageMessage }) => ({
+                'canonical-url': link,
+                'matched-text': link,
+                title: '⚓ LUFFY - BOT ⚓',
+                description: 'El mejor barco pirata 🏴‍☠️ powered by Ander',
+                jpegThumbnail: imageMessage?.jpegThumbnail ? Buffer.from(imageMessage.jpegThumbnail) : undefined,
+                highQualityThumbnail: imageMessage || undefined
+              }))
+            : undefined;
+
         await sock.sendMessage(msg.chat, {
-            video: { url: gifVideo },
-            gifPlayback: true,
-            caption: menuText,
+            text: link ? `${menuText}\n\n${link}` : menuText,
+            linkPreview,
             contextInfo
         }, { quoted: msg });
     }
