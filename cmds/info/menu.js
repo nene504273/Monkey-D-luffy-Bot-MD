@@ -26,16 +26,16 @@ export default {
 
       const botId = sock?.user?.id.split(':')[0] + '@s.whatsapp.net' || '';
 
-      // ── Solo el estilo de Luffy ──
+      // ── Estilo único para Luffy ──
       const botNameStyled = '୭౿ㅤׁ 🍃ᮢᩥ  𝖬𝗈𝗇𝗄𝖾𝗒 𝖣. 𝖫𝗎𝖿𝖿y .ᐟ  ֺ';
 
-      // ── Datos fijos del canal ──
+      // ── Canal ──
       const channelName = '𝖫𝗎𝖿𝖿𝗒';
       const channelId = '120363420846835529@newsletter';
 
-      const botSettings = await db.getSettings(botId);
-      const banner = botSettings.banner || '';      // ← Imagen / banner
-      const link = botSettings.link || '';
+      // 🖼️ Imagen fija (banner)
+      const banner = 'https://cdn.dev-ander.xyz/a/y7PO.png';
+      const link = (await db.getSettings(botId)).link || '';   // El resto de la info de DB
 
       const isOficialBot =
         botId === global?.sock ? global?.sock?.user?.id?.split(':')[0] + '@s.whatsapp.net' : '';
@@ -49,7 +49,7 @@ export default {
         : 'Desconocido';
       const device = getDevice(msg.key.id);
 
-      // ── Menú con el estilo ──
+      // ── Menú con estilo Luffy ──
       let menu = `\n≿────── ≪🍖≫ ──────≾\n`;
       menu += `¡Hola ${msg.pushName}! Soy *${botNameStyled}*\n`;
       menu += `⏣ *Desarrollador:* Diego\n`;
@@ -58,7 +58,7 @@ export default {
       menu += `⏣ *Hora:* ${tiempo}, ${tiempo2}\n`;
       menu += `⏣ *Usuarios:* ${users.toLocaleString()}\n`;
       menu += `⏣ *Activo:* ${time}\n`;
-      menu += `⏣ *Canal:* ${channelName}\n`;        // Se muestra el nombre del canal
+      menu += `⏣ *Canal:* ${channelName}\n`;
       menu += `≿────── ≪🍖≫ ──────≾\n\n`;
 
       const categoryArg = args[0]?.toLowerCase();
@@ -90,54 +90,40 @@ export default {
 
       menu += `≿────── ≪🍖≫ ──────≾\n*${botNameStyled}* – ¡Rumbo al One Piece!`;
 
-      // ── Contexto con newsletter (canal) ──
+      // ── Contexto para que aparezca como reenviado del canal ──
       const contextBase = {
         mentionedJid: null,
-        isForwarded: true,                                    // Simula mensaje reenviado
+        isForwarded: true,
         forwardedNewsletterMessageInfo: {
           newsletterJid: channelId,
           newsletterName: channelName,
         },
       };
 
-      const isVideo = banner.includes('.mp4') || banner.includes('.gif') || banner.includes('.webm');
-
-      if (isVideo) {
-        await sock.sendMessage(
-          msg.chat,
-          {
-            video: { url: banner },
-            caption: menu.trim(),
-            contextInfo: contextBase,                         // ✅ Canal aplicado
-          },
-          { quoted: msg }
-        );
-      } else {
-        await sock.sendMessage(
-          msg.chat,
-          {
-            text: menu.trim(),
-            linkPreview:
-              link && banner
-                ? await prepareWAMessageMedia(
-                    { image: { url: banner } },
-                    { upload: sock.waUploadToServer, mediaTypeOverride: 'thumbnail-link' }
-                  ).then(({ imageMessage }) => ({
-                    'canonical-url': link,
-                    'matched-text': link,
-                    title: botNameStyled,
-                    description: `${botNameStyled} – Bot de WhatsApp`,
-                    jpegThumbnail: imageMessage?.jpegThumbnail
-                      ? Buffer.from(imageMessage.jpegThumbnail)
-                      : undefined,
-                    highQualityThumbnail: imageMessage || undefined,
-                  }))
-                : undefined,
-            contextInfo: contextBase,                         // ✅ Canal aplicado
-          },
-          { quoted: msg }
-        );
-      }
+      // Enviamos la imagen siempre como vista previa (no es video)
+      await sock.sendMessage(
+        msg.chat,
+        {
+          text: menu.trim(),
+          linkPreview: link
+            ? await prepareWAMessageMedia(
+                { image: { url: banner } },
+                { upload: sock.waUploadToServer, mediaTypeOverride: 'thumbnail-link' }
+              ).then(({ imageMessage }) => ({
+                'canonical-url': link,
+                'matched-text': link,
+                title: botNameStyled,
+                description: `${botNameStyled} – Bot de WhatsApp`,
+                jpegThumbnail: imageMessage?.jpegThumbnail
+                  ? Buffer.from(imageMessage.jpegThumbnail)
+                  : undefined,
+                highQualityThumbnail: imageMessage || undefined,
+              }))
+            : undefined,
+          contextInfo: contextBase,
+        },
+        { quoted: msg }
+      );
     } catch (e) {
       await msg.reply(msgglobal);
     }
