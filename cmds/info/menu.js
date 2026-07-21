@@ -48,19 +48,26 @@ export default {
 
         const sortedCategories = Object.keys(categories).sort();
         for (const cat of sortedCategories) {
-            // 🔥 Filtrar solo comandos que tengan la propiedad 'command' con al menos un elemento
-            const validCmds = categories[cat].filter(cmd => cmd.command && cmd.command.length > 0);
-            if (validCmds.length === 0) continue; // omitir categorías vacías
+            // NO filtramos, usamos todos los comandos como en tu menú original
+            const cmds = categories[cat];
+            if (cmds.length === 0) continue;
 
             menuText += `✿ㅤ໋︵ּㅤׄ⏜ּㅤ֯✿ִㅤ⃞ׄ🧭⃞ㅤִ❀֯ㅤּ⏜ׄㅤּ︵  ✿\n`;
             menuText += `┄ ֺ 〪ᨘ✿🥂 〫࣫〇ׁ┄ \`${cat.toUpperCase()}\` ┄〇ׁ🥂✿ ׅ ۬┄\n`;
 
-            // Ordenar por el primer nombre del comando
-            const cmds = validCmds.sort((a, b) => a.command[0].localeCompare(b.command[0]));
+            // Ordenar con protección por si command o alias no existen
+            cmds.sort((a, b) => {
+                const aName = (a.alias?.[0] || a.command?.[0] || '').toLowerCase();
+                const bName = (b.alias?.[0] || b.command?.[0] || '').toLowerCase();
+                return aName.localeCompare(bName);
+            });
 
             for (const cmd of cmds) {
-                // Construir los alias con el prefijo
-                const aliases = cmd.alias
+                // Usamos alias si existe; si no, command (como hacías antes)
+                const names = cmd.alias || cmd.command || [];
+                if (names.length === 0) continue; // sin nombres no se muestra
+
+                const aliases = names
                     .map(a => prefix + a.split(/[\/#!+.\-]+/).pop().toLowerCase())
                     .join(' › ');
                 menuText += `│ ᗢׁ̇ᰍ〪֙  ᳝ ׁ \`\`\`${aliases}\`\`\`\n`;
