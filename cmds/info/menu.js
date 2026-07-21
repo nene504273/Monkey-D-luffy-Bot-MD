@@ -26,15 +26,15 @@ export default {
 
       const botId = sock?.user?.id.split(':')[0] + '@s.whatsapp.net' || '';
 
-      // ── Estilo único para el nombre del bot ─────────
+      // ── Solo el estilo de Luffy ──
       const botNameStyled = '୭౿ㅤׁ 🍃ᮢᩥ  𝖬𝗈𝗇𝗄𝖾𝗒 𝖣. 𝖫𝗎𝖿𝖿y .ᐟ  ֺ';
 
-      // Canal (nombre e ID fijos)
+      // ── Datos fijos del canal ──
       const channelName = '𝖫𝗎𝖿𝖿𝗒';
       const channelId = '120363420846835529@newsletter';
 
       const botSettings = await db.getSettings(botId);
-      const banner = botSettings.banner || '';
+      const banner = botSettings.banner || '';      // ← Imagen / banner
       const link = botSettings.link || '';
 
       const isOficialBot =
@@ -49,7 +49,7 @@ export default {
         : 'Desconocido';
       const device = getDevice(msg.key.id);
 
-      // ── Menú principal (con el estilo decorado) ────
+      // ── Menú con el estilo ──
       let menu = `\n≿────── ≪🍖≫ ──────≾\n`;
       menu += `¡Hola ${msg.pushName}! Soy *${botNameStyled}*\n`;
       menu += `⏣ *Desarrollador:* Diego\n`;
@@ -58,7 +58,7 @@ export default {
       menu += `⏣ *Hora:* ${tiempo}, ${tiempo2}\n`;
       menu += `⏣ *Usuarios:* ${users.toLocaleString()}\n`;
       menu += `⏣ *Activo:* ${time}\n`;
-      menu += `⏣ *Canal:* ${channelName} (newsletter)\n`;
+      menu += `⏣ *Canal:* ${channelName}\n`;        // Se muestra el nombre del canal
       menu += `≿────── ≪🍖≫ ──────≾\n\n`;
 
       const categoryArg = args[0]?.toLowerCase();
@@ -90,37 +90,53 @@ export default {
 
       menu += `≿────── ≪🍖≫ ──────≾\n*${botNameStyled}* – ¡Rumbo al One Piece!`;
 
-      const contextBase = { mentionedJid: null, isForwarded: false };
+      // ── Contexto con newsletter (canal) ──
+      const contextBase = {
+        mentionedJid: null,
+        isForwarded: true,                                    // Simula mensaje reenviado
+        forwardedNewsletterMessageInfo: {
+          newsletterJid: channelId,
+          newsletterName: channelName,
+        },
+      };
 
       const isVideo = banner.includes('.mp4') || banner.includes('.gif') || banner.includes('.webm');
 
       if (isVideo) {
         await sock.sendMessage(
           msg.chat,
-          { video: { url: banner }, caption: menu.trim(), contextInfo: contextBase },
+          {
+            video: { url: banner },
+            caption: menu.trim(),
+            contextInfo: contextBase,                         // ✅ Canal aplicado
+          },
           { quoted: msg }
         );
       } else {
-        // En el link preview también usamos el estilo
-        await sock.sendMessage(msg.chat, {
-          text: menu.trim(),
-          linkPreview: link && banner
-            ? await prepareWAMessageMedia(
-                { image: { url: banner } },
-                { upload: sock.waUploadToServer, mediaTypeOverride: 'thumbnail-link' }
-              ).then(({ imageMessage }) => ({
-                'canonical-url': link,
-                'matched-text': link,
-                title: botNameStyled,             // Solo el estilo
-                description: `${botNameStyled} – Bot de WhatsApp`,
-                jpegThumbnail: imageMessage?.jpegThumbnail
-                  ? Buffer.from(imageMessage.jpegThumbnail)
-                  : undefined,
-                highQualityThumbnail: imageMessage || undefined,
-              }))
-            : undefined,
-          contextInfo: contextBase,
-        }, { quoted: msg });
+        await sock.sendMessage(
+          msg.chat,
+          {
+            text: menu.trim(),
+            linkPreview:
+              link && banner
+                ? await prepareWAMessageMedia(
+                    { image: { url: banner } },
+                    { upload: sock.waUploadToServer, mediaTypeOverride: 'thumbnail-link' }
+                  ).then(({ imageMessage }) => ({
+                    'canonical-url': link,
+                    'matched-text': link,
+                    title: botNameStyled,
+                    description: `${botNameStyled} – Bot de WhatsApp`,
+                    jpegThumbnail: imageMessage?.jpegThumbnail
+                      ? Buffer.from(imageMessage.jpegThumbnail)
+                      : undefined,
+                    highQualityThumbnail: imageMessage || undefined,
+                  }))
+                : undefined,
+            contextInfo: contextBase,                         // ✅ Canal aplicado
+          },
+          { quoted: msg }
+        );
       }
     } catch (e) {
       await msg.reply(msgglobal);
