@@ -102,7 +102,7 @@ export default {
                 'canonical-url': link,
                 'matched-text': link,
                 title: '⚓ LUFFY - BOT ⚓',
-                description: 'El mejor barco pirata 🏴‍☠️ powered by Ander',
+                description: 'El mejor barco pirata 🏴‍☠️ powered by Luffy',
                 jpegThumbnail: imageMessage?.jpegThumbnail ? Buffer.from(imageMessage.jpegThumbnail) : undefined,
                 highQualityThumbnail: imageMessage || undefined
               }))
