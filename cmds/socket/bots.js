@@ -77,10 +77,11 @@ export default {
       categorizedBots.Owner.length +
       categorizedBots.Sub.length
 
-    let message = `ꕥ Números de Sockets activos *(${totalBots})*\n\n`
-    message += `ੈ❖‧₊˚ Principales › *${totalCounts.Owner}*\n`
-    message += `ੈ✿‧₊˚ Subs › *${totalCounts.Sub}*\n\n`
-    message += `➭ *Bots en el grupo ›* ${totalInGroup}\n`
+    // Mensaje con estilo simple y directo
+    let message = `Sockets activos: *${totalBots}*\n\n`
+    message += `- Principales: *${totalCounts.Owner}*\n`
+    message += `- Subs: *${totalCounts.Sub}*\n\n`
+    message += `Bots en el grupo: *${totalInGroup}*\n`
 
     for (const category of ['Owner', 'Sub']) {
       if (categorizedBots[category].length) {
