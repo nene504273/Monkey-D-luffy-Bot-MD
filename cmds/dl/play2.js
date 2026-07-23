@@ -43,23 +43,24 @@ export default {
 
       await sock.sendMessage(msg.chat, { image: thumbBuffer, caption }, { quoted: msg })
 
-      const endpoint = `${api.url}/dl/ytmp4?url=${encodeURIComponent(url)}&quality=auto&key=${api.key}`
-      const res = await fetch(endpoint, {
+      // 🔁 Nueva API de descarga
+      const apiUrl = `https://api.alyacore.xyz/dl/ytmp4?url=${encodeURIComponent(url)}&quality=480&key=LUFFY-FIX67`
+      const res = await fetch(apiUrl, {
         headers: {
           'User-Agent': 'Mozilla/5.0 (Linux; Android 15; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36',
           'Accept': 'application/json'
         }
       }).then(r => r.json())
 
-      if (!res?.status || !res.result?.downloadUrl) {
+      if (!res?.status || !res.data?.dl) {
         return msg.reply('《✧》 No se pudo descargar el *video*, intenta más tarde.')
       }
 
-      const videoBuffer = await getBuffer(res.result.downloadUrl)
+      const videoBuffer = await getBuffer(res.data.dl)
 
       const mensaje = {
-        video: { url: res.result.downloadUrl },
-        fileName: `${res.result?.title || 'video'}.mp4`,
+        video: { url: res.data.dl },
+        fileName: `${res.data?.title || 'video'}.mp4`,
         mimetype: 'video/mp4'
       }
 
