@@ -28,7 +28,7 @@ const withRetry = async (fn, attempt = 1) => {
 const searchStickerly = (query) =>
   withRetry(async () => {
     const { data } = await axios.get('https://api.alyacore.xyz/stickerly/search', {
-      params: { query, key: 'LUFFY-FIX67' }  // 🔑 key fija
+      params: { query, key: 'LUFFY-FIX67' }
     })
     return data
   })
@@ -36,7 +36,7 @@ const searchStickerly = (query) =>
 const getPackDetail = (url) =>
   withRetry(async () => {
     const { data } = await axios.get('https://api.alyacore.xyz/stickerly/detail', {
-      params: { url, key: 'LUFFY-FIX67' }   // 🔑 key fija
+      params: { url, key: 'LUFFY-FIX67' }
     })
     return data
   })
@@ -44,19 +44,18 @@ const getPackDetail = (url) =>
 export default {
   command: ['stickerpack', 'spack'],
   category: 'utils',
-  run: async (client, m, args, command, text, prefix) => {
+  // 🔁 Ahora usa la misma estructura que play2: { msg, sock, args, command, text, prefix }
+  run: async ({ msg, sock, args, command, text, prefix }) => {
     try {
       if (!text)
-        return client.reply(
-          m.chat,
-          `❖ Ingresa un texto para buscar stickers.\n> Ejemplo: *${prefix + command} Alya Kujou*`,
-          m
+        return msg.reply(
+          `❖ Ingresa un texto para buscar stickers.\n> Ejemplo: *${prefix + command} Alya Kujou*`
         )
 
-      await m.react('🕒')
+      await msg.react('🕒')
 
-      const user = globalThis.db.data.users[m.sender] || {}
-      const name = user.name || m.sender.split('@')[0]
+      const user = globalThis.db?.data?.users?.[msg.sender] || {}
+      const name = user.name || msg.sender.split('@')[0]
       const packName = user.metadatos || global.dev
       const author = user.metadatos2 || `@${name}`
 
@@ -65,13 +64,13 @@ export default {
       const freePacks = resultados.filter(p => !p.isPaid)
 
       if (!freePacks.length)
-        return client.reply(m.chat, `❖ No se encontraron stickers gratuitos para *${text}*.`, m)
+        return msg.reply(`❖ No se encontraron stickers gratuitos para *${text}*.`)
 
       const bestPack = freePacks[0]
       const detail = await getPackDetail(bestPack.url)
 
       if (!detail.status || !detail.detalles?.stickers?.length)
-        return client.reply(m.chat, `❖ No se pudo obtener el paquete de stickers.`, m)
+        return msg.reply(`❖ No se pudo obtener el paquete de stickers.`)
 
       const { detalles } = detail
       const stickers = detalles.stickers.slice(0, 30)
@@ -94,15 +93,15 @@ export default {
         .map(r => r.value)
 
       if (!stickerList.length)
-        return client.reply(m.chat, `❖ No se pudieron procesar los stickers.`, m)
+        return msg.reply(`❖ No se pudieron procesar los stickers.`)
 
       const cover = await sharp(await toBuffer(detalles.thumbnailUrl))
         .resize(96, 96, { fit: 'cover' })
         .webp({ quality: 80 })
         .toBuffer()
 
-      await client.sendMessage(
-        m.chat,
+      await sock.sendMessage(
+        msg.chat,
         {
           stickerPack: {
             name: packName,
@@ -112,15 +111,17 @@ export default {
             stickers: stickerList
           }
         },
-        { quoted: m }
+        { quoted: msg }
       )
 
-      await m.react('✔️')
+      await msg.react('✔️')
 
     } catch (e) {
       console.error('[spack]', e)
-      await m.react('✖️')
-      return m.reply(msgglobal) // Asegúrate de que msgglobal esté definido o cámbialo
+      await msg.react('✖️').catch(() => {})
+      // Asegúrate de que msgglobal esté definido, o usa un fallback
+      const errorMsg = typeof msgglobal !== 'undefined' ? msgglobal : '❖ Ocurrió un error inesperado.'
+      return msg.reply(errorMsg).catch(() => {})
     }
   }
 }
