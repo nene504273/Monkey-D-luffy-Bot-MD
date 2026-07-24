@@ -44,19 +44,21 @@ const getPackDetail = (url) =>
 export default {
   command: ['stickerpack', 'spack'],
   category: 'utils',
-  // 🔁 Ahora usa la misma estructura que play2: { msg, sock, args, command, text, prefix }
-  run: async ({ msg, sock, args, command, text, prefix }) => {
+  run: async ({ msg, sock, args, command, text }) => {
     try {
+      // ⚠️ Obtener el prefijo de forma segura
+      const prefix = (global.prefix || '.').trim()
+      const cmd = command || 'spack'
+
       if (!text)
         return msg.reply(
-          `❖ Ingresa un texto para buscar stickers.\n> Ejemplo: *${prefix + command} Alya Kujou*`
+          `❖ Ingresa un texto para buscar stickers.\n> Ejemplo: *${prefix + cmd} Alya Kujou*`
         )
 
-      await msg.react('🕒')
-
-      const user = globalThis.db?.data?.users?.[msg.sender] || {}
-      const name = user.name || msg.sender.split('@')[0]
-      const packName = user.metadatos || global.dev
+      // Acceso seguro a la DB del usuario
+      const user = (globalThis.db?.data?.users?.[msg.sender]) || {}
+      const name = user.name || msg.sender?.split('@')[0] || 'Usuario'
+      const packName = user.metadatos || global.dev || 'Sticker Pack'
       const author = user.metadatos2 || `@${name}`
 
       const search = await searchStickerly(text)
@@ -106,7 +108,7 @@ export default {
           stickerPack: {
             name: packName,
             publisher: author,
-            description: `${detalles.name} • ${global.botname}`,
+            description: `${detalles.name} • ${global.botname || ''}`,
             cover,
             stickers: stickerList
           }
@@ -114,14 +116,13 @@ export default {
         { quoted: msg }
       )
 
-      await msg.react('✔️')
+      await msg.reply('✅ Paquete de stickers enviado.')
 
     } catch (e) {
-      console.error('[spack]', e)
-      await msg.react('✖️').catch(() => {})
-      // Asegúrate de que msgglobal esté definido, o usa un fallback
-      const errorMsg = typeof msgglobal !== 'undefined' ? msgglobal : '❖ Ocurrió un error inesperado.'
-      return msg.reply(errorMsg).catch(() => {})
+      console.error('[stickerpack] Error:', e)
+      // Mostrar el error real si es de la API
+      const errorMsg = e.response?.data?.message || e.message || 'Error desconocido'
+      return msg.reply(`❖ Ocurrió un error: ${errorMsg}`).catch(() => {})
     }
   }
 }
