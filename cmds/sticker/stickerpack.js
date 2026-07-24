@@ -7,10 +7,16 @@ const toBuffer = async (url) =>
   Buffer.from((await axios.get(url, { responseType: 'arraybuffer' })).data)
 
 const toWebp = async (buffer, isAnimated = false) => {
-  const base = sharp(buffer, isAnimated ? { animated: true } : {})
-    .resize(512, 512, { fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } })
-    .webp({ quality: 80, ...(isAnimated ? { loop: 0 } : {}) })
-  return base.toBuffer()
+  try {
+    const base = sharp(buffer, isAnimated ? { animated: true } : {})
+      .resize(512, 512, { fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } })
+      .webp({ quality: 80, ...(isAnimated ? { loop: 0 } : {}) })
+    return await base.toBuffer()
+  } catch (e) {
+    // Si sharp no puede procesar el buffer (ej. GIF animado corrupto) retornamos null para filtrarlo
+    console.error('[toWebp] Error:', e.message)
+    return null
+  }
 }
 
 const withRetry = async (fn, attempt = 1) => {
@@ -46,7 +52,6 @@ export default {
   category: 'utils',
   run: async ({ msg, sock, args, command, text }) => {
     try {
-      // ⚠️ Obtener el prefijo de forma segura
       const prefix = (global.prefix || '.').trim()
       const cmd = command || 'spack'
 
@@ -55,7 +60,6 @@ export default {
           `❖ Ingresa un texto para buscar stickers.\n> Ejemplo: *${prefix + cmd} Alya Kujou*`
         )
 
-      // Acceso seguro a la DB del usuario
       const user = (globalThis.db?.data?.users?.[msg.sender]) || {}
       const name = user.name || msg.sender?.split('@')[0] || 'Usuario'
       const packName = user.metadatos || global.dev || 'Sticker Pack'
@@ -77,11 +81,13 @@ export default {
       const { detalles } = detail
       const stickers = detalles.stickers.slice(0, 30)
 
+      // Convertir stickers, omitiendo los que fallen
       const stickerList = (
         await Promise.allSettled(
           stickers.map(async (s) => {
             const buf = await toBuffer(s.imageUrl)
             const webp = await toWebp(buf, s.isAnimated)
+            if (!webp) return null  // señal para filtrar
             return {
               sticker: webp,
               isAnimated: s.isAnimated || false,
@@ -91,36 +97,41 @@ export default {
           })
         )
       )
-        .filter(r => r.status === 'fulfilled')
+        .filter(r => r.status === 'fulfilled' && r.value !== null)
         .map(r => r.value)
 
       if (!stickerList.length)
-        return msg.reply(`❖ No se pudieron procesar los stickers.`)
+        return msg.reply(`❖ No se pudieron procesar los stickers (posiblemente formatos no soportados).`)
 
-      const cover = await sharp(await toBuffer(detalles.thumbnailUrl))
-        .resize(96, 96, { fit: 'cover' })
-        .webp({ quality: 80 })
-        .toBuffer()
+      // Intentar generar cover, si falla se ignora
+      let cover = null
+      try {
+        const coverBuffer = await toBuffer(detalles.thumbnailUrl)
+        cover = await sharp(coverBuffer)
+          .resize(96, 96, { fit: 'cover' })
+          .webp({ quality: 80 })
+          .toBuffer()
+      } catch (e) {
+        console.error('[cover] Error generando miniatura:', e.message)
+        // cover se queda null
+      }
 
-      await sock.sendMessage(
-        msg.chat,
-        {
-          stickerPack: {
-            name: packName,
-            publisher: author,
-            description: `${detalles.name} • ${global.botname || ''}`,
-            cover,
-            stickers: stickerList
-          }
-        },
-        { quoted: msg }
-      )
+      // Enviar stickerPack sin description y con cover opcional
+      const packMessage = {
+        stickerPack: {
+          name: packName,
+          publisher: author,
+          stickers: stickerList
+        }
+      }
+      if (cover) packMessage.stickerPack.cover = cover
+
+      await sock.sendMessage(msg.chat, packMessage, { quoted: msg })
 
       await msg.reply('✅ Paquete de stickers enviado.')
 
     } catch (e) {
       console.error('[stickerpack] Error:', e)
-      // Mostrar el error real si es de la API
       const errorMsg = e.response?.data?.message || e.message || 'Error desconocido'
       return msg.reply(`❖ Ocurrió un error: ${errorMsg}`).catch(() => {})
     }
