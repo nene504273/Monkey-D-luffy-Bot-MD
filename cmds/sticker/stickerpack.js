@@ -200,13 +200,13 @@ export default {
           }
 
           stickerList.push({
-            media: webp,               // ← CORREGIDO: 'media' en lugar de 'sticker'
+            sticker: webp,                // ✅ CORREGIDO: 'sticker' en lugar de 'media'
             isAnimated: sticker.isAnimated || false,
             isLottie: false,
             emojis: ['🎀']
           })
         } catch (err) {
-          console.error(`[sticker] Error descargando/conviertiendo ${i + 1}:`, err.message)
+          console.error(`[sticker] Error descargando/convirtiendo ${i + 1}:`, err.message)
         }
       }
 
@@ -233,10 +233,10 @@ export default {
         `👤 *${packDetails.author}*\n` +
         `📊 *${stickerList.length} stickers*`
       )
-      await msg.react('😋')
+      await msg.react('🎀')
     } catch (e) {
       console.error('[stickerly] Error general:', e)
-      await msg.react('❌')
+      await msg.react('🥀')
       return msg.reply(`❖ Ocurrió un error:\n${e.message || 'Error desconocido'}`)
     }
   }
