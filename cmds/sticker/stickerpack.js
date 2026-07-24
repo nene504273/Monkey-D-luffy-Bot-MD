@@ -200,7 +200,7 @@ export default {
           }
 
           stickerList.push({
-            sticker: webp,
+            media: webp,               // ← CORREGIDO: 'media' en lugar de 'sticker'
             isAnimated: sticker.isAnimated || false,
             isLottie: false,
             emojis: ['🎀']
@@ -233,7 +233,7 @@ export default {
         `👤 *${packDetails.author}*\n` +
         `📊 *${stickerList.length} stickers*`
       )
-      await msg.react('💰')
+      await msg.react('😋')
     } catch (e) {
       console.error('[stickerly] Error general:', e)
       await msg.react('❌')
