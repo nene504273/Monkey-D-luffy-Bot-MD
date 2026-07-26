@@ -2,6 +2,7 @@ import { normalizeJid, resolveParticipantJid, resolveJidSync, deleteCachedMeta, 
 import db from "#db"
 import chalk from 'chalk';
 import moment from 'moment-timezone';
+import { prepareWAMessageMedia } from 'baileys';
 
 function getGroupAdmins(participants) {
   return (participants ?? []).filter(p => p.admin === 'admin' || p.admin === 'superadmin').map(p => p.id).filter(Boolean);
@@ -32,13 +33,13 @@ export default async (sock, msg) => {
 
       const groupAdmins = metadata ? getGroupAdmins(metadata.participants) : [];
       const botId = sock.user.id.split(':')[0] + '@s.whatsapp.net';
-
+      
       const chat = await db.getChat(anu.id);
       const botSettings = await db.getSettings(botId);
-
+      
       const primaryBotId = chat?.primaryBot;
       const isSelf = (botSettings?.self ?? 0) || (chat?.isMute ?? false);
-
+      
       if (isSelf) return;
 
       const now = new Date();
@@ -47,33 +48,24 @@ export default async (sock, msg) => {
       const tiempo2 = moment.tz('America/Bogota').format('hh:mm A');
       const memberCount = metadata?.participants?.length || 0;
 
-      // *** IMÁGENES FIJAS Y CANAL DE LUFFY ***
-      const welcomeImageUrl = 'https://n.uguu.se/LBkLPUzM.jpeg';
-      const goodbyeImageUrl = 'https://d.uguu.se/mEWKsMLi.jpeg';
-      const newsletterJid = '120363420846835529@newsletter';
-      const newsletterName = '⿻̸̷᮫̼̼፝͠🥨᪲ 𝐋𝗎𝖿𝖿𝗒 𝐆͢𝖾𝖺⃜𝗋 𝟧 ׅ ࿔𔗨̶🌊';
-
       for (const p of anu.participants) {
         const jid = resolveEventParticipant(p, sock);
         if (!jid) continue;
-
+        
         const phone = jid.split('@')[0];
         const userData = await db.getUser(jid);
         const name = userData?.name || phone;
+        
+        const avatar = await sock.profilePictureUrl(jid, 'image').catch(() => "https://cloud.stellarwa.xyz/i6AeOyYU.jpeg");
 
-        // Selecciona la imagen según la acción
-        const imageUrl = anu.action === 'add' ? welcomeImageUrl : goodbyeImageUrl;
-
-        // Contexto con menciones (usuario + canal)
-        const contextInfo = {
-          mentionedJid: [jid, newsletterJid],
+        const contextBase = {
+          mentionedJid: [jid].filter(Boolean),
           isForwarded: false
         };
 
-        // ---- BIENVENIDA ----
         if (anu.action === 'add' && chat?.welcome && (!primaryBotId || primaryBotId === botId)) {
           if (!metadata) continue;
-
+          
           let caption;
           if (chat.welcomeMessage && chat.welcomeMessage.trim() !== '') {
             caption = chat.welcomeMessage
@@ -96,20 +88,30 @@ export default async (sock, msg) => {
 な⃟   ۟  ─ _Ahora somos *${memberCount}* miembros!_
 
 > Puedes usar \`/help\` para ver la lista de comandos.
-> 🏴‍☠️ Canal: @${newsletterJid}
 > ✐ 𝐋𝐢𝐧𝐤 » ${botSettings.link || ''}`;
           }
 
-          // Envía imagen + caption (sin link preview externo)
-          await sock.sendMessage(anu.id, {
-            image: { url: welcomeImageUrl },
-            caption: caption.trim(),
-            mentions: [jid, newsletterJid],
-            contextInfo
+          const linkPreview = botSettings.link && avatar ? (
+            await prepareWAMessageMedia(
+              { image: { url: avatar } },
+              { upload: sock.waUploadToServer, mediaTypeOverride: 'thumbnail-link' }
+            ).then(({ imageMessage }) => ({
+              'canonical-url': botSettings.link,
+              'matched-text': botSettings.link,
+              title: "˚₊·—̳͟͞͞♡ 𝐖 𝐄 𝐋 𝐂 𝐎 𝐌 𝐄 ₍ᐢ..ᐢ₎♡",
+              description: `${botSettings.namebot2 || 'Stellar Bot'}, Built With 💛 By Stellar`,
+              jpegThumbnail: imageMessage?.jpegThumbnail ? Buffer.from(imageMessage.jpegThumbnail) : undefined,
+              highQualityThumbnail: imageMessage || undefined
+            }))
+          ) : undefined;
+
+          await sock.sendMessage(anu.id, { 
+            text: caption.trim(), 
+            linkPreview: linkPreview, 
+            contextInfo: contextBase
           }, { quoted: null });
         }
 
-        // ---- DESPEDIDA ----
         if ((anu.action === 'remove' || anu.action === 'leave') && chat?.goodbye && (!primaryBotId || primaryBotId === botId)) {
           if (!metadata) continue;
 
@@ -135,20 +137,30 @@ export default async (sock, msg) => {
 な⃟   ۟  ─ _Ahora somos *${memberCount}* miembros!_
 
 > Puedes usar \`/help\` para ver la lista de comandos.
-> 🏴‍☠️ Canal: @${newsletterJid}
 > ✐ 𝐋𝐢𝐧𝐤 » ${botSettings.link || ''}`;
           }
 
-          // Envía imagen + caption (sin link preview externo)
-          await sock.sendMessage(anu.id, {
-            image: { url: goodbyeImageUrl },
-            caption: caption.trim(),
-            mentions: [jid, newsletterJid],
-            contextInfo
+          const linkPreview = botSettings.link && avatar ? (
+            await prepareWAMessageMedia(
+              { image: { url: avatar } },
+              { upload: sock.waUploadToServer, mediaTypeOverride: 'thumbnail-link' }
+            ).then(({ imageMessage }) => ({
+              'canonical-url': botSettings.link,
+              'matched-text': botSettings.link,
+              title: "˚₊·—̳͟͞͞♡ 𝐁 𝐘 𝐄 ₍ᐢ..ᐢ₎♡",
+              description: `${botSettings.namebot2 || 'Stellar Bot'}, Built With 💛 By Stellar`,
+              jpegThumbnail: imageMessage?.jpegThumbnail ? Buffer.from(imageMessage.jpegThumbnail) : undefined,
+              highQualityThumbnail: imageMessage || undefined
+            }))
+          ) : undefined;
+
+          await sock.sendMessage(anu.id, { 
+            text: caption.trim(), 
+            linkPreview: linkPreview, 
+            contextInfo: contextBase
           }, { quoted: null });
         }
 
-        // Limpiar AFK al salir
         if (anu.action === 'remove' || anu.action === 'leave') {
           const user = chat?.users?.[jid];
           if (user && typeof user.afk === 'number' && user.afk > -1) {
@@ -159,7 +171,6 @@ export default async (sock, msg) => {
           }
         }
 
-        // Promoción
         if (anu.action === 'promote' && chat?.alerts && (!primaryBotId || primaryBotId === botId)) {
           const authorJid = normalizeJid(anu.author) || anu.author;
           await sock.sendMessage(anu.id, { 
@@ -168,7 +179,6 @@ export default async (sock, msg) => {
           });
         }
 
-        // Degradación
         if (anu.action === 'demote' && chat?.alerts && (!primaryBotId || primaryBotId === botId)) {
           const authorJid = normalizeJid(anu.author) || anu.author;
           await sock.sendMessage(anu.id, { 
