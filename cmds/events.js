@@ -56,7 +56,7 @@ export default async (sock, msg) => {
         const userData = await db.getUser(jid);
         const name = userData?.name || phone;
 
-        const avatar = await sock.profilePictureUrl(jid, 'image').catch(() => "https://cloud.stellarwa.xyz/i6AeOyYU.jpeg");
+        const avatar = await sock.profilePictureUrl(jid, 'image').catch(() => "https://n.uguu.se/LBkLPUzM.jpeg");
 
         const contextBase = {
           mentionedJid: [jid].filter(Boolean),
