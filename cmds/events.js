@@ -63,6 +63,7 @@ export default async (sock, msg) => {
           isForwarded: false
         };
 
+        // ─── BIENVENIDA (diseño original con tema Luffy) ───
         if (anu.action === 'add' && chat?.welcome && (!primaryBotId || primaryBotId === botId)) {
           if (!metadata) continue;
 
@@ -75,17 +76,17 @@ export default async (sock, msg) => {
               .replace(/@members/g, memberCount)
               .replace(/@time/g, `${tiempo} ${tiempo2}`);
           } else {
-            caption = `ത        ׂ𖹭     ׅ    ꒰͡     𝖭 ⋃ Σ 𝖵 𝖮     
-𑄹𑄹  »   𝙐 𝙎 𝙀 𝙍!!*    ✬✫
+            caption = `ത        ׂ𖹭     ׅ    ꒰͡     𝙼 𝚄 𝙶 𝙸 𝚆 𝙰 𝚁 𝙰     
+𑄹𑄹  »   𝙽 𝙰 𝙺 𝙰 𝙼 𝙰!!*    ✬✫
 
-⪩⪩   ֹ  \`𝖡𝗂𝖾ɳ𝗏𝖾𝗇𝗂𝖽@ 𝖺\`
+⪩⪩   ֹ  \`𝖡𝗂𝖾𝗇𝗏𝖾𝗇𝗂𝖽@ 𝖺 𝗅𝖺 𝗍𝗋𝗂𝗉𝗎𝗅𝖺𝖼𝗂\́𝗇 𝖽𝖾\`
                  \`${metadata.subject || ''}\`  ꒱꒱ㅤㅤㅤ
 
 *ֹ  ᦕ   ׄ                      _@${phone}_*
 
-         ׅ     ⑅ ׄ     .˙ Disfruta tu estadía!ֹ
+         ׅ     ⑅ ׄ     .˙ ¡Zarpamos juntos, nakama!ֹ
 
-な⃟   ۟  ─ _Ahora somos *${memberCount}* miembros!_
+な⃟   ۟  ─ _Ahora somos *${memberCount}* tripulantes!_
 
 > Puedes usar \`/help\` para ver la lista de comandos.
 > ✐ 𝐋𝐢𝐧𝐤 » ${botSettings.link || ''}`;
@@ -98,8 +99,8 @@ export default async (sock, msg) => {
             ).then(({ imageMessage }) => ({
               'canonical-url': botSettings.link,
               'matched-text': botSettings.link,
-              title: "˚₊·—̳͟͞͞♡ 𝐖 𝐄 𝐋 𝐂 𝐎 𝐌 𝐄 ₍ᐢ..ᐢ₎♡",
-              description: `${botSettings.namebot2 || 'Stellar Bot'}, Built With 💛 By Stellar`,
+              title: "🏴‍☠️ Bienvenido a los Sombrero de Paja",
+              description: `${botSettings.namebot2 || 'Mugiwara Bot'}, rumbo al One Piece ⚡`,
               jpegThumbnail: imageMessage?.jpegThumbnail ? Buffer.from(imageMessage.jpegThumbnail) : undefined,
               highQualityThumbnail: imageMessage || undefined
             }))
@@ -112,6 +113,7 @@ export default async (sock, msg) => {
           }, { quoted: null });
         }
 
+        // ─── DESPEDIDA (diseño original con tema Luffy) ───
         if ((anu.action === 'remove' || anu.action === 'leave') && chat?.goodbye && (!primaryBotId || primaryBotId === botId)) {
           if (!metadata) continue;
 
@@ -124,17 +126,17 @@ export default async (sock, msg) => {
               .replace(/@members/g, memberCount)
               .replace(/@time/g, `${tiempo} ${tiempo2}`);
           } else {
-            caption = `ത        ׂ𖹭     ׅ    ꒰͡     A ᗞＩO S     
-𑄹𑄹  »   𝙐 𝙎 𝙀 𝙍!!*    ✬✫
+            caption = `ത        ׂ𖹭     ׅ    ꒰͡     𝙰 𝙳 𝙸 𝙾 𝚂     
+𑄹𑄹  »   𝙽 𝙰 𝙺 𝙰 𝙼 𝙰!!*    ✬✫
 
-⪩⪩   ֹ  \`𝙷𝚊𝚜𝚝𝚊 𝚕𝚞𝚎𝚐𝚘 𝚍𝚎\`
+⪩⪩   ֹ  \`𝖧𝖺𝗌𝗍𝖺 𝗅𝗎𝖾𝗀𝗈, 𝗍𝗋𝗂𝗉𝗎𝗅𝖺𝗇𝗍𝖾 𝖽𝖾\`
                  \`${metadata.subject || ''}\`  ꒱꒱ㅤㅤㅤ
 
 *ֹ  ᦕ   ׄ                      _@${phone}_*
 
-         ׅ     ⑅ ׄ     .˙ Espero vuelvas Pronto!ֹ
+         ׅ     ⑅ ׄ     .˙ ¡Siempre serás un nakama!ֹ
 
-な⃟   ۟  ─ _Ahora somos *${memberCount}* miembros!_
+な⃟   ۟  ─ _Ahora somos *${memberCount}* tripulantes!_
 
 > Puedes usar \`/help\` para ver la lista de comandos.
 > ✐ 𝐋𝐢𝐧𝐤 » ${botSettings.link || ''}`;
@@ -147,8 +149,8 @@ export default async (sock, msg) => {
             ).then(({ imageMessage }) => ({
               'canonical-url': botSettings.link,
               'matched-text': botSettings.link,
-              title: "˚₊·—̳͟͞͞♡ 𝐁 𝐘 𝐄 ₍ᐢ..ᐢ₎♡",
-              description: `${botSettings.namebot2 || 'Stellar Bot'}, Built With 💛 By Stellar`,
+              title: "😢 Hasta pronto, nakama",
+              description: `${botSettings.namebot2 || 'Mugiwara Bot'}, el mar siempre nos une ⚡`,
               jpegThumbnail: imageMessage?.jpegThumbnail ? Buffer.from(imageMessage.jpegThumbnail) : undefined,
               highQualityThumbnail: imageMessage || undefined
             }))
