@@ -1,194 +1,166 @@
-import { normalizeJid, resolveParticipantJid, resolveJidSync, deleteCachedMeta, getCachedMeta, setCachedMeta } from '#serialize';
-import db from "#db"
-import chalk from 'chalk';
-import moment from 'moment-timezone';
-import { prepareWAMessageMedia } from 'baileys';
+import { WAMessageStubType, prepareWAMessageMedia } from '@whiskeysockets/baileys'
 
-function getGroupAdmins(participants) {
-  return (participants ?? []).filter(p => p.admin === 'admin' || p.admin === 'superadmin').map(p => p.id).filter(Boolean);
-}
+const newsletterJid = '120363420846835529@newsletter';
+const newsletterName = '⿻̸̷᮫̼̼፝͠🥨᪲ 𝐋𝗎𝖿𝖿𝗒 𝐆͢𝖾𝖺⃜𝗋 𝟧 ׅ ࿔𔗨̶🌊';
 
-function resolveEventParticipant(p, sock) {
-  if (typeof p === 'string') return resolveJidSync(p, sock) || p;
-  return resolveParticipantJid(p, sock) || normalizeJid(p.id || p.phoneNumber || p.jid || p.lid || '') || '';
-}
+// ── Imágenes de bienvenida y despedida (estilo Luffy) ───────────────
+const welcomeImage = 'https://n.uguu.se/LBkLPUzM.jpeg'   // Imagen de bienvenida
+const byeImage = 'https://d.uguu.se/mEWKsMLi.jpeg'       // Imagen de despedida
 
-export default async (sock, msg) => {
-  sock.ev.on('group-participants.update', async (anu) => {
+// ── Utilidades (mantenidas) ──────────────────────────────────────────
+function normalizeMentionJid(value) {
+  if (!value) return null
+  if (typeof value === 'object') value = value.id || value.jid || value.phoneNumber || value.lid || ''
+  let text = String(value).trim()
+  if (!text) return null
+  if (text.startsWith('{')) {
     try {
-      if (['add', 'remove', 'leave', 'promote', 'demote'].includes(anu.action)) {
-        deleteCachedMeta(anu.id);
-      }
+      const parsed = JSON.parse(text)
+      text = parsed.id || parsed.jid || parsed.phoneNumber || parsed.lid || text
+    } catch {}
+  }
+  text = String(text).replace(/^@/, '').trim()
+  if (/^\d+$/.test(text)) return `${text}@s.whatsapp.net`
+  if (/^\d+@(?:s\.whatsapp\.net|lid)$/.test(text)) return text
+  return text.includes('@') ? text : null
+}
 
-      const metadata = await (async () => {
-        const cached = getCachedMeta(anu.id);
-        if (cached) return cached;
-        for (let i = 0; i < 3; i++) {
-          const m = await sock.groupMetadata(anu.id).catch(() => null);
-          if (m) { setCachedMeta(anu.id, m); return m; }
-          await new Promise(r => setTimeout(r, 1500));
+// ── Handler principal ────────────────────────────────────────────────
+export async function before(m, { conn, participants = [], groupMetadata = {} } = {}) {
+  if (!m.messageStubType || !m.isGroup) return true
+
+  const chat = global.db.getChat(m.chat)
+  if (!chat) return true
+
+  const botJid = conn.user.jid.split('@')[0]
+  const primaryBot = chat.botPrimario ? chat.botPrimario.split('@')[0] : null
+  if (primaryBot && botJid !== primaryBot) return true
+
+  const isWelcome = [
+    WAMessageStubType.GROUP_PARTICIPANT_ADD,
+    WAMessageStubType.GROUP_PARTICIPANT_INVITE,
+    27, 31
+  ].includes(m.messageStubType)
+
+  const isBye = [
+    WAMessageStubType.GROUP_PARTICIPANT_REMOVE,
+    WAMessageStubType.GROUP_PARTICIPANT_LEAVE,
+    28, 32
+  ].includes(m.messageStubType)
+
+  if (!isWelcome && !isBye) return true
+  if ((isWelcome && !chat.welcome) || (isBye && !chat.bye)) return true
+
+  const safeParticipants = Array.isArray(participants) ? participants : []
+  const usuariosAfectados = Array.isArray(m.messageStubParameters) && m.messageStubParameters.length > 0
+    ? m.messageStubParameters
+    : [m.sender]
+
+  const groupName = groupMetadata?.subject || 'este grupo'
+  const desc = groupMetadata?.desc?.toString() || 'Sin descripción'
+  const groupSize = (Array.isArray(groupMetadata?.participants) && groupMetadata.participants.length) || safeParticipants.length || 0
+
+  const now = new Date()
+  const colombianTime = new Date(now.toLocaleString('en-US', { timeZone: 'America/Bogota' }))
+  const tiempo = colombianTime.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).replace(/,/g, '')
+  const tiempo2 = colombianTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })
+
+  const botLink ='🍃ᮢᩥ  𝖬𝗈𝗇𝗄𝖾𝗒 𝖣. 𝖫𝗎𝖿𝖿𝗒 '
+
+  for (let userId of usuariosAfectados) {
+    if (!userId) continue
+    const targetJid = normalizeMentionJid(userId) || normalizeMentionJid(m.sender)
+    if (!targetJid) continue
+    const phone = targetJid.split('@')[0]
+    const username = `@${phone}`
+
+    try {
+      const avatar = isWelcome ? welcomeImage : byeImage
+
+      const linkPreview = botLink ? await prepareWAMessageMedia(
+        { image: { url: avatar } },
+        { upload: conn.waUploadToServer, mediaTypeOverride: 'thumbnail-link' }
+      ).then(({ imageMessage }) => ({
+        'canonical-url': botLink,
+        'matched-text': botLink,
+        title: isWelcome ? '⚓ ¡NUEVO NAKAMA! ⚓' : '⚓ ¡HASTA LUEGO, NAKAMA! ⚓',
+        description: `🏴‍☠️ ${groupName} – ${groupSize} piratas`,
+        jpegThumbnail: imageMessage?.jpegThumbnail ? Buffer.from(imageMessage.jpegThumbnail) : undefined,
+        highQualityThumbnail: imageMessage || undefined
+      })) : undefined
+
+      let caption
+      if (isWelcome) {
+        if (chat.welcomeText && chat.welcomeText.trim() !== '') {
+          caption = chat.welcomeText
+            .replace(/@user/g, username)
+            .replace(/@subject/g, groupName)
+            .replace(/@desc/g, desc)
+            .replace(/@members/g, groupSize)
+            .replace(/@time/g, `${tiempo} ${tiempo2}`)
+        } else {
+          // ── Plantilla bienvenida estilo Luffy ──────────────────────
+          caption = `☠️⚓️  ꒰͡     𝖭 𝖠 𝖪 𝖠 𝖬 𝖠     
+𑄹𑄹  »   ¡NUEVO PIRATA!   ✬✫
+
+⪩⪩   ֹ  \`¡Bienvenido a la tripulación de\`
+                 \`${groupName}\`  ꒱꒱ㅤㅤㅤ
+
+*ֹ  ᦕ   ׄ                      _${username}_*
+
+         ׅ     ⑅ ׄ     .˙ ¡Vamos por el One Piece! ֹ
+
+な⃟   ۟  ─ _Ahora somos *${groupSize}* piratas!_
+
+> Puedes usar \`/help\` para los comandos.
+> ✐ 𝐋𝐢𝐧𝐤 » ${botLink || ''}`
         }
-        return null;
-      })();
+      } else {
+        if (chat.byeText && chat.byeText.trim() !== '') {
+          caption = chat.byeText
+            .replace(/@user/g, username)
+            .replace(/@subject/g, groupName)
+            .replace(/@desc/g, desc)
+            .replace(/@members/g, groupSize)
+            .replace(/@time/g, `${tiempo} ${tiempo2}`)
+        } else {
+          // ── Plantilla despedida estilo Luffy ───────────────────────
+          caption = `⚓💨  ꒰͡     𝖠 𝖣 𝖨 𝖮 𝖲     
+𑄹𑄹  »   ¡HASTA LUEGO!   ✬✫
 
-      const groupAdmins = metadata ? getGroupAdmins(metadata.participants) : [];
-      const botId = sock.user.id.split(':')[0] + '@s.whatsapp.net';
-      
-      const chat = await db.getChat(anu.id);
-      const botSettings = await db.getSettings(botId);
-      
-      const primaryBotId = chat?.primaryBot;
-      const isSelf = (botSettings?.self ?? 0) || (chat?.isMute ?? false);
-      
-      if (isSelf) return;
+⪩⪩   ֹ  \`Un nakama se va de\`
+                 \`${groupName}\`  ꒱꒱ㅤㅤㅤ
 
-      const now = new Date();
-      const colombianTime = new Date(now.toLocaleString('en-US', { timeZone: 'America/Bogota' }));
-      const tiempo = colombianTime.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).replace(/,/g, '');
-      const tiempo2 = moment.tz('America/Bogota').format('hh:mm A');
-      const memberCount = metadata?.participants?.length || 0;
+*ֹ  ᦕ   ׄ                      _${username}_*
 
-      for (const p of anu.participants) {
-        const jid = resolveEventParticipant(p, sock);
-        if (!jid) continue;
-        
-        const phone = jid.split('@')[0];
-        const userData = await db.getUser(jid);
-        const name = userData?.name || phone;
-        
-        const avatar = await sock.profilePictureUrl(jid, 'image').catch(() => "https://cloud.stellarwa.xyz/i6AeOyYU.jpeg");
+         ׅ     ⑅ ׄ     .˙ ¡Siempre serás parte de la banda! ֹ
 
-        const contextBase = {
-          mentionedJid: [jid].filter(Boolean),
-          isForwarded: false
-        };
+な⃟   ۟  ─ _Ahora somos *${groupSize}* piratas!_
 
-        if (anu.action === 'add' && chat?.welcome && (!primaryBotId || primaryBotId === botId)) {
-          if (!metadata) continue;
-          
-          let caption;
-          if (chat.welcomeMessage && chat.welcomeMessage.trim() !== '') {
-            caption = chat.welcomeMessage
-              .replace(/@user/g, `@${phone}`)
-              .replace(/@group/g, metadata.subject || '')
-              .replace(/@desc/g, metadata.desc || 'Sin descripción')
-              .replace(/@members/g, memberCount)
-              .replace(/@time/g, `${tiempo} ${tiempo2}`);
-          } else {
-            caption = `ത        ׂ𖹭     ׅ    ꒰͡     𝖭 ⋃ Σ 𝖵 𝖮     
-𑄹𑄹  »   𝙐 𝙎 𝙀 𝙍!!*    ✬✫
-
-⪩⪩   ֹ  \`𝖡𝗂𝖾ɳ𝗏𝖾𝗇𝗂𝖽@ 𝖺\`
-                 \`${metadata.subject || ''}\`  ꒱꒱ㅤㅤㅤ
-
-*ֹ  ᦕ   ׄ                      _@${phone}_*
-
-         ׅ     ⑅ ׄ     .˙ Disfruta tu estadía!ֹ
-
-な⃟   ۟  ─ _Ahora somos *${memberCount}* miembros!_
-
-> Puedes usar \`/help\` para ver la lista de comandos.
-> ✐ 𝐋𝐢𝐧𝐤 » ${botSettings.link || ''}`;
-          }
-
-          const linkPreview = botSettings.link && avatar ? (
-            await prepareWAMessageMedia(
-              { image: { url: avatar } },
-              { upload: sock.waUploadToServer, mediaTypeOverride: 'thumbnail-link' }
-            ).then(({ imageMessage }) => ({
-              'canonical-url': botSettings.link,
-              'matched-text': botSettings.link,
-              title: "˚₊·—̳͟͞͞♡ 𝐖 𝐄 𝐋 𝐂 𝐎 𝐌 𝐄 ₍ᐢ..ᐢ₎♡",
-              description: `${botSettings.namebot2 || 'Stellar Bot'}, Built With 💛 By Stellar`,
-              jpegThumbnail: imageMessage?.jpegThumbnail ? Buffer.from(imageMessage.jpegThumbnail) : undefined,
-              highQualityThumbnail: imageMessage || undefined
-            }))
-          ) : undefined;
-
-          await sock.sendMessage(anu.id, { 
-            text: caption.trim(), 
-            linkPreview: linkPreview, 
-            contextInfo: contextBase
-          }, { quoted: null });
-        }
-
-        if ((anu.action === 'remove' || anu.action === 'leave') && chat?.goodbye && (!primaryBotId || primaryBotId === botId)) {
-          if (!metadata) continue;
-
-          let caption;
-          if (chat.byeMessage && chat.byeMessage.trim() !== '') {
-            caption = chat.byeMessage
-              .replace(/@user/g, `@${phone}`)
-              .replace(/@group/g, metadata.subject || '')
-              .replace(/@desc/g, metadata.desc || 'Sin descripción')
-              .replace(/@members/g, memberCount)
-              .replace(/@time/g, `${tiempo} ${tiempo2}`);
-          } else {
-            caption = `ത        ׂ𖹭     ׅ    ꒰͡     A ᗞＩO S     
-𑄹𑄹  »   𝙐 𝙎 𝙀 𝙍!!*    ✬✫
-
-⪩⪩   ֹ  \`𝙷𝚊𝚜𝚝𝚊 𝚕𝚞𝚎𝚐𝚘 𝚍𝚎\`
-                 \`${metadata.subject || ''}\`  ꒱꒱ㅤㅤㅤ
-
-*ֹ  ᦕ   ׄ                      _@${phone}_*
-
-         ׅ     ⑅ ׄ     .˙ Espero vuelvas Pronto!ֹ
-
-な⃟   ۟  ─ _Ahora somos *${memberCount}* miembros!_
-
-> Puedes usar \`/help\` para ver la lista de comandos.
-> ✐ 𝐋𝐢𝐧𝐤 » ${botSettings.link || ''}`;
-          }
-
-          const linkPreview = botSettings.link && avatar ? (
-            await prepareWAMessageMedia(
-              { image: { url: avatar } },
-              { upload: sock.waUploadToServer, mediaTypeOverride: 'thumbnail-link' }
-            ).then(({ imageMessage }) => ({
-              'canonical-url': botSettings.link,
-              'matched-text': botSettings.link,
-              title: "˚₊·—̳͟͞͞♡ 𝐁 𝐘 𝐄 ₍ᐢ..ᐢ₎♡",
-              description: `${botSettings.namebot2 || 'Stellar Bot'}, Built With 💛 By Stellar`,
-              jpegThumbnail: imageMessage?.jpegThumbnail ? Buffer.from(imageMessage.jpegThumbnail) : undefined,
-              highQualityThumbnail: imageMessage || undefined
-            }))
-          ) : undefined;
-
-          await sock.sendMessage(anu.id, { 
-            text: caption.trim(), 
-            linkPreview: linkPreview, 
-            contextInfo: contextBase
-          }, { quoted: null });
-        }
-
-        if (anu.action === 'remove' || anu.action === 'leave') {
-          const user = chat?.users?.[jid];
-          if (user && typeof user.afk === 'number' && user.afk > -1) {
-             if(chat && chat.users && chat.users[jid]) {
-                chat.users[jid].afk = -1;
-                chat.users[jid].afkReason = '';
-             }
-          }
-        }
-
-        if (anu.action === 'promote' && chat?.alerts && (!primaryBotId || primaryBotId === botId)) {
-          const authorJid = normalizeJid(anu.author) || anu.author;
-          await sock.sendMessage(anu.id, { 
-            text: `「✎」 *@${phone}* ha sido promovido a Administrador por *@${authorJid.split('@')[0]}.*`, 
-            mentions: [jid, authorJid, ...groupAdmins] 
-          });
-        }
-
-        if (anu.action === 'demote' && chat?.alerts && (!primaryBotId || primaryBotId === botId)) {
-          const authorJid = normalizeJid(anu.author) || anu.author;
-          await sock.sendMessage(anu.id, { 
-            text: `「✎」 *@${phone}* ha sido degradado de Administrador por *@${authorJid.split('@')[0]}.*`, 
-            mentions: [jid, authorJid, ...groupAdmins] 
-          });
+> Puedes usar \`/help\` para los comandos.
+> ✐ 𝐋𝐢𝐧𝐤 » ${botLink || ''}`
         }
       }
-    } catch (err) {
-      console.log(chalk.gray(`[ EVENT ERROR ] → ${err}`));
+
+      await conn.sendMessage(m.chat, {
+        text: caption,
+        linkPreview: linkPreview,
+        contextInfo: {
+          mentionedJid: [targetJid],
+          isForwarded: false,
+          forwardedNewsletterMessageInfo: {
+            newsletterJid: newsletterJid,
+            newsletterName: newsletterName,
+            serverMessageId: -1
+          }
+        }
+      }, { quoted: null })
+
+    } catch (error) {
+      console.error('[welcome/bye] error procesando participante', error)
     }
-  });
-};
+  }
+  return true
+}
+
+export default { before }
