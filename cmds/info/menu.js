@@ -5,7 +5,7 @@ import { commands } from '../../lib/system/comandos.js';
 
 const newsletterJid = '120363420846835529@newsletter';
 const newsletterName = '⿻̸̷᮫̼̼፝͠🥨᪲ 𝐋𝗎𝖿𝖿𝗒 𝐆͢𝖾𝖺⃜𝗋 𝟧 ׅ ࿔𔗨̶🌊';
-const banner = 'https://cdn.dev-ander.xyz/a/4zOF.jpg';
+const banner = 'https://cdn.dev-ander.xyz/a/XmHm.jpg';
 
 function clockString(ms) {
     const h = Math.floor(ms / 3600000);
