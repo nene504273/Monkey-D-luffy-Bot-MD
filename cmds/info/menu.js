@@ -23,9 +23,7 @@ export default {
         const totalreg = Object.keys(await db.getUser()).length;
         const venezuelaTime = moment().tz('America/Caracas').format('HH:mm:ss');
 
-        // Forzamos un link válido para el preview (puede ser el banner si no hay web)
-        const link = global.api?.url || banner;
-
+        // Agrupamos comandos por categoría
         const categories = {};
         for (const cmd of commands) {
             const cat = cmd.category || 'otros';
@@ -33,6 +31,7 @@ export default {
             categories[cat].push(cmd);
         }
 
+        // Construcción del menú (eliminé el enlace del final para que no se duplique)
         let menuText = `⏝ᩙ ׅ   ׄ᷼⏜֟፝᷼͡⏜͜   ׄ ░⃝ᩘ🏴‍☠️ᩙ ׄ  ͜⏜፝֟᷼͡⏜ׄ᷼   ׅ ⏝ᩙ\n\n`;
         menuText += `     *⿻̸̷᮫̼̼፝͠🍖̸̷ᩙ᪶𔗨̶࿔:: 𝐁𝐢𝐞𝐧𝐯𝐞𝐧𝐢𝐝𝐨 𝐚 𝐛𝐨𝐫𝐝𝐨*\n`;
         menuText += `             *𝐝𝐞𝐥 𝐦𝐞𝐣𝐨𝐫 𝐛𝐚𝐫𝐜𝐨 𝐩𝐢𝐫𝐚𝐭𝐚*\n`;
@@ -45,7 +44,7 @@ export default {
         menuText += `> ⌑ׄ🎖️〪𝆭݀₊ _Alianza:_ ${totalreg} Piratas\n`;
         menuText += `> ⌑ׄ⏳〪𝆭݀₊ _Activo:_ ${uptime}\n`;
         menuText += `> ⌑ׄ🕒〪𝆭݀₊ _Hora:_ ${venezuelaTime} (VZLA)\n`;
-        menuText += `> ⌑ׄ🔗〪𝆭݀₊ _API:_ ${link}\n`;
+        menuText += `> ⌑ׄ🔗〪𝆭݀₊ _API:_ ${global.api?.url || banner}\n`;
         menuText += `╰ׅ━ׁ┉ׅ─ׁ┉ׅ─ׁ┉ׅ─ׁ 𝆭˳ּ👒 ׁ─ׅ┉ׁ─ׅ┉ׁ─ׅ┉ׁ━ִ╯\n\n`;
 
         menuText += `* ˳࣪𫆪𫇭֦˚ּ ⠶ 𝗟𝗶𝘀𝘁𝗮 𝗱𝗲 𝗧𝗲𝘀𝗼𝗿𝗼𝘀 ᩡ\n\n`;
@@ -76,9 +75,11 @@ export default {
             menuText += `╰ׅ━ׁ┉ׅ─ׁ┉ׅ─ׁ┉ׅ─ׁ 𝆭⚓˳ּ ׁ─ׅ┉ׁ─ׅ┉ׁ─ׅ┉ׁ━ִ╯\n\n`;
         }
 
-        // *** SE ELIMINÓ LA FRASE DE LUFFY ***
-        // Solo añadimos el enlace para el preview, sin el texto decorativo anterior
-        menuText += `\n⚓ ${link}`;
+        // --- 🔥 ARREGLO DE LA IMAGEN: Preparamos el banner como imagen real ---
+        const { imageMessage } = await prepareWAMessageMedia(
+            { image: { url: banner } },
+            { upload: sock.waUploadToServer, mediaTypeOverride: 'image' }
+        );
 
         const contextInfo = {
             mentionedJid: [msg.sender],
@@ -91,27 +92,9 @@ export default {
             }
         };
 
-        // Generamos la miniatura personalizada
-        const { imageMessage } = await prepareWAMessageMedia(
-            { image: { url: banner } },
-            { upload: sock.waUploadToServer, mediaTypeOverride: 'thumbnail-link' }
-        );
-
-        const linkPreview = {
-            'canonical-url': link,
-            'matched-text': link,
-            title: '⚓ LUFFY - BOT ⚓',
-            description: 'El mejor barco pirata 🏴‍☠️ powered by Luffy',
-            jpegThumbnail: imageMessage?.jpegThumbnail
-                ? Buffer.from(imageMessage.jpegThumbnail)
-                : undefined,
-            highQualityThumbnail: imageMessage || undefined
-        };
-
-        // Enviamos todo en un solo mensaje
         await sock.sendMessage(msg.chat, {
-            text: menuText,
-            linkPreview,
+            image: imageMessage,  // <--- Aquí está la foto gigante y bonita
+            caption: menuText,
             contextInfo
         }, { quoted: msg });
     }
