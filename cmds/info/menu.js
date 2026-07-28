@@ -1,6 +1,5 @@
 import moment from 'moment-timezone';
 import db from "#db";
-import { prepareWAMessageMedia } from 'baileys';
 import { commands } from '../../lib/system/comandos.js';
 
 const newsletterJid = '120363420846835529@newsletter';
@@ -22,8 +21,6 @@ export default {
         const uptime = clockString(Date.now() - (sock.uptime || Date.now()));
         const totalreg = Object.keys(await db.getUser()).length;
         const venezuelaTime = moment().tz('America/Caracas').format('HH:mm:ss');
-
-        // Forzamos un link válido para el preview (puede ser el banner si no hay web)
         const link = global.api?.url || banner;
 
         const categories = {};
@@ -76,9 +73,7 @@ export default {
             menuText += `╰ׅ━ׁ┉ׅ─ׁ┉ׅ─ׁ┉ׅ─ׁ 𝆭⚓˳ּ ׁ─ׅ┉ׁ─ׅ┉ׁ─ׅ┉ׁ━ִ╯\n\n`;
         }
 
-        // *** SE ELIMINÓ LA FRASE DE LUFFY ***
-        // Solo añadimos el enlace para el preview, sin el texto decorativo anterior
-        menuText += `\n⚓ ${link}`;
+        menuText += `⚓ ${link}`;
 
         const contextInfo = {
             mentionedJid: [msg.sender],
@@ -91,30 +86,11 @@ export default {
             }
         };
 
-        // Generamos la miniatura personalizada
-        const { imageMessage } = await prepareWAMessageMedia(
-            { image: { url: banner } },
-            { upload: sock.waUploadToServer, mediaTypeOverride: 'thumbnail-link' }
-        );
-
-        const linkPreview = {
-            'canonical-url': link,
-            'matched-text': link,
-            title: '⚓ LUFFY - BOT ⚓',
-            description: 'El mejor barco pirata 🏴‍☠️ powered by Luffy',
-            jpegThumbnail: imageMessage?.jpegThumbnail
-                ? Buffer.from(imageMessage.jpegThumbnail)
-                : undefined,
-            highQualityThumbnail: imageMessage || undefined
-        };
-
-        // Enviamos todo en un solo mensaje
+        // Enviamos la imagen directamente con el menú en la leyenda (caption)
         await sock.sendMessage(msg.chat, {
-            text: menuText,
-            linkPreview,
+            image: { url: banner },
+            caption: menuText,
             contextInfo
         }, { quoted: msg });
     }
 };
-
-
