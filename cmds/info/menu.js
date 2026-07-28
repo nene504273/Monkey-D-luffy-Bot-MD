@@ -22,7 +22,9 @@ export default {
         const uptime = clockString(Date.now() - (sock.uptime || Date.now()));
         const totalreg = Object.keys(await db.getUser()).length;
         const venezuelaTime = moment().tz('America/Caracas').format('HH:mm:ss');
-        const link = global.api?.url || '';
+
+        // Forzamos un link válido para el preview (puede ser el banner si no hay web)
+        const link = global.api?.url || banner;
 
         const categories = {};
         for (const cmd of commands) {
@@ -74,10 +76,9 @@ export default {
             menuText += `╰ׅ━ׁ┉ׅ─ׁ┉ׅ─ׁ┉ׅ─ׁ 𝆭⚓˳ּ ׁ─ׅ┉ׁ─ׅ┉ׁ─ׅ┉ׁ━ִ╯\n\n`;
         }
 
-        menuText += `.   ╓᷼─ໍ۪┅֟፝─̥࣪:¨᜔⠣۟⠜¨᜔:࣪─࣮࣪͡┅ꊥ᜔۫👒ꊥ᜔┅࣮࣪͡─:࣪¨᜔⠣۟⠜¨᜔:࣪─̥፝֟┅۪─᷼ໍ╖\n`;
-        menuText += `> *“Si no arriesgas tu vida, no puedes crear un futuro.”*\n`;
-        menuText += `> _— Monkey D. Luffy_\n`;
-        menuText += `.   ╙᷼─ໍ۪┅֟፝─̥࣪:¨᜔⠣۟⠜¨᜔:࣪─࣮࣪͡┅ꊥ᜔۫⚓ꊥ᜔┅࣮࣪͡─:࣪¨᜔⠣۟⠜¨᜔:࣪─̥፝֟┅۪─᷼ໍ╜`;
+        // *** SE ELIMINÓ LA FRASE DE LUFFY ***
+        // Solo añadimos el enlace para el preview, sin el texto decorativo anterior
+        menuText += `\n⚓ ${link}`;
 
         const contextInfo = {
             mentionedJid: [msg.sender],
@@ -90,20 +91,24 @@ export default {
             }
         };
 
-        const linkPreview = link && banner
-            ? await prepareWAMessageMedia(
-                { image: { url: banner } },
-                { upload: sock.waUploadToServer, mediaTypeOverride: 'thumbnail-link' }
-              ).then(({ imageMessage }) => ({
-                'canonical-url': link,
-                'matched-text': link,
-                title: '⚓ LUFFY - BOT ⚓',
-                description: 'El mejor barco pirata 🏴‍☠️ powered by Luffy',
-                jpegThumbnail: imageMessage?.jpegThumbnail ? Buffer.from(imageMessage.jpegThumbnail) : undefined,
-                highQualityThumbnail: imageMessage || undefined
-              }))
-            : undefined;
+        // Generamos la miniatura personalizada
+        const { imageMessage } = await prepareWAMessageMedia(
+            { image: { url: banner } },
+            { upload: sock.waUploadToServer, mediaTypeOverride: 'thumbnail-link' }
+        );
 
+        const linkPreview = {
+            'canonical-url': link,
+            'matched-text': link,
+            title: '⚓ LUFFY - BOT ⚓',
+            description: 'El mejor barco pirata 🏴‍☠️ powered by Luffy',
+            jpegThumbnail: imageMessage?.jpegThumbnail
+                ? Buffer.from(imageMessage.jpegThumbnail)
+                : undefined,
+            highQualityThumbnail: imageMessage || undefined
+        };
+
+        // Enviamos todo en un solo mensaje
         await sock.sendMessage(msg.chat, {
             text: menuText,
             linkPreview,
