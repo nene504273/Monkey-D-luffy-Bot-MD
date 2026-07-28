@@ -1,4 +1,4 @@
- funciona import moment from 'moment-timezone';
+import moment from 'moment-timezone';
 import db from "#db";
 import { prepareWAMessageMedia } from 'baileys';
 import { commands } from '../../lib/system/comandos.js';
@@ -116,3 +116,5 @@ export default {
         }, { quoted: msg });
     }
 };
+
+
