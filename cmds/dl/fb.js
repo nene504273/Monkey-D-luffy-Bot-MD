@@ -1,96 +1,108 @@
-import db from "#db";
-import fetch from "node-fetch";
+import fetch from 'node-fetch'
 
 export default {
-  command: ["fb", "facebook"],
-  category: "downloader",
+  command: ['fb', 'facebook'],
+  category: 'downloader',
   run: async ({ msg, sock, args, command }) => {
+
     if (!args.length) {
-      return msg.reply("✎ Ingrese uno o varios enlaces de *Facebook*");
+      return msg.reply('✎ Ingresa uno o varios enlaces de *Facebook*')
     }
 
-    const urls = args.filter((arg) =>
-      arg.match(/facebook\.com|fb\.watch|video\.fb\.com/)
-    );
+    // Filtra URLs válidas de Facebook
+    const urls = args.filter(arg => /facebook\.com|fb\.watch|video\.fb\.com/.test(arg))
     if (!urls.length) {
-      return msg.reply("✿ Por favor, envía un link de Facebook válido");
+      return msg.reply('✿ Por favor, envía un link de Facebook válido')
     }
 
     try {
-      const API_URL = "https://api.alyacore.xyz/dl/facebookv2";
-      const API_KEY = "LUFFY-FIX67"; // ← cámbialo por api.key si existe
+      // Procesar hasta 10 enlaces (para no saturar)
+      const maxLinks = Math.min(urls.length, 10)
+      const mediaPromises = []
 
-      if (urls.length > 1) {
-        const medias = [];
-        for (const url of urls.slice(0, 10)) {
-          try {
-            // 1. Obtener JSON de la API
-            const apiRes = await fetch(
-              `${API_URL}?url=${encodeURIComponent(url)}&key=${API_KEY}`
-            );
-            const text = await apiRes.text(); // para depurar
-            console.log(`Respuesta para ${url}:`, text);
-            const json = JSON.parse(text);
+      for (let i = 0; i < maxLinks; i++) {
+        const url = urls[i]
+        mediaPromises.push(processFacebookUrl(url, msg))
+      }
 
-            if (!json.status || !json.data?.dl) {
-              console.error(`API error: ${json.msg || 'sin URL'}`);
-              continue;
-            }
+      const results = await Promise.allSettled(mediaPromises)
+      const successful = results.filter(r => r.status === 'fulfilled' && r.value)
 
-            // 2. Descargar video con headers
-            const videoRes = await fetch(json.data.dl, {
-              headers: {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-              }
-            });
-            if (!videoRes.ok) throw new Error(`Descarga fallida ${videoRes.status}`);
-            const buffer = await videoRes.buffer();
+      if (successful.length === 0) {
+        return msg.reply('✿ No se pudo obtener ningún video de los enlaces proporcionados.')
+      }
 
-            medias.push({ type: "video", data: buffer });
-          } catch (e) {
-            console.error(`Error con ${url}:`, e.message);
-            continue;
-          }
-        }
-
-        if (medias.length) {
-          await sock.sendAlbumMessage(msg.chat, medias, { quoted: msg });
-        } else {
-          await msg.reply("✿ No se pudieron procesar los enlaces.");
-        }
-      } else {
-        const url = urls[0];
-
-        const apiRes = await fetch(
-          `${API_URL}?url=${encodeURIComponent(url)}&key=${API_KEY}`
-        );
-        const text = await apiRes.text();
-        console.log('Respuesta API:', text);
-        const json = JSON.parse(text);
-
-        if (!json.status || !json.data?.dl) {
-          throw new Error(`API error: ${json.msg || 'sin URL'}`);
-        }
-
-        const videoRes = await fetch(json.data.dl, {
-          headers: {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-          }
-        });
-        if (!videoRes.ok) throw new Error(`Descarga fallida ${videoRes.status}`);
-        const buffer = await videoRes.buffer();
-
+      // Si es un solo video, enviarlo directamente
+      if (successful.length === 1) {
+        const { buffer, filename } = successful[0].value
         await sock.sendMessage(
           msg.chat,
-          { video: buffer, mimetype: "video/mp4", fileName: "fb.mp4" },
+          {
+            video: buffer,
+            mimetype: 'video/mp4',
+            fileName: filename || 'facebook_video.mp4',
+            // Opcional: añadir caption
+            // caption: `📹 Video de Facebook`
+          },
           { quoted: msg }
-        );
+        )
+        return
       }
+
+      // Si son varios, enviarlos uno tras otro (con un pequeño delay para evitar bloqueos)
+      for (const result of successful) {
+        const { buffer, filename } = result.value
+        await sock.sendMessage(
+          msg.chat,
+          {
+            video: buffer,
+            mimetype: 'video/mp4',
+            fileName: filename || 'facebook_video.mp4'
+          },
+          { quoted: msg }
+        )
+        // Pequeña pausa entre envíos
+        await new Promise(resolve => setTimeout(resolve, 500))
+      }
+
     } catch (e) {
-      console.error('ERROR GENERAL:', e);
-      // En lugar de msgglobal, envía el error real (solo para depuración)
-      await msg.reply(`❌ Error: ${e.message}`);
-      // Cuando funcione, vuelve a msgglobal
+      console.error('Error en comando fb:', e)
+      msg.reply('❌ Ocurrió un error al procesar el(los) enlace(s). Intenta más tarde.')
     }
-  },
-};
+  }
+}
+
+/**
+ * Función auxiliar para procesar un solo enlace de Facebook
+ * Retorna { buffer, filename } o lanza error
+ */
+async function processFacebookUrl(url, msg) {
+  // 1. Obtener datos de la API (suponiendo que devuelve JSON con la URL del video)
+  const apiUrl = `${api.url}/dl/facebookv2?url=${encodeURIComponent(url)}&key=${api.key}`
+  const res = await fetch(apiUrl)
+  if (!res.ok) throw new Error(`HTTP ${res.status} - ${res.statusText}`)
+
+  const data = await res.json()
+
+  // 2. Extraer la URL del video (ajusta la ruta según la respuesta real de tu API)
+  // Ejemplo común: data.video, data.url, data.download_url, etc.
+  const videoUrl = data.video || data.url || data.download_url || data.result?.url
+  if (!videoUrl) throw new Error('No se encontró la URL del video en la respuesta de la API')
+
+  // 3. Descargar el video como buffer
+  const videoRes = await fetch(videoUrl)
+  if (!videoRes.ok) throw new Error(`Error al descargar el video: ${videoRes.status}`)
+
+  const buffer = await videoRes.buffer()
+
+  // 4. Verificar tamaño (WhatsApp permite hasta ~16 MB, pero mejor limitar a 15 MB)
+  const sizeMB = buffer.length / (1024 * 1024)
+  if (sizeMB > 15) {
+    throw new Error(`El video pesa ${sizeMB.toFixed(2)} MB y supera el límite de 15 MB.`)
+  }
+
+  // 5. Generar nombre de archivo (opcional)
+  const filename = `fb_${Date.now()}.mp4`
+
+  return { buffer, filename }
+}
