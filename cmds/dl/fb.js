@@ -18,7 +18,7 @@ export default {
 
     try {
       const API_URL = "https://api.alyacore.xyz/dl/facebookv2";
-      const API_KEY = "LUFFY-FIX67"; // o usa api.key si lo tienes definido
+      const API_KEY = "LUFFY-FIX67"; // ← cámbialo por api.key si existe
 
       if (urls.length > 1) {
         const medias = [];
@@ -28,23 +28,28 @@ export default {
             const apiRes = await fetch(
               `${API_URL}?url=${encodeURIComponent(url)}&key=${API_KEY}`
             );
-            if (!apiRes.ok) throw new Error(`API HTTP ${apiRes.status}`);
-            const json = await apiRes.json();
-            if (!json.status || !json.data?.dl)
-              throw new Error("URL de descarga no disponible");
+            const text = await apiRes.text(); // para depurar
+            console.log(`Respuesta para ${url}:`, text);
+            const json = JSON.parse(text);
 
-            // 2. Descargar el video desde la URL obtenida
-            const videoRes = await fetch(json.data.dl);
+            if (!json.status || !json.data?.dl) {
+              console.error(`API error: ${json.msg || 'sin URL'}`);
+              continue;
+            }
+
+            // 2. Descargar video con headers
+            const videoRes = await fetch(json.data.dl, {
+              headers: {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+              }
+            });
             if (!videoRes.ok) throw new Error(`Descarga fallida ${videoRes.status}`);
             const buffer = await videoRes.buffer();
 
-            medias.push({
-              type: "video",
-              data: buffer,
-            });
+            medias.push({ type: "video", data: buffer });
           } catch (e) {
             console.error(`Error con ${url}:`, e.message);
-            continue; // salta este enlace y sigue con los demás
+            continue;
           }
         }
 
@@ -56,17 +61,22 @@ export default {
       } else {
         const url = urls[0];
 
-        // 1. Obtener JSON de la API
         const apiRes = await fetch(
           `${API_URL}?url=${encodeURIComponent(url)}&key=${API_KEY}`
         );
-        if (!apiRes.ok) throw new Error(`API HTTP ${apiRes.status}`);
-        const json = await apiRes.json();
-        if (!json.status || !json.data?.dl)
-          throw new Error("URL de descarga no disponible");
+        const text = await apiRes.text();
+        console.log('Respuesta API:', text);
+        const json = JSON.parse(text);
 
-        // 2. Descargar el video
-        const videoRes = await fetch(json.data.dl);
+        if (!json.status || !json.data?.dl) {
+          throw new Error(`API error: ${json.msg || 'sin URL'}`);
+        }
+
+        const videoRes = await fetch(json.data.dl, {
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+          }
+        });
         if (!videoRes.ok) throw new Error(`Descarga fallida ${videoRes.status}`);
         const buffer = await videoRes.buffer();
 
@@ -77,8 +87,10 @@ export default {
         );
       }
     } catch (e) {
-      console.error(e);
-      await msg.reply(msgglobal); // asegúrate de que msgglobal esté definido
+      console.error('ERROR GENERAL:', e);
+      // En lugar de msgglobal, envía el error real (solo para depuración)
+      await msg.reply(`❌ Error: ${e.message}`);
+      // Cuando funcione, vuelve a msgglobal
     }
   },
 };
