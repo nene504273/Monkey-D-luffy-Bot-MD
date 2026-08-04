@@ -1,8 +1,8 @@
 import { normalizeJid, resolveParticipantJid, resolveJidSync, deleteCachedMeta, getCachedMeta, setCachedMeta } from '#serialize';
-import db from "#db"
+import db from "#db";
 import chalk from 'chalk';
 import moment from 'moment-timezone';
-import { prepareWAMessageMedia } from 'baileys';
+import fetch from 'node-fetch'; // Asegúrate de tener disponible fetch/axios
 
 function getGroupAdmins(participants) {
   return (participants ?? []).filter(p => p.admin === 'admin' || p.admin === 'superadmin').map(p => p.id).filter(Boolean);
@@ -54,16 +54,19 @@ export default async (sock, msg) => {
 
         const phone = jid.split('@')[0];
         const userData = await db.getUser(jid);
-        const name = userData?.name || phone;
 
-        const avatar = await sock.profilePictureUrl(jid, 'image').catch(() => "https://n.uguu.se/LBkLPUzM.jpeg");
+        const avatarUrl = await sock.profilePictureUrl(jid, 'image').catch(() => "https://n.uguu.se/LBkLPUzM.jpeg");
+        
+        // Convertir la imagen a buffer para asegurar que WhatsApp la procese e imprima la miniatura
+        let avatarBuffer;
+        try {
+          const res = await fetch(avatarUrl);
+          avatarBuffer = await res.buffer();
+        } catch {
+          avatarBuffer = null;
+        }
 
-        const contextBase = {
-          mentionedJid: [jid].filter(Boolean),
-          isForwarded: false
-        };
-
-        // ─── BIENVENIDA (diseño original con tema Luffy) ───
+        // ─── BIENVENIDA ───
         if (anu.action === 'add' && chat?.welcome && (!primaryBotId || primaryBotId === botId)) {
           if (!metadata) continue;
 
@@ -92,28 +95,25 @@ export default async (sock, msg) => {
 > ✐ 𝐋𝐢𝐧𝐤 » ${botSettings.link || ''}`;
           }
 
-          const linkPreview = botSettings.link && avatar ? (
-            await prepareWAMessageMedia(
-              { image: { url: avatar } },
-              { upload: sock.waUploadToServer, mediaTypeOverride: 'thumbnail-link' }
-            ).then(({ imageMessage }) => ({
-              'canonical-url': botSettings.link,
-              'matched-text': botSettings.link,
-              title: "🏴‍☠️ Bienvenido a los Sombrero de Paja",
-              description: `${botSettings.namebot2 || 'Mugiwara Bot'}, rumbo al One Piece ⚡`,
-              jpegThumbnail: imageMessage?.jpegThumbnail ? Buffer.from(imageMessage.jpegThumbnail) : undefined,
-              highQualityThumbnail: imageMessage || undefined
-            }))
-          ) : undefined;
-
           await sock.sendMessage(anu.id, { 
             text: caption.trim(), 
-            linkPreview: linkPreview, 
-            contextInfo: contextBase
+            contextInfo: {
+              mentionedJid: [jid],
+              isForwarded: false,
+              externalAdReply: {
+                title: "🏴‍☠️ Bienvenido a los Sombrero de Paja",
+                body: `${botSettings.namebot2 || 'Mugiwara Bot'}, rumbo al One Piece ⚡`,
+                mediaType: 1,
+                previewType: 0,
+                renderLargerThumbnail: true,
+                thumbnail: avatarBuffer,
+                sourceUrl: botSettings.link || ''
+              }
+            }
           }, { quoted: null });
         }
 
-        // ─── DESPEDIDA (diseño original con tema Luffy) ───
+        // ─── DESPEDIDA ───
         if ((anu.action === 'remove' || anu.action === 'leave') && chat?.goodbye && (!primaryBotId || primaryBotId === botId)) {
           if (!metadata) continue;
 
@@ -142,24 +142,21 @@ export default async (sock, msg) => {
 > ✐ 𝐋𝐢𝐧𝐤 » ${botSettings.link || ''}`;
           }
 
-          const linkPreview = botSettings.link && avatar ? (
-            await prepareWAMessageMedia(
-              { image: { url: avatar } },
-              { upload: sock.waUploadToServer, mediaTypeOverride: 'thumbnail-link' }
-            ).then(({ imageMessage }) => ({
-              'canonical-url': botSettings.link,
-              'matched-text': botSettings.link,
-              title: "😢 Hasta pronto, nakama",
-              description: `${botSettings.namebot2 || 'Mugiwara Bot'}, el mar siempre nos une ⚡`,
-              jpegThumbnail: imageMessage?.jpegThumbnail ? Buffer.from(imageMessage.jpegThumbnail) : undefined,
-              highQualityThumbnail: imageMessage || undefined
-            }))
-          ) : undefined;
-
           await sock.sendMessage(anu.id, { 
             text: caption.trim(), 
-            linkPreview: linkPreview, 
-            contextInfo: contextBase
+            contextInfo: {
+              mentionedJid: [jid],
+              isForwarded: false,
+              externalAdReply: {
+                title: "😢 Hasta pronto, nakama",
+                body: `${botSettings.namebot2 || 'Mugiwara Bot'}, el mar siempre nos une ⚡`,
+                mediaType: 1,
+                previewType: 0,
+                renderLargerThumbnail: true,
+                thumbnail: avatarBuffer,
+                sourceUrl: botSettings.link || ''
+              }
+            }
           }, { quoted: null });
         }
 
