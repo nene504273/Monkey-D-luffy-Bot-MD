@@ -1,6 +1,8 @@
 import axios from 'axios'
 import sharp from 'sharp'
 
+// ... (las funciones helper delay, toBuffer, toWebp, withRetry, searchStickerly, getPackDetail se mantienen igual) ...
+
 export default {
   name: 'spack',
   alias: ['stickerpack', 'spack'],
