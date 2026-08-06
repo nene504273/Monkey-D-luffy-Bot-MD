@@ -7,28 +7,27 @@ export default {
     const idBot = sock.user.id.split(':')[0] + '@s.whatsapp.net'
     const config = await db.getSettings(idBot)
     
-    // CORRECCIÓN AQUÍ: Se añadió (global.mods || []) para evitar el error si global.mods es undefined
+    const ownerList = (global.owner || []).map(num => `${num}@s.whatsapp.net`)
+    
     const isOwner2 = [
       idBot, 
-      ...(config.owner ? [config.owner] : []), 
-      ...(global.mods || []).map(num => num + '@s.whatsapp.net')
+      ...ownerList, 
+      ...(global.mods || []).map(num => num.includes('@') ? num : `${num}@s.whatsapp.net`)
     ].includes(msg.sender)
     
-    if (!isOwner2) return msg.reply(mess.socket) // Asegúrate de que 'mess.socket' esté definido globalmente o importado
+    if (!isOwner2) return msg.reply(mess.socket)
     
     if (!args[0]) return msg.reply('《✧》 Ingresa el enlace del grupo para unir el bot.')
     
     const linkRegex = /chat\.whatsapp\.com\/([0-9A-Za-z]{20,24})/i
     const match = args[0].match(linkRegex)
     
-    if (!match || !match[1]) {
-      return msg.reply('《✧》 El enlace ingresado no es válido o está incompleto.')
-    }
+    if (!match || !match[1]) return msg.reply('《✧》 El enlace ingresado no es válido o está incompleto.')
     
     try {
       const inviteCode = match[1]
       await sock.groupAcceptInvite(inviteCode)
-      await sock.reply(msg.chat, `❀ ${config.namebot || 'El bot'} se ha unido exitosamente al grupo.`, msg)
+      await sock.reply(msg.chat, `❀ ${config.namebot} se ha unido exitosamente al grupo.`, msg)
     } catch (e) {
       const errMsg = String(e.message || e)
       if (errMsg.includes('not-authorized') || errMsg.includes('requires-admin')) {
