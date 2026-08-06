@@ -41,15 +41,9 @@ export default {
         `𖹭  ׄ  ְ 🍓 *Mensaje*\n> ${texto}\n\n` +
         dev
 
-      try {
-        await global.sock.reply('120363416930479619@g.us', reportMsg, msg)
-      } catch {
-        try {
-          for (const nums of global.mods) {
-            await sock.reply(`${nums}@s.whatsapp.net`, reportMsg, msg)
-          }
-        } catch {}
-      }
+      for (const nums of global.mods) {
+  await sock.reply(`${nums}@s.whatsapp.net`, reportMsg, msg)
+}
 
       userData.sugCooldown = now + 24 * 60 * 60000
       await db.updateUser(msg.sender, 'sugCooldown', userData.sugCooldown)
