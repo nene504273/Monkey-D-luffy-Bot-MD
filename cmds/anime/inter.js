@@ -278,47 +278,64 @@ export default {
   ],
   category: 'anime',
   run: async ({ msg, sock, args, command, text, usedPrefix: prefix }) => {
-    const currentCommand = commandAliases[command] || command
-    if (!captions[currentCommand]) return
+    const currentCommand = commandAliases[command] || command;
+    if (!captions[currentCommand]) return;
 
-    let who
-    const texto = msg.mentionedJid
+    // Determinar el usuario objetivo
+    let who;
     if (msg.isGroup) {
-      who = texto.length > 0 ? texto[0] : msg.quoted ? msg.quoted.sender : msg.sender
+      who = msg.mentionedJid?.length > 0
+        ? msg.mentionedJid[0]
+        : msg.quoted
+          ? msg.quoted.sender
+          : msg.sender;
     } else {
-      who = msg.quoted ? msg.quoted.sender : msg.sender
+      who = msg.quoted ? msg.quoted.sender : msg.sender;
     }
 
-    const user = await db.getUser(who)
-    const fromName = msg.pushName || 'Alguien'
-    const toName = user.name || 'alguien'
+    const user = await db.getUser(who);
+    const fromName = msg.pushName || 'Alguien';
+    const toName = user.name || 'alguien';
 
-    const usr = await db.getUser(msg.sender)
-    const genero = usr.genre || 'Oculto'
+    const usr = await db.getUser(msg.sender);
+    const genero = usr.genre || 'Oculto';
 
-    const captionText = captions[currentCommand](fromName, toName, genero)
+    const captionText = captions[currentCommand](fromName, toName, genero);
     const caption =
       who !== msg.sender
         ? `@${msg.sender.split('@')[0]} ${captionText} @${who.split('@')[0]} ${getRandomSymbol()}.`
-        : `${fromName} ${captionText} ${getRandomSymbol()}.`
+        : `${fromName} ${captionText} ${getRandomSymbol()}.`;
 
     try {
-      // 1. Obtener la URL del video desde la API de Alyacore
-      const apiUrl = `https://api.alyacore.xyz/sfw/interaction?inter=${currentCommand}&key=Core`
-      const apiRes = await fetch(apiUrl)
-      const json = await apiRes.json()
+      // 1. Obtener la URL del video
+      const apiUrl = `https://api.alyacore.xyz/sfw/interaction?inter=${currentCommand}&key=Core`;
+      const apiRes = await fetch(apiUrl).catch(() => null);
+      if (!apiRes || !apiRes.ok) throw new Error('No se pudo conectar a la API de videos');
 
-      if (!json.status || !json.result) {
-        throw new Error('API no devolvió un resultado válido')
+      const json = await apiRes.json();
+      if (!json.status || !json.result) throw new Error('La API no devolvió un resultado válido');
+
+      const videoUrl = json.result;
+
+      // 2. Descargar el video (con headers amigables)
+      const videoRes = await fetch(videoUrl, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (compatible; WhatsAppBot/1.0)',
+          'Accept': 'video/mp4,video/*;q=0.9,*/*;q=0.8'
+        }
+      });
+      if (!videoRes.ok) throw new Error(`Error al descargar el video (HTTP ${videoRes.status})`);
+
+      // Obtener buffer compatible con versiones viejas y nuevas de node-fetch
+      let videoBuffer;
+      if (typeof videoRes.buffer === 'function') {
+        videoBuffer = await videoRes.buffer();
+      } else {
+        const arrayBuffer = await videoRes.arrayBuffer();
+        videoBuffer = Buffer.from(arrayBuffer);
       }
 
-      const videoUrl = json.result
-
-      // 2. Descargar el video como buffer
-      const videoRes = await fetch(videoUrl)
-      const videoBuffer = await videoRes.buffer()
-
-      // 3. Enviar el mensaje con el video
+      // 3. Enviar video
       await sock.sendMessage(
         msg.chat,
         {
@@ -328,10 +345,15 @@ export default {
           mentions: [who, msg.sender],
         },
         { quoted: msg },
-      )
+      );
     } catch (err) {
-      console.error(err)
-      await msg.reply(msgglobal) // Asegúrate de que `msgglobal` esté definido en tu contexto
+      console.error('Error en interacción anime:', err);
+      // Si falla el video, enviamos al menos el texto con el emoji
+      await sock.sendMessage(
+        msg.chat,
+        { text: caption, mentions: [who, msg.sender] },
+        { quoted: msg },
+      );
     }
   },
 };
