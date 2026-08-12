@@ -307,7 +307,7 @@ export default {
         : `${fromName} ${captionText} ${getRandomSymbol()}.`;
 
     try {
-      // 1. Obtener la URL del video
+      // 1. Obtener URL de la API
       const apiUrl = `https://api.alyacore.xyz/sfw/interaction?inter=${currentCommand}&key=Core`;
       const apiRes = await fetch(apiUrl).catch(() => null);
       if (!apiRes || !apiRes.ok) throw new Error('No se pudo conectar a la API de videos');
@@ -317,7 +317,7 @@ export default {
 
       const videoUrl = json.result;
 
-      // 2. Descargar el video (con headers amigables)
+      // 2. Descargar video con headers
       const videoRes = await fetch(videoUrl, {
         headers: {
           'User-Agent': 'Mozilla/5.0 (compatible; WhatsAppBot/1.0)',
@@ -326,7 +326,6 @@ export default {
       });
       if (!videoRes.ok) throw new Error(`Error al descargar el video (HTTP ${videoRes.status})`);
 
-      // Obtener buffer compatible con versiones viejas y nuevas de node-fetch
       let videoBuffer;
       if (typeof videoRes.buffer === 'function') {
         videoBuffer = await videoRes.buffer();
@@ -335,24 +334,99 @@ export default {
         videoBuffer = Buffer.from(arrayBuffer);
       }
 
-      // 3. Enviar video
-      await sock.sendMessage(
-        msg.chat,
-        {
-          video: videoBuffer,
-          gifPlayback: true,
-          caption,
-          mentions: [who, msg.sender],
-        },
-        { quoted: msg },
-      );
+      console.log(`[ANIME] Tamaño del video: ${(videoBuffer.length / 1024 / 1024).toFixed(2)} MB`);
+
+      let enviado = false;
+
+      // Intento 1: Video con gifPlayback (animación)
+      try {
+        await sock.sendMessage(
+          msg.chat,
+          {
+            video: videoBuffer,
+            mimetype: 'video/mp4',
+            gifPlayback: true,
+            caption,
+            mentions: [who, msg.sender],
+          },
+          { quoted: msg }
+        );
+        enviado = true;
+        console.log('[ANIME] Enviado con gifPlayback');
+      } catch (e) {
+        console.error('[ANIME] Fallo gifPlayback:', e.message);
+      }
+
+      // Intento 2: Video normal sin gifPlayback
+      if (!enviado) {
+        try {
+          await sock.sendMessage(
+            msg.chat,
+            {
+              video: videoBuffer,
+              mimetype: 'video/mp4',
+              caption,
+              mentions: [who, msg.sender],
+            },
+            { quoted: msg }
+          );
+          enviado = true;
+          console.log('[ANIME] Enviado como video normal');
+        } catch (e) {
+          console.error('[ANIME] Fallo video normal:', e.message);
+        }
+      }
+
+      // Intento 3: Usar directamente la URL (Baileys la descarga internamente)
+      if (!enviado) {
+        try {
+          await sock.sendMessage(
+            msg.chat,
+            {
+              video: { url: videoUrl, mimetype: 'video/mp4' },
+              gifPlayback: true,
+              caption,
+              mentions: [who, msg.sender],
+            },
+            { quoted: msg }
+          );
+          enviado = true;
+          console.log('[ANIME] Enviado con URL + gifPlayback');
+        } catch (e) {
+          console.error('[ANIME] Fallo URL + gifPlayback:', e.message);
+        }
+      }
+
+      // Intento 4: URL sin gifPlayback
+      if (!enviado) {
+        try {
+          await sock.sendMessage(
+            msg.chat,
+            {
+              video: { url: videoUrl, mimetype: 'video/mp4' },
+              caption,
+              mentions: [who, msg.sender],
+            },
+            { quoted: msg }
+          );
+          enviado = true;
+          console.log('[ANIME] Enviado con URL normal');
+        } catch (e) {
+          console.error('[ANIME] Fallo URL normal:', e.message);
+        }
+      }
+
+      // Si absolutamente nada funcionó
+      if (!enviado) {
+        throw new Error('Ningún método de envío de video funcionó');
+      }
     } catch (err) {
-      console.error('Error en interacción anime:', err);
-      // Si falla el video, enviamos al menos el texto con el emoji
+      console.error('[ANIME] Error final:', err);
+      // Enviar al menos el texto con el símbolo
       await sock.sendMessage(
         msg.chat,
         { text: caption, mentions: [who, msg.sender] },
-        { quoted: msg },
+        { quoted: msg }
       );
     }
   },
