@@ -1,9 +1,10 @@
-import db from "#db";
+import db from "#db"
 import axios from 'axios';
 import sharp from 'sharp';
 
 const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 const toBuffer = async (url) => Buffer.from((await axios.get(url, { responseType: 'arraybuffer', timeout: 15000 })).data);
+const key = api.key // Se asume que 'api' está definido globalmente en tu proyecto
 
 const toWebp = async (buffer, isAnimated = false) => {
   if (isAnimated) {
@@ -20,23 +21,22 @@ const isStickerUrl = (url) => {
   return /^(https?:\/\/)?(www\.)?sticker\.ly\/s\/[a-zA-Z0-9]+$/i.test(url);
 };
 
-// Pasamos apiUrl y apiKey como argumentos para que no crashee en la raíz
-const searchPacks = async (query, apiUrl, apiKey, attempt = 1) => {
+const searchPacks = async (query, attempt = 1) => {
   try {
-    const { data } = await axios.get(`${apiUrl}/stickerly/search`, { params: { query, key: apiKey }, timeout: 10000 });
+    const { data } = await axios.get(`${api.url}/stickerly/search`, { params: { query, key }, timeout: 10000 });
     return data;
   } catch (e) {
-    if (e.response?.status === 429 && attempt <= 3) { await delay((e.response.headers['retry-after'] || 5) * 1000); return searchPacks(query, apiUrl, apiKey, attempt + 1); }
+    if (e.response?.status === 429 && attempt <= 3) { await delay((e.response.headers['retry-after'] || 5) * 1000); return searchPacks(query, attempt + 1); }
     throw e;
   }
 };
 
-const downloadPack = async (url, apiUrl, apiKey, attempt = 1) => {
+const downloadPack = async (url, attempt = 1) => {
   try {
-    const { data } = await axios.get(`${apiUrl}/stickerly/detail`, { params: { url, key: apiKey }, timeout: 10000 });
+    const { data } = await axios.get(`${api.url}/stickerly/detail`, { params: { url, key }, timeout: 10000 });
     return data;
   } catch (e) {
-    if (e.response?.status === 429 && attempt <= 3) { await delay((e.response.headers['retry-after'] || 5) * 1000); return downloadPack(url, apiUrl, apiKey, attempt + 1); }
+    if (e.response?.status === 429 && attempt <= 3) { await delay((e.response.headers['retry-after'] || 5) * 1000); return downloadPack(url, attempt + 1); }
     if (e.response?.status === 500) return { status: false, error: 500 };
     throw e;
   }
@@ -56,30 +56,24 @@ export default {
   category: 'stickers',
   run: async ({ msg, sock, args, command, text, usedPrefix: prefix }) => {
     try {
-      // 1. Obtenemos las credenciales de la API de forma segura al momento de ejecutar
-      const apiUrl = typeof api !== 'undefined' ? api.url : (global.api?.url || 'URL_POR_DEFECTO');
-      const apiKey = typeof api !== 'undefined' ? api.key : (global.api?.key || 'KEY_POR_DEFECTO');
-
-      if (!text) return sock.reply(msg.chat, `《✧》 Ingresa un texto para buscar packs de stickers o una URL de sticker.ly.`, msg);
+      // Reemplazo de la función multi-idioma por texto directo
+      if (!text) return sock.reply(msg.chat, `⚓ Ingresa el nombre de un paquete de stickers o un enlace de sticker.ly.\nEjemplo: ${prefix}stickerpack luffy`, msg);
       
-      // 2. Agregamos el encadenamiento opcional (?.) para evitar el error si el usuario es nuevo
-      const userData = await db.getUser(msg.sender);
-      const name = userData?.name || msg.sender.split('@')[0];
-      
+      const name = await db.getUser(msg.sender).name || msg.sender.split('@')[0];
       let packData;
       const stickerMatch = text.match(/(?:sticker\.ly\/s\/)([a-zA-Z0-9]+)(?:\s|$)/);
       const url = stickerMatch ? 'https://sticker.ly/s/' + stickerMatch[1] : (isStickerUrl(text) ? text : null);
       
       if (url) {
-        let detail = await downloadPack(url, apiUrl, apiKey);
+        let detail = await downloadPack(url);
         if (!detail || !detail.status || detail.error === 500) {
-          return sock.reply(msg.chat, `《✧》 El pack de la URL no está disponible o es privado.`, msg);
+          return sock.reply(msg.chat, '🏴‍☠️ El enlace proporcionado no es válido o está temporalmente inaccesible.', msg);
         }
-        if (!detail.detalles) return sock.reply(msg.chat, `《✧》 No se pudo obtener el pack desde la URL.`, msg);
+        if (!detail.detalles) return sock.reply(msg.chat, '🏴‍☠️ No se pudieron obtener los detalles de ese enlace.', msg);
         packData = detail.detalles;
       } else {
-        const search = await searchPacks(text, apiUrl, apiKey);
-        if (!search.status || !search.resultados?.length) return sock.reply(msg.chat, `《✧》 No se encontraron packs para *${text}*.`, msg);
+        const search = await searchPacks(text);
+        if (!search.status || !search.resultados?.length) return sock.reply(msg.chat, `🧭 No encontré ningún paquete de stickers para: "${text}"`, msg);
         
         const relevantPacks = filterRelevantPacks(search.resultados, text);
         let packsToTry = relevantPacks.length > 0 ? relevantPacks : search.resultados;
@@ -97,30 +91,27 @@ export default {
         while (intentos < maxIntentos && !detail) {
           const index = indices[intentos];
           selectedPack = packsToTry[index];
-          const res = await downloadPack(selectedPack.url, apiUrl, apiKey);
+          const res = await downloadPack(selectedPack.url);
           if (res?.status && res?.detalles?.stickers?.length > 0) {
             detail = res.detalles;
             break;
           }
           intentos++;
         }
-        
         if (!detail) {
-          return sock.reply(msg.chat, `《✧》 No se pudo descargar ningún pack válido.`, msg);
+          return sock.reply(msg.chat, '☠️ Encontré paquetes, pero no pude descargar ninguno correctamente. Intenta con otra búsqueda.', msg);
         }
         packData = detail;
       }      
       
       const { name: packName, author, stickers, thumbnailUrl } = packData;      
       if (!stickers?.length) {
-        return sock.reply(msg.chat, `《✧》 El pack no contiene stickers válidos.`, msg);
+        return sock.reply(msg.chat, '📦 Ese cofre está vacío (el paquete no contiene stickers).', msg);
       }
       
       const MAX_STICKERS = 30;
       const selectedStickers = stickers.slice(0, MAX_STICKERS);
-      
-      const [cover, stickerResults] = await Promise.all([
-        (async () => {
+      const [cover, stickerResults] = await Promise.all([(async () => {
           try {
             return await sharp(await toBuffer(thumbnailUrl)).resize(96, 96, { fit: 'cover' }).webp({ quality: 60 }).toBuffer();
           } catch {
@@ -131,24 +122,20 @@ export default {
           try {
             const buffer = await toBuffer(s.imageUrl);
             const sticker = await toWebp(buffer, s.isAnimated || false);
-            return { sticker, isAnimated: s.isAnimated || false, isLottie: false, emojis: ['🎭'] };
+            return { sticker, isAnimated: s.isAnimated || false, isLottie: false, emojis: ['🍒'] };
           } catch {
             return null;
           }
-        })).then(results => results.filter(r => r !== null))
-      ]);      
+        })).then(results => results.filter(r => r !== null))]);      
       
-      if (!stickerResults.length) return sock.reply(msg.chat, `《✧》 No se pudieron procesar los stickers del pack.`, msg);
+      if (!stickerResults.length) return sock.reply(msg.chat, '💥 ¡Gomu Gomu no...! Hubo un error al procesar y convertir los stickers.', msg);
       
-      await sock.sendMessage(msg.chat, { stickerPack: { name: packName, publisher: author?.name || author?.username || `@${name}`, description: 'Sᴛᴇʟʟᴀʀ 🧠 Wᴀʙᴏᴛ', cover, stickers: stickerResults }}, { quoted: msg });      
-      
+      // La descripción "Kujou" fue removida de la creación del Sticker Pack
+      await sock.sendMessage(msg.chat, { stickerPack: { name: packName, publisher: author?.name || author?.username || `@${name}`, description: 'ׄ𓆩⚝𓆪 Monkey D. Luffy 𓆩⚝𓆪', cover, stickers: stickerResults }}, { quoted: msg });      
     } catch (e) {
-      console.error("Error en spack:", e); // Esto te permitirá ver el error real en tu consola
-      // 3. Fallback en caso de que msgglobal no esté definida globalmente
-      const errorText = typeof msgglobal !== 'undefined' ? msgglobal : `《✧》 Ocurrió un error inesperado al descargar el pack.`;
-      
-      if (typeof msg.reply === 'function') return msg.reply(errorText);
-      return sock.reply(msg.chat, errorText, msg);
+      console.error(e);
+      // Se reemplazó msgglobal por un string de texto
+      return msg.reply('❌ ¡Algo falló! Ocurrió un error inesperado al procesar el paquete de stickers.');
     }
   }
 };
