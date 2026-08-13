@@ -168,11 +168,10 @@ const commandAliases = {
   comer: 'eat',
   nom: 'eat',
   feliz: 'happy',
-  morder: 'bite', // Añadido: Sin esto fallaba cuando alguien usaba #morder
+  morder: 'bite', 
 }
 
 export default {
-  // Removí comandos que tenías duplicados (love y amor estaban dos veces)
   command: [
     'angry', 'bleh', 'bored', 'aburrido', 'beso', 'clap', 'coffee', 'cafe',
     'dramatic', 'drama', 'drunk', 'impregnate', 'preg', 'kisscheek', 'laugh',
@@ -199,7 +198,6 @@ export default {
       who = msg.quoted ? msg.quoted.sender : msg.sender
     }
 
-    // Prevención de cuelgues si la base de datos devuelve nulo temporalmente
     const user = (await db.getUser(who)) || {}
     const fromName = msg.pushName || 'Alguien'
     const toName = user.name || 'alguien'
@@ -214,28 +212,24 @@ export default {
         : `${fromName} ${captionText} ${getRandomSymbol()}.`
 
     try {
-      // 1. Obtener la URL del video desde la API de Alyacore
-      const apiUrl = `https://api.alyacore.xyz/sfw/interaction?inter=${currentCommand}&key=Core`
+      const apiUrl = `https://api.alyacore.xyz/sfw/interaction?inter=${currentCommand}&key=LUFFY-FIX67`
       const apiRes = await fetch(apiUrl)
       
-      // 2. Comprobar que la respuesta no es un error de red o de HTML
       if (!apiRes.ok) {
-         throw new Error('Error de conectividad con la API')
+         throw new Error(`Error de red o conexión: Código ${apiRes.status}`)
       }
       
       const json = await apiRes.json()
 
       if (!json.status || !json.result) {
-        throw new Error('La API no devolvió un resultado válido o no soporta esta interacción')
+        throw new Error('La API devolvió un status false o el resultado está vacío')
       }
 
       const videoUrl = json.result
 
-      // 3. Descargar el video como buffer
       const videoRes = await fetch(videoUrl)
       const videoBuffer = await videoRes.buffer()
 
-      // 4. Enviar el mensaje con el video
       await sock.sendMessage(
         msg.chat,
         {
@@ -247,10 +241,8 @@ export default {
         { quoted: msg },
       )
     } catch (err) {
-      console.error('[Error de Interacción Anime]:', err)
-      // ARREGLO PRINCIPAL: Se reemplaza `msgglobal` por texto. 
-      // Si la API falla para comandos como 'kill', te avisará en vez de romper el bot.
-      await msg.reply('❌ Ocurrió un error al procesar la interacción. Es posible que la API no soporte este comando o esté caída temporalmente.')
+      console.error('[Error en módulo Anime]:', err)
+      await msg.reply('❌ Ocurrió un error al procesar el comando. Es posible que la API esté caída temporalmente o no encuentre el gif.')
     }
   },
 };
