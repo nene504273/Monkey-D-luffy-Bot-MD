@@ -1,4 +1,4 @@
-Arreglame este error import db from "#db"
+import db from "#db"
 import fetch from 'node-fetch';
 
 const captions = {
@@ -66,7 +66,7 @@ const captions = {
   impregnate: (from, to) => (from === to ? 'se embarazó.' : 'embarazó a'),
   bully: (from, to, genero) =>
     from === to
-      ? `se hace bullying ${genero === 'Hombre' ? 'el mismo' : genero === 'Mujer' ? 'ella misma' : 'el/ella mismx'}… alguien ${genero === 'Hombre' ? 'que lo abrace' : genero === 'Mujer' ? 'que la abrace' : `que ${genero === 'Hombre' ? 'lo' : genero === 'Mujer' ? 'la' : 'lx'} ayude`}.`
+      ? `se hace bullying ${genero === 'Hombre' ? 'él mismo' : genero === 'Mujer' ? 'ella misma' : 'el/ella mismx'}… alguien ${genero === 'Hombre' ? 'que lo abrace' : genero === 'Mujer' ? 'que la abrace' : 'que lx ayude'}.`
       : 'le está haciendo bullying a',
   cry: (from, to) => (from === to ? 'está llorando.' : 'está llorando por'),
   happy: (from, to) => (from === to ? 'está feliz.' : 'está feliz con'),
@@ -114,8 +114,8 @@ const captions = {
   run: (from, to) => (from === to ? 'está corriendo por su vida.' : 'está corriendo con'),
   scared: (from, to, genero) =>
     from === to
-      ? `está ${genero === 'Hombre' ? 'asustado' : genero === 'Mujer' ? 'asustada' : 'asustxd'} por algo.`
-      : `está ${genero === 'Hombre' ? 'asustado' : genero === 'Mujer' ? 'asustada' : 'asustxd'} por`,
+      ? `está ${genero === 'Hombre' ? 'asustado' : genero === 'Mujer' ? 'asustada' : 'asustadx'} por algo.`
+      : `está ${genero === 'Hombre' ? 'asustado' : genero === 'Mujer' ? 'asustada' : 'asustadx'} por`,
   sad: (from, to) => (from === to ? `está triste` : `está expresando su tristeza a`),
   smoke: (from, to) => (from === to ? 'está fumando tranquilamente.' : 'está fumando con'),
   smile: (from, to) => (from === to ? 'está sonriendo.' : 'le sonrió a'),
@@ -142,26 +142,9 @@ const captions = {
 }
 
 const symbols = [
-  '(⁠◠⁠‿⁠◕⁠)',
-  '˃͈◡˂͈',
-  '૮(˶ᵔᵕᵔ˶)ა',
-  '(づ｡◕‿‿◕｡)づ',
-  '(✿◡‿◡)',
-  '(꒪⌓꒪)',
-  '(✿✪‿✪｡)',
-  '(*≧ω≦)',
-  '(✧ω◕)',
-  '˃ 𖥦 ˂',
-  '(⌒‿⌒)',
-  '(¬‿¬)',
-  '(✧ω✧)',
-  '✿(◕ ‿◕)✿',
-  'ʕ•́ᴥ•̀ʔっ',
-  '(ㅇㅅㅇ❀)',
-  '(∩︵∩)',
-  '(✪ω✪)',
-  '(✯◕‿◕✯)',
-  '(•̀ᴗ•́)و ̑̑',
+  '(⁠◠⁠‿⁠◕⁠)', '˃͈◡˂͈', '૮(˶ᵔᵕᵔ˶)ა', '(づ｡◕‿‿◕｡)づ', '(✿◡‿◡)', '(꒪⌓꒪)',
+  '(✿✪‿✪｡)', '(*≧ω≦)', '(✧ω◕)', '˃ 𖥦 ˂', '(⌒‿⌒)', '(¬‿¬)', '(✧ω✧)',
+  '✿(◕ ‿◕)✿', 'ʕ•́ᴥ•̀ʔっ', '(ㅇㅅㅇ❀)', '(∩︵∩)', '(✪ω✪)', '(✯◕‿◕✯)', '(•̀ᴗ•́)و ̑̑',
 ]
 
 function getRandomSymbol() {
@@ -185,96 +168,23 @@ const commandAliases = {
   comer: 'eat',
   nom: 'eat',
   feliz: 'happy',
+  morder: 'bite', // Añadido: Sin esto fallaba cuando alguien usaba #morder
 }
 
 export default {
+  // Removí comandos que tenías duplicados (love y amor estaban dos veces)
   command: [
-    'angry',
-    'bleh',
-    'bored',
-    'aburrido',
-    'beso',
-    'clap',
-    'coffee',
-    'cafe',
-    'dramatic',
-    'drama',
-    'drunk',
-    'impregnate',
-    'preg',
-    'kisscheek',
-    'laugh',
-    'love',
-    'amor',
-    'pout',
-    'punch',
-    'run',
-    'correr',
-    'sad',
-    'triste',
-    'scared',
-    'seduce',
-    'shy',
-    'timido',
-    'sleep',
-    'smoke',
-    'fumar',
-    'spit',
-    'escupir',
-    'step',
-    'pisar',
-    'think',
-    'walk',
-    'hug',
-    'kill',
-    'eat',
-    'nom',
-    'comer',
-    'kiss',
-    'muak',
-    'wink',
-    'pat',
-    'happy',
-    'bully',
-    'bite',
-    'morder',
-    'blush',
-    'wave',
-    'bath',
-    'smug',
-    'smile',
-    'highfive',
-    'handhold',
-    'cringe',
-    'bonk',
-    'cry',
-    'lick',
-    'slap',
-    'dance',
-    'love',
-    'amor',
-    'cuddle',
-    'cold',
-    'sing',
-    'tickle',
-    'scream',
-    'push',
-    'nope',
-    'jump',
-    'heat',
-    'gaming',
-    'draw',
-    'call',
-    'feliz',
-    'snuggle',
-    'blowkiss',
-    'trip',
-    'stare',
-    'sniff',
-    'curious',
-    'thinkhard',
-    'comfort',
-    'peek',
+    'angry', 'bleh', 'bored', 'aburrido', 'beso', 'clap', 'coffee', 'cafe',
+    'dramatic', 'drama', 'drunk', 'impregnate', 'preg', 'kisscheek', 'laugh',
+    'love', 'amor', 'pout', 'punch', 'run', 'correr', 'sad', 'triste',
+    'scared', 'seduce', 'shy', 'timido', 'sleep', 'smoke', 'fumar', 'spit',
+    'escupir', 'step', 'pisar', 'think', 'walk', 'hug', 'kill', 'eat', 'nom',
+    'comer', 'kiss', 'muak', 'wink', 'pat', 'happy', 'bully', 'bite', 'morder',
+    'blush', 'wave', 'bath', 'smug', 'smile', 'highfive', 'handhold', 'cringe',
+    'bonk', 'cry', 'lick', 'slap', 'dance', 'cuddle', 'cold', 'sing', 'tickle',
+    'scream', 'push', 'nope', 'jump', 'heat', 'gaming', 'draw', 'call', 'feliz',
+    'snuggle', 'blowkiss', 'trip', 'stare', 'sniff', 'curious', 'thinkhard',
+    'comfort', 'peek',
   ],
   category: 'anime',
   run: async ({ msg, sock, args, command, text, usedPrefix: prefix }) => {
@@ -289,11 +199,12 @@ export default {
       who = msg.quoted ? msg.quoted.sender : msg.sender
     }
 
-    const user = await db.getUser(who)
+    // Prevención de cuelgues si la base de datos devuelve nulo temporalmente
+    const user = (await db.getUser(who)) || {}
     const fromName = msg.pushName || 'Alguien'
     const toName = user.name || 'alguien'
 
-    const usr = await db.getUser(msg.sender)
+    const usr = (await db.getUser(msg.sender)) || {}
     const genero = usr.genre || 'Oculto'
 
     const captionText = captions[currentCommand](fromName, toName, genero)
@@ -306,19 +217,25 @@ export default {
       // 1. Obtener la URL del video desde la API de Alyacore
       const apiUrl = `https://api.alyacore.xyz/sfw/interaction?inter=${currentCommand}&key=Core`
       const apiRes = await fetch(apiUrl)
+      
+      // 2. Comprobar que la respuesta no es un error de red o de HTML
+      if (!apiRes.ok) {
+         throw new Error('Error de conectividad con la API')
+      }
+      
       const json = await apiRes.json()
 
       if (!json.status || !json.result) {
-        throw new Error('API no devolvió un resultado válido')
+        throw new Error('La API no devolvió un resultado válido o no soporta esta interacción')
       }
 
       const videoUrl = json.result
 
-      // 2. Descargar el video como buffer
+      // 3. Descargar el video como buffer
       const videoRes = await fetch(videoUrl)
       const videoBuffer = await videoRes.buffer()
 
-      // 3. Enviar el mensaje con el video
+      // 4. Enviar el mensaje con el video
       await sock.sendMessage(
         msg.chat,
         {
@@ -330,9 +247,10 @@ export default {
         { quoted: msg },
       )
     } catch (err) {
-      console.error(err)
-      await msg.reply(msgglobal) // Asegúrate de que `msgglobal` esté definido en tu contexto
+      console.error('[Error de Interacción Anime]:', err)
+      // ARREGLO PRINCIPAL: Se reemplaza `msgglobal` por texto. 
+      // Si la API falla para comandos como 'kill', te avisará en vez de romper el bot.
+      await msg.reply('❌ Ocurrió un error al procesar la interacción. Es posible que la API no soporte este comando o esté caída temporalmente.')
     }
   },
 };
-
