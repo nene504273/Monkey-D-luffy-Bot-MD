@@ -43,9 +43,9 @@ export default {
 
       await sock.sendMessage(msg.chat, { image: thumbBuffer, caption }, { quoted: msg })
 
-      // 🔗 Llamada a la nueva API con más logs de error
-      const apiUrl = `https://api.alyacore.xyz/dl/ytmp4?url=${encodeURIComponent(url)}&quality=480&key=LUFFY-FIX67`
-      
+      // 🔗 Llamada a la nueva API (youtubeplayv2)
+      const apiUrl = `https://api.alyacore.xyz/dl/youtubeplayv2?query=${encodeURIComponent(url)}&type=mp4&quality=auto&key=LUFFY-FIX67`
+
       let res
       try {
         const response = await fetch(apiUrl, {
@@ -54,19 +54,24 @@ export default {
             'Accept': 'application/json'
           }
         })
+        
+        // Verificamos si el servidor devuelve un error HTTP (ej. 503, 404) antes de convertir a JSON
+        if (!response.ok) {
+           return msg.reply(`《✧》 La API falló con el código de estado: ${response.status}`)
+        }
+        
         res = await response.json()
-      } catch (parseError) {
-        return msg.reply('《✧》 La API no respondió con un JSON válido, posiblemente caída o sobrecargada.')
+      } catch (error) {
+        return msg.reply(`《✧》 Error al conectar con la API: ${error.message}`)
       }
 
-      // Validación más descriptiva
+      // Validación más descriptiva basada en la nueva estructura
       if (!res?.status || !res.data?.dl) {
         const motivo = res?.message || res?.error || 'Motivo no especificado'
         return msg.reply(`《✧》 Falló la descarga.\n📌 Razón de la API: ${motivo}`)
       }
 
-      // Descarga y envío
-      const videoBuffer = await getBuffer(res.data.dl)
+      // Envío del video (ya no es necesario descargar el Buffer previamente si WhatsApp procesa la URL directa)
       const mensaje = {
         video: { url: res.data.dl },
         fileName: `${res.data?.title || title || 'video'}.mp4`,
@@ -76,9 +81,9 @@ export default {
       await sock.sendMessage(msg.chat, mensaje, { quoted: msg })
 
     } catch (e) {
-      // Error global controlado (por si msgglobal no existiera)
+      // Error global controlado
       await msg.reply('《✧》 Ocurrió un error inesperado. Inténtalo de nuevo más tarde.').catch(() => {})
-      console.error(e) // Para que puedas depurar en consola
+      console.error(e) // Para depurar en consola
     }
   }
 }
