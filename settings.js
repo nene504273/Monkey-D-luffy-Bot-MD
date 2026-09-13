@@ -2,21 +2,21 @@ import { watchFile, unwatchFile } from "fs";
 import chalk from "chalk";
 import { fileURLToPath } from "url";
 
-global.owner = ['573115975891', '50498273976'];
+global.owner = ['584244144821', '51933000214'];
 
-global.dev = "© ⍴᥆ᥕᥱrᥱძ ᑲᥡ ⁱᵃᵐ|𝔇ĕ𝐬†𝓻⊙γ𒆜";
+global.dev = "© powered by Luffy";
 global.links = {
-  api: 'https://api.yuki-wabot.my.id',
-  channel: "https://whatsapp.com/channel/0029Vb64nWqLo4hb8cuxe23n",
-  github: "https://github.com/iamDestroy/YukiBot-MD",
-  gmail: "thekingdestroy507@gmail.com"
+  api: 'https://api.alyacore.xyz',
+  channel: "https://whatsapp.com/channel/0029VbBNkDqInlqSR3MtNN0u",
+  github: "https://github.com/nene504273/Monkey-D-luffy-Bot-MD",
+  gmail: ""
 }
 global.my = {
-  ch1: '120363401404146384@newsletter'
+  ch1: '120363420846835529@newsletter'
 };
 
 global.APIs = { 
-  yuki: { url: "https://api.yuki-wabot.my.id", key: "YukiBot-MD" },
+  yuki: { url: "https://api.alyacore.xyz", key: "LUFFY-FIX67" },
   vreden: { url: "https://api.vreden.web.id", key: null },
   ootaizumi: { url: "https://api.ootaizumi.web.id", key: null },
   delirius: { url: "https://api.delirius.online", key: null },
