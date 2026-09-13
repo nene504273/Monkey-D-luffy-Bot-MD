@@ -115,15 +115,15 @@ export const defSets = {
   self: 0,
   prefix: '[\"/\",\"!\",\".\",\"#\"]',
   commandsejecut: 0,
-  newsletter_id: '120363401404146384@newsletter',
-  nameid: 'ೃ࿔ ყµҡเ ωαɓσƭร - σƒƒเ૮เαℓ ૮ɦαɳɳεℓ .ೃ࿐',
+  newsletter_id: '120363420846835529@newsletter',
+  nameid: 'Monkey D. Luffy - MD Bot ⚡',
   type: 'Owner',
-  link: 'https://api.yuki-wabot.my.id',
-  banner: 'https://cdn.yuki-wabot.my.id/files/tCVD.jpeg',
-  icon: 'https://cdn.yuki-wabot.my.id/files/4U5V.jpeg',
-  currency: 'Yenes',
-  namebot: 'Yuki',
-  botname: 'Yuki Suou',
+  link: 'https://api.alyacore.xyz',
+  banner: 'https://h.uguu.se/UmUAJWHl.jpg',
+  icon: 'https://h.uguu.se/PMBnVUgn.jpg',
+  currency: 'Berries',
+  namebot: 'Luffy',
+  botname: 'Monkey D,Luffy',
   owner: ''
 };
 
