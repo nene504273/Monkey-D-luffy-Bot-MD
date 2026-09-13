@@ -209,9 +209,15 @@ export function getUser(id, opt = {}) {
     if (orderBy) {
       const allowedCols = ['exp', 'level', 'usedcommands', 'name'];
       if (!allowedCols.includes(orderBy)) throw new Error('Columna no permitida');
-      let q = `SELECT * FROM users ORDER BY ${orderBy} ${desc ? 'DESC' : 'ASC'}`;
-      if (limit) q += ` LIMIT ${limit}`;
-      return stmt(q).all();
+      let q = 'SELECT * FROM users ORDER BY ' + orderBy + ' ' + (desc ? 'DESC' : 'ASC');
+      const params = [];
+      if (limit) {
+        const lim = parseInt(limit, 10);
+        if (!Number.isInteger(lim) || lim <= 0) throw new Error('Limite no valido');
+        q += ' LIMIT ?';
+        params.push(lim);
+      }
+      return stmt(q).all(...params);
     }
     return stmt('SELECT * FROM users').all();
   }
