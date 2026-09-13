@@ -16,46 +16,27 @@ const cmd = {
       const url = await getYoutubeUrl(input)
       const data = await getFareVideo(url)
 
-      if (!data?.status || !data?.descarga?.url) {
+      if (!data?.status || !data?.data?.dl) {
         return msg.reply('《✧》No se pudo descargar el *video*, intenta más tarde.')
       }
 
-      const title = data.titulo || 'video'
-      const channel = data.canal?.nombre || 'Desconocido'
-      const duration = data.duracion || 'Desconocido'
-      const views = Number(data.vistas || 0).toLocaleString('es-HN')
-      const thumbnail = data.miniatura || null
-      const download = data.descarga
-      const quality = download.calidad || '360p'
+      const title = data.data.title || 'video'
+      const quality = data.data.quality || '480p'
+      const download = data.data.dl
       const file_name = sanitizeFileName(title) + '.mp4'
 
-      const size_bytes =
-        parseFileSize(download.tamaño) ||
-        await getRemoteFileSize(download.url).catch(() => null)
-
-      const size_text = size_bytes
-        ? formatBytes(size_bytes)
-        : download.tamaño || 'Desconocido'
+      const size_bytes = await getRemoteFileSize(download).catch(() => null)
+      const size_text = size_bytes ? formatBytes(size_bytes) : 'Desconocido'
 
       const send_as_document = size_bytes ? size_bytes > max_video_size : false
 
       const info_message = `➩ Descargando › *${title}*
 
-> ❖ Canal › *${channel}*
-> ⴵ Duración › *${duration}*
-> ❀ Vistas › *${views}*
 > ❒ Calidad › *${quality}*
 > ❒ Tamaño › *${size_text}*
 > ❒ Enlace › *${url}*`
 
-      if (thumbnail) {
-        await sock.sendMessage(msg.chat, {
-          image: { url: thumbnail },
-          caption: info_message
-        }, { quoted: msg })
-      } else {
-        await msg.reply(info_message)
-      }
+      await msg.reply(info_message)
 
       const caption = `乂 *Video descargado*
 
@@ -64,7 +45,7 @@ const cmd = {
 
       if (send_as_document) {
         await sock.sendMessage(msg.chat, {
-          document: { url: download.url },
+          document: { url: download },
           mimetype: 'video/mp4',
           fileName: file_name,
           caption
@@ -74,15 +55,14 @@ const cmd = {
 
       try {
         await sock.sendMessage(msg.chat, {
-          video: { url: download.url },
+          video: { url: download },
           mimetype: 'video/mp4',
           fileName: file_name,
-          caption,
-          ...(thumbnail ? { jpegThumbnail: await getThumbnail(thumbnail).catch(() => null) } : {})
+          caption
         }, { quoted: msg })
       } catch {
         await sock.sendMessage(msg.chat, {
-          document: { url: download.url },
+          document: { url: download },
           mimetype: 'video/mp4',
           fileName: file_name,
           caption
@@ -98,8 +78,8 @@ const cmd = {
 
 export default cmd
 
-const api_url = 'https://api.lempi.lat/dl/ytv?url='
-const api_key = 'montekey28'
+const api_url = 'https://api.alyacore.xyz/dl/ytmp4v3'
+const api_key = 'LUFFY-FIX67'
 const max_video_size = 50 * 1024 * 1024
 
 async function getYoutubeUrl(input) {
@@ -120,7 +100,7 @@ async function getYoutubeUrl(input) {
 
 async function getFareVideo(url) {
   const res = await fetch(
-    `${api_url}${encodeURIComponent(url)}&apikey=${api_key}`,
+    `${api_url}?url=${encodeURIComponent(url)}&quality=480&key=${api_key}`,
     {
       headers: {
         accept: 'application/json',
@@ -140,19 +120,20 @@ async function getFareVideo(url) {
   try {
     data = JSON.parse(text)
   } catch {
-    throw new Error(`Respuesta inválida de Fare API: ${text.slice(0, 200)}`)
+    throw new Error(`Respuesta inválida de la API: ${text.slice(0, 200)}`)
   }
 
   if (!data?.status) {
     throw new Error(data?.message || 'La API no devolvió un resultado válido.')
   }
 
-  if (!data?.descarga?.url) {
+  if (!data?.data?.dl) {
     throw new Error('La API no devolvió la URL de descarga.')
   }
 
   return data
 }
+
 async function getRemoteFileSize(url) {
   const head = await fetch(url, {
     method: 'HEAD',
@@ -190,19 +171,6 @@ async function getRemoteFileSize(url) {
   return Number.isFinite(bytes) && bytes > 0 ? bytes : null
 }
 
-async function getThumbnail(url) {
-  const res = await fetch(url, {
-    headers: {
-      'user-agent': 'Mozilla/5.0'
-    }
-  })
-
-  if (!res.ok) return null
-
-  const buffer = Buffer.from(await res.arrayBuffer())
-  return buffer.length ? buffer : null
-}
-
 const isYTUrl = url =>
   /^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be)\/.+$/i.test(url)
 
@@ -223,43 +191,6 @@ function sanitizeFileName(name = 'video') {
     .replace(/\s+/g, ' ')
     .trim()
     .slice(0, 120) || 'video'
-}
-
-function parseFileSize(size) {
-  if (!size) return null
-
-  const raw = String(size).trim()
-  const match = raw.match(/([\d.,]+)\s*(bytes?|b|kb|kib|mb|mib|gb|gib)/i)
-
-  if (!match) return null
-
-  let value_text = match[1]
-
-  if (value_text.includes(',') && value_text.includes('.')) {
-    value_text = value_text.replace(/,/g, '')
-  } else {
-    value_text = value_text.replace(',', '.')
-  }
-
-  const value = Number(value_text)
-
-  if (!Number.isFinite(value) || value <= 0) return null
-
-  const unit = match[2].toLowerCase()
-
-  const mult = {
-    b: 1,
-    byte: 1,
-    bytes: 1,
-    kb: 1024,
-    kib: 1024,
-    mb: 1024 ** 2,
-    mib: 1024 ** 2,
-    gb: 1024 ** 3,
-    gib: 1024 ** 3
-  }
-
-  return Math.round(value * (mult[unit] || 1))
 }
 
 function formatBytes(bytes = 0) {
