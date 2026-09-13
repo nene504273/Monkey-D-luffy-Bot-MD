@@ -67,7 +67,7 @@ const cmd = {
       }, { quoted: msg })
     } catch (e) {
       await msg.reply(
-        `> An unexpected error occurred while executing command *${usedPrefix + command}*.\n> [Error: *${e.message}*]`
+        `> Ocurrió un error inesperado al ejecutar el comando *${usedPrefix + command}*.\n> [Error: *${e.message}*]`
       )
     }
   }
@@ -118,8 +118,9 @@ async function getVideoInfo(input, video_id) {
 }
 
 async function getAudioFromApi(url) {
-  const api_url = `https://api.lempi.lat/dl/yta?url=${encodeURIComponent(url)}&apikey=montekey28`
-  
+  // Nueva API actualizada
+  const api_url = `https://api.alyacore.xyz/dl/ytmp3?url=${encodeURIComponent(url)}&key=LUFFY-FIX67`
+
   const res = await fetch(api_url, {
     headers: { 'accept': 'application/json' }
   })
@@ -128,17 +129,18 @@ async function getAudioFromApi(url) {
 
   const json = await res.json()
 
-  if (!json?.status || !json?.descarga?.url) {
+  // Validación adaptada a la nueva estructura de respuesta
+  if (!json?.status || !json?.data?.dl) {
     throw new Error('No se encontró el enlace de descarga en la API.')
   }
 
-  const audio_res = await fetch(json.descarga.url)
+  const audio_res = await fetch(json.data.dl)
   if (!audio_res.ok) throw new Error(`No se pudo descargar el audio: HTTP ${audio_res.status}`)
 
   const buffer = await audio_res.buffer()
 
   return {
     buffer,
-    name: json.descarga.archivo || 'audio.mp3'
+    name: json.data.title ? `${json.data.title}.mp3` : 'audio.mp3'
   }
 }
