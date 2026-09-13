@@ -1,108 +1,56 @@
-import db from "#db"
+import db from '#db';
 export default {
   command: ['sell', 'vender'],
   category: 'gacha',
-  run: async ({ msg, sock, args }) => {
-    const chatId = msg.chat
-    const userId = msg.sender
-    const botId = sock.user.id.split(':')[0] + '@s.whatsapp.net'
-
-    const botSettings = await db.getSettings(botId)
-    const currency = botSettings.currency
-    const botname = botSettings.namebot2
-
-    const chatData = await db.getChat(chatId)
-    if (chatData.adminonly || !chatData.gacha)
-      return msg.reply(mess.comandooff)
-
-    try {
-      const precioCoins = parseInt(args[0])
-      const personajeNombre = args.slice(1).join(' ').trim().toLowerCase()
-
-      if (!personajeNombre || isNaN(precioCoins))
-        return msg.reply('《✤》 Especifica el valor y el nombre de la waifu a vender.')
-
-      const userData = await db.getChatUser(chatId, userId)
-      if (!userData?.characters?.length) return msg.reply('✐ No tienes personajes en tu inventario.')
-
-      const characterIndex = userData.characters.findIndex(
-        (c) => c.name?.toLowerCase() === personajeNombre,
-      )
-      if (characterIndex === -1)
-        return msg.reply(`✎ No tienes el personaje *${personajeNombre}* en tu inventario.`)
-
-      if (precioCoins < 5000)
-        return msg.reply(`✎ El precio mínimo para vender un personaje es de *¥5,000 ${currency}*.`)
-
-      if (precioCoins > 20000000)
-        return msg.reply(
-          `✎ El precio máximo para vender un personaje es de *¥20,000,000 ${currency}*.`,
-        )
-
-      const character = userData.characters[characterIndex]
-      const expira = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString()
-
-      if (!Array.isArray(userData.personajesEnVenta)) {
-        userData.personajesEnVenta = []
-      }
-
-      userData.personajesEnVenta.push({
-        ...character,
-        precio: precioCoins,
-        vendedor: userId,
-        expira,
-      })
-
-      userData.characters.splice(characterIndex, 1)
-
-      await db.updateChatUser(chatId, userId, 'personajesEnVenta', userData.personajesEnVenta)
-      await db.updateChatUser(chatId, userId, 'characters', userData.characters)
-
-      const mensaje = `❒ *${character.name}* ha sido puesto a la venta!
-
-> 𖣣ֶㅤ֯⌗ ✿  ׄ ⬭ Vendedor › *@${userId.split('@')[0]}*
-> 𖣣ֶㅤ֯⌗ ⛀  ׄ ⬭ Valor › *${precioCoins.toLocaleString()} ${currency}*
-> 𖣣ֶㅤ֯⌗ ❖  ׄ ⬭ Expira en › *3 días*
-
-${dev}`
-
-      await sock.reply(chatId, mensaje, msg, { mentions: [userId] })
-    } catch (e) {
-      console.error(e)
-      await msg.reply(msgglobal)
+  description: 'Poner un personaje a la venta.',
+  run: async ({ msg, sock, args, usedPrefix, command }) => {
+    const chatId = msg.chat;
+    const userId = msg.sender;
+    db.setCreate('chats', chatId, 'sales', {});
+    const chat = db.getChat(chatId);
+    if (chat.adminonly || !chat.gacha) {
+      return msg.reply(`ꕥ Los comandos de *Gacha* están desactivados en este grupo.\n\nUn *administrador* puede activarlos con el comando:\n» *${usedPrefix}gacha on*`);
     }
-  },
-}
-
-setInterval(async () => {
-  try {
-    const allChats = await db.getChat()
-    
-    for (const chat of allChats) {
-      const chatUsers = await db.getChatUser(chat.id)
-      
-      for (const user of chatUsers) {
-        if (Array.isArray(user.personajesEnVenta) && user.personajesEnVenta.length > 0) {
-          const validos = []
-          for (const p of user.personajesEnVenta) {
-            const exp = new Date(p.expira)
-            const expired = Date.now() > exp
-            if (expired) {
-              if (!user.characters) user.characters = []
-              user.characters.push(p)
-              await db.updateChatUser(chat.id, user.user_id, 'characters', user.characters)
-            } else {
-              validos.push(p)
-            }
-          }
-
-          if (validos.length !== user.personajesEnVenta.length) {
-            await db.updateChatUser(chat.id, user.user_id, 'personajesEnVenta', validos)
-          }
+    const botId = sock.user.id.split(':')[0] + '@s.whatsapp.net';
+    const settings = db.getSettings(botId);
+    const currency = settings?.currency;
+    try {
+      if (args.length < 2) {
+        return msg.reply(`❀ Debes especificar un precio para subastar el personaje.\n> Ejemplo » *${usedPrefix + command} 5000 Yuki Suou*`);
+      }
+      const price = parseInt(args[0]);
+      if (isNaN(price) || price < 2000) {
+        return msg.reply(`ꕥ El precio mínimo para subastar un personaje es de *¥2,000 ${currency}*.`);
+      }
+      if (price > 100_000_000) {
+        return msg.reply(`ꕥ El precio máximo permitido para subastar un personaje es de *¥100,000,000 ${currency}*.`);
+      }
+      const name = args.slice(1).join(' ').toLowerCase();
+      const chatUserData = db.getChatUser(chatId, userId);
+      const ownedIds = Array.isArray(chatUserData?.characters) ? chatUserData.characters : [];
+      let idSell = null;
+      let charSell = null;
+      for (const cid of ownedIds) {
+        const chatKey = chatId + '__' + cid;
+        const chatChar = db.getCharacter(chatKey);
+        if (chatChar?.name?.toLowerCase() === name && chatChar.user === userId) {
+          idSell = cid;
+          charSell = chatChar;
+          break;
         }
       }
+      if (!idSell || !charSell) return msg.reply(`ꕥ No se ha encontrado al personaje *${args.slice(1).join(' ')}* reclamado por ti.`);
+      if (!chat.sales) chat.sales = {};
+      if (typeof chat.sales === 'string') {
+        try { chat.sales = JSON.parse(chat.sales); } catch { chat.sales = {}; }
+      }
+      chat.sales[idSell] = { name: charSell.name, user: userId, price, time: Date.now() };
+      db.setChat(chatId, 'sales', chat.sales);
+      const sellerGlobal = db.getUser(userId);
+      let sellerName = sellerGlobal?.name?.trim() || userId.split('@')[0];
+      msg.reply(`✎ *${charSell.name}* ha sido puesto a la venta!\n❀ Vendedor » *${sellerName}*\n⛁ Valor » *¥${price.toLocaleString()} ${currency}*\nⴵ Expira en » *3 dias*\n> Puedes ver los personajes en venta usando *${usedPrefix}wshop*`);
+    } catch (e) {
+      await msg.reply(`> An unexpected error occurred while executing command *${usedPrefix + command}*. Please try again or contact support if the issue persists.\n> [Error: *${e.message}*]`);
     }
-  } catch (e) {
-    console.error('Error en intervalo de ventas:', e)
-  }
-}, 60 * 60 * 1000)
+  },
+};

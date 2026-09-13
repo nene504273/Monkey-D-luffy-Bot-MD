@@ -1,72 +1,82 @@
-import db from "#db"
-import fs from 'fs';
+import { promises as fs } from 'fs';
+import db from '#db';
+
+const charactersFilePath = './core/characters.json';
 
 async function loadCharacters() {
-  try {
-    return JSON.parse(fs.readFileSync('./lib/characters.json', 'utf-8'))
-  } catch {
-    return {}
-  }
+  const data = await fs.readFile(charactersFilePath, 'utf-8');
+  return JSON.parse(data);
 }
 
-function findCharacterMatch(char, charactersData) {
-  return Object.values(charactersData)
-    .flatMap(s => Array.isArray(s.characters) ? s.characters : [])
-    .find(c => c.name === char.name)
+function flattenCharacters(structure) {
+  return Object.values(structure).flatMap(s => Array.isArray(s.characters) ? s.characters : []);
 }
 
 export default {
-  command: ['harem', 'miswaifus', 'claims'],
+  command: ['harem', 'waifus', 'claims'],
   category: 'gacha',
-  run: async ({ msg, sock, args }) => {
-    const chatId = msg.chat
-    const mentioned = msg.mentionedJid
-    const userId = mentioned.length > 0 ? mentioned[0] : (msg.quoted ? msg.quoted.sender : msg.sender)
-
-    const globalUser = await db.getUser(userId)
-    const name = globalUser?.name || userId.split('@')[0]
-    
-    const chatConfig = await db.getChat(chatId)
-
-    if (chatConfig.adminonly || !chatConfig.gacha)
-      return msg.reply(mess.comandooff)
-
-    const userData = await db.getChatUser(chatId, userId)
-
-    if (!userData?.characters?.length) {
-      return msg.reply(
-        userId === msg.sender
-          ? `✐ No tienes personajes reclamados en tu inventario.`
-          : `✐ *${name}* no tiene personajes reclamados en su inventario.`
-      )
+  description: 'Ver tus personajes reclamados.',
+  run: async ({ msg, sock, args, usedPrefix, command, text }) => {
+    try {
+      const chat = db.getChat(msg.chat);
+      if (chat.adminonly || !chat.gacha) {
+        return msg.reply(`ꕥ Los comandos de *Gacha* están desactivados en este grupo.\n\nUn *administrador* puede activarlos con el comando:\n» *${usedPrefix}gacha on*`);
+      }      
+      const userId = msg.mentionedJid?.[0] || msg.quoted?.sender || msg.sender;
+      const userGlobal = db.getUser(userId);
+      const name = userGlobal?.name || userId.split('@')[0];      
+      const structure = await loadCharacters();
+      const allCharacters = flattenCharacters(structure);
+      let ownedIDs = [];
+      const userData = db.getChatUser(msg.chat, userId);
+      if (userData && userData.characters) {
+        if (typeof userData.characters === 'string') {
+          try { userData.characters = JSON.parse(userData.characters); } catch { userData.characters = []; }
+        }
+        ownedIDs = Array.isArray(userData.characters) ? userData.characters : [];
+      }      
+      if (ownedIDs.length === 0) {
+        const isSelf = userId === msg.sender;
+        const replyText = isSelf ? 'ꕥ No tienes personajes reclamados.' : `ꕥ *${name}* no tiene personajes reclamados.`;
+        return sock.sendMessage(msg.chat, { text: replyText, mentions: [userId] }, { quoted: msg });
+      }
+      const charactersWithValues = [];
+      for (const id of ownedIDs) {
+        const globalChar = db.getCharacter(id);
+        const chatChar = db.getCharacter(msg.chat + '__' + id);
+        const value = typeof globalChar?.value === 'number' ? globalChar.value : chatChar?.value || 0;
+        charactersWithValues.push({ id, value });
+      }
+      charactersWithValues.sort((a, b) => b.value - a.value);
+      const sortedIDs = charactersWithValues.map(item => item.id);
+      const page = parseInt(args[1]) || 1;
+      const perPage = 64;
+      const totalPages = Math.ceil(sortedIDs.length / perPage);
+      if (page < 1 || page > totalPages) {
+        return msg.reply(`❀ Página no válida. Hay un total de *${totalPages}* páginas.`);
+      }
+      const start = (page - 1) * perPage;
+      const end = Math.min(start + perPage, sortedIDs.length);
+      let message = `✿ Personajes reclamados ✿\n`;
+      message += `⌦ Usuario: *${name}*\n`;
+      message += `♡ Personajes: *(${sortedIDs.length})*\n\n`;
+      for (let i = start; i < end; i++) {
+        const id = sortedIDs[i];
+        const globalChar2 = db.getCharacter(id);
+        const chatChar2 = db.getCharacter(msg.chat + '__' + id);
+        const jsonRec = allCharacters.find(c => c.id === id);
+        const charName = jsonRec?.name || chatChar2?.name || globalChar2?.name || `ID:${id}`;
+        const value = typeof globalChar2?.value === 'number' ? globalChar2.value : chatChar2?.value || 0;
+        message += `» *${charName}* (*${value.toLocaleString()}*)\n`;
+      }      
+      message += `\n⌦ _Página *${page}* de *${totalPages}*_`;
+      if (page < totalPages) {
+        const nameArgs = args.filter(arg => isNaN(parseInt(arg))).join(' ');
+        message += `\n> Usa *${usedPrefix}${command} ${nameArgs} ${page + 1}* para ver la siguiente página.`;
+      }
+      await sock.sendMessage(msg.chat, { text: message.trim(), mentions: [userId] }, { quoted: msg });
+    } catch (e) {
+      await msg.reply(`> An unexpected error occurred while executing command *${usedPrefix + command}*. Please try again or contact support if the issue persists.\n> [Error: *${e.message}*]`);
     }
-
-    const charactersData = await loadCharacters()
-    const total = userData.characters.length
-    const perPage = 20
-    const page = Math.max(1, parseInt(args[0]) || 1)
-    const pages = Math.ceil(total / perPage)
-
-    if (page > pages)
-      return msg.reply(`✎ Página inválida. Hay un total de *${pages}* página${pages > 1 ? 's' : ''}`)
-
-    const start = (page - 1) * perPage
-    const end = Math.min(start + perPage, total)
-    const charactersOnPage = userData.characters.slice(start, end)
-
-    let message = `❀ Personajes reclamados ❀
-⌦ Usuario: *${name}*
-♡ Personajes: *(${total}):*\n\n`
-
-    charactersOnPage.forEach((char, i) => {
-      const match = findCharacterMatch(char, charactersData)
-      const value = match?.value?.toLocaleString() || char.value?.toLocaleString() || 'Desconocido'
-      const label = match?.name || char.name || 'Desconocido'
-      message += `> ${start + i + 1}. *${label}* (${value})\n`
-    })
-
-    message += `\n➮ Página *${page}* de *${pages}*`
-
-    await msg.reply(message)
-  }
-}
+  },
+};

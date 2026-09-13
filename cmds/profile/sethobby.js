@@ -1,11 +1,11 @@
-import db from "#db"
+import db from '#db';
 export default {
   command: ['setpasatiempo', 'sethobby'],
   category: 'profile',
-    run: async ({ msg, sock, args, command, text, usedPrefix: prefix }) => {
-    const user = await db.getUser(msg.sender)
-    const input = args.join(' ').trim()
-
+  description: 'Establecer tu pasatiempo.',
+  run: async ({ msg, args, usedPrefix }) => {
+    const user = db.getUser(msg.sender);
+    const input = args.join(' ').trim();    
     const pasatiemposDisponibles = [
       '📚 Leer', '✍️ Escribir', '🎤 Cantar', '💃 Bailar', '🎮 Jugar', 
       '🎨 Dibujar', '🍳 Cocinar', '✈️ Viajar', '🏊 Nadar', '📸 Fotografía',
@@ -21,50 +21,36 @@ export default {
       '🔍 Investigar', '💄 Maquillaje', '💇‍♂️ Peluquería', '🛌 Dormir', '🍺 Cervecería',
       '🪓 Carpintería', '🧪 Experimentos', '📻 Radioafición', '🗺️ Geografía', '💎 Joyería',
       'Otro 🌟'
-    ]
-
+    ];    
     if (!input) {
-      let lista = '🎯 *Elige un pasatiempo:*\n\n'
+      let lista = '🎯 *Elige un pasatiempo:*\n\n';
       pasatiemposDisponibles.forEach((pasatiempo, index) => {
-        lista += `${index + 1}) ${pasatiempo}\n`
-      })
-      lista += `\n*Ejemplos:*\n${prefix + command} 1\n${prefix + command} Leer\n${prefix + command} "Otro 🌟"`
-
-      return msg.reply(lista)
-    }
-
-    let pasatiempoSeleccionado = ''
-
+        lista += `${index + 1}) ${pasatiempo}\n`;
+      });
+      lista += `\n*Ejemplos:*\n${usedPrefix}setpasatiempo 1\n${usedPrefix}setpasatiempo Leer\n${usedPrefix}setpasatiempo "Otro 🌟"`;
+      return msg.reply(lista);
+    }    
+    let pasatiempoSeleccionado = '';
     if (/^\d+$/.test(input)) {
-      const index = parseInt(input) - 1
+      const index = parseInt(input) - 1;
       if (index >= 0 && index < pasatiemposDisponibles.length) {
-        pasatiempoSeleccionado = pasatiemposDisponibles[index]
+        pasatiempoSeleccionado = pasatiemposDisponibles[index];
       } else {
-        return msg.reply(`《✧》 Número inválido. Selecciona un número entre 1 y ${pasatiemposDisponibles.length}`)
+        return msg.reply(`《✧》 Número inválido. Selecciona un número entre 1 y ${pasatiemposDisponibles.length}`);
       }
-    } 
-
-    else {
-      const inputLimpio = input.replace(/[^\w\s]/g, '').toLowerCase().trim()
-      const encontrado = pasatiemposDisponibles.find(
-        p => p.replace(/[^\w\s]/g, '').toLowerCase().includes(inputLimpio)
-      )
-
+    } else {
+      const inputLimpio = input.replace(/[^\w\s]/g, '').toLowerCase().trim();
+      const encontrado = pasatiemposDisponibles.find(p => p.replace(/[^\w\s]/g, '').toLowerCase().includes(inputLimpio));
       if (encontrado) {
-        pasatiempoSeleccionado = encontrado
+        pasatiempoSeleccionado = encontrado;
       } else {
-        return msg.reply('《✧》 Pasatiempo no encontrado. Usa el comando sin argumentos para ver la lista disponible.')
+        return msg.reply('《✧》 Pasatiempo no encontrado. Usa el comando sin argumentos para ver la lista disponible.');
       }
-    }
-
+    }    
     if (user.pasatiempo === pasatiempoSeleccionado) {
-      return msg.reply(`《✧》 Ya tienes establecido este pasatiempo: *${user.pasatiempo}*`)
-    }
-
-    user.pasatiempo = pasatiempoSeleccionado
-
-await db.updateUser(msg.sender, 'pasatiempo', user.pasatiempo)
-
-    return msg.reply(`✐ Se ha establecido tu pasatiempo:\n> *${user.pasatiempo}*`)
+      return msg.reply(`《✧》 Ya tienes establecido este pasatiempo: *${user.pasatiempo}*`);
+    }    
+    db.setUser(msg.sender, 'pasatiempo', pasatiempoSeleccionado);
+    return msg.reply(`✐ Se ha establecido tu pasatiempo:\n> *${pasatiempoSeleccionado}*`);
   },
 };

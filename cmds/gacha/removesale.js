@@ -1,45 +1,33 @@
-import db from "#db"
+import db from '#db';
 export default {
   command: ['removesale', 'removerventa'],
   category: 'gacha',
-  run: async ({ msg, sock, args }) => {
+  description: 'Eliminar un personaje en venta.',
+  run: async ({ msg, args, usedPrefix, command }) => {
+    const chatId = msg.chat;
+    const userId = msg.sender;
+    db.setCreate('chats', chatId, 'sales', {});
+    let chat = db.getChat(chatId);
+    if (chat.adminonly || !chat.gacha) {
+      return msg.reply(`ꕥ Los comandos de *Gacha* están desactivados en este grupo.\n\nUn *administrador* puede activarlos con:\n» *${usedPrefix}gacha on*`);
+    }
+    if (chat.sales && typeof chat.sales === 'string') {
+      try { chat.sales = JSON.parse(chat.sales); } catch { chat.sales = {}; }
+    }    
+    if (!args.length) {
+      return msg.reply(`❀ Debes especificar un personaje para eliminar.\n> Ejemplo » *${usedPrefix + command} Yuki Suou*`);
+    }    
     try {
-    const chatId = msg.chat
-    const userId = msg.sender
-    const characterName = args.join(' ')?.trim()?.toLowerCase()
-
-    const chatConfig = await db.getChat(chatId)
-    
-    if (chatConfig.adminonly || !chatConfig.gacha)
-      return msg.reply(mess.comandooff)
-
-    if (!characterName) 
-      return msg.reply('《✤》 Especifica el nombre del personaje que deseas cancelar.')
-
-    const userData = await db.getChatUser(chatId, userId)
-
-    if (!userData.personajesEnVenta?.length) 
-      return msg.reply('✤ No tienes personajes en venta.')
-
-    const index = userData.personajesEnVenta.findIndex(
-      (p) => p.name?.toLowerCase() === characterName,
-    )
-    
-    if (index === -1)
-      return msg.reply(`✎ No se encontró el personaje *${characterName}* en tu lista de ventas.`)
-
-    const personajeCancelado = userData.personajesEnVenta.splice(index, 1)[0]
-    
-    await db.updateChatUser(chatId, userId, 'personajesEnVenta', userData.personajesEnVenta)
-
-    if (!userData.characters) userData.characters = []
-    userData.characters.push(personajeCancelado)
-    
-    await db.updateChatUser(chatId, userId, 'characters', userData.characters)
-
-    await sock.reply(chatId, `✐ Tu personaje *${personajeCancelado.name}* ha sido retirado de la venta.`, msg)
+      const nameRemove = args.join(' ').toLowerCase();
+      const idRemove = Object.keys(chat.sales).find(id => (chat.sales[id]?.name || '').toLowerCase() === nameRemove);      
+      if (!idRemove || chat.sales[idRemove].user !== userId) {
+        return msg.reply(`ꕥ El personaje *${args.join(' ')}* no está a la venta por ti.`);
+      }      
+      delete chat.sales[idRemove];
+      db.setChat(chatId, 'sales', chat.sales);
+      msg.reply(`❀ *${args.join(' ')}* ha sido eliminado de la lista de ventas.`);      
     } catch (e) {
-      msg.reply(msgglobal + e)
+      await msg.reply(`> An unexpected error occurred while executing command *${usedPrefix + command}*. Please try again or contact support if the issue persists.\n> [Error: *${e.message}*]`);
     }
   },
-}
+};

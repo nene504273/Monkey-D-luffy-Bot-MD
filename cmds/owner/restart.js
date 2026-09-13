@@ -1,12 +1,16 @@
-import db from "#db"
 export default {
   command: ['restart'],
-  category: 'mod',
+  category: 'owner',
+  description: 'Reiniciar el socket del bot.',
   isOwner: true,
   run: async ({ msg, sock }) => {
-    await sock.reply(msg.chat, `✎ Reiniciando el Socket...\n> *Espere un momento...*`, msg)
+    await sock.reply(msg.chat, `✎ Reiniciando el Socket...\n> *Espere un momento...*`, msg);
     setTimeout(() => {
-      process.exit(0)
-    }, 3000)
+      if (process.send) {
+        process.send("restart");
+      } else {
+        process.exit(0);
+      }
+    }, 3000);
   },
 };

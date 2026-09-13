@@ -1,35 +1,40 @@
-import db from "#db"
+import db from '#db';
+
+const growth = Math.pow(Math.PI / Math.E, 1.618) * Math.E * 0.75;
+
+function xpRange(level, multiplier = global.multiplier || 2) {
+  if (level < 0) throw new TypeError('level cannot be negative value');  
+  level = Math.floor(level);
+  const min = level === 0 ? 0 : Math.round(Math.pow(level, growth) * multiplier) + 1;
+  const max = Math.round(Math.pow(level + 1, growth) * multiplier);  
+  return { min, max, xp: max - min };
+}
 
 export default {
-  command: ['levelup', 'level', 'lvl'],
+  command: ['level', 'lvl'],
   category: 'profile',
-  run: async ({ msg, sock, args }) => {
-    const chatId = msg.chat
-    const mentioned = msg.mentionedJid
-    const who = mentioned.length > 0 ? mentioned[0] : (msg.quoted ? msg.quoted.sender : msg.sender)
+  description: 'Ver tu nivel y experiencia actual.',
+  run: async ({ msg, sock, text }) => {
+    const chatId = msg.chat;
+    const who = msg.mentionedJid?.[0] || msg.quoted?.sender || msg.sender;
+    const user = db.getUser(who);
+    if (!user) {
+      return msg.reply(`「✎」 El usuario mencionado no está registrado en el bot.`);
+    }
+    const allUsers = db.getUser();
+    const users = allUsers.map(u => ({ ...u, jid: u.id }));
+    const sortedLevel = users.sort((a, b) => (b.level || 0) - (a.level || 0));
+    const rank = sortedLevel.findIndex(u => u.jid === who) + 1;
+    const { min, xp } = xpRange(user.level, global.multiplier);
+    const progresoActual = user.exp - min;
+    const porcentaje = Math.floor((progresoActual / xp) * 100);
+    const txt = `*「✿」Usuario* ◢ ${user.name} ◤
 
-    const user = await db.getUser(who)     
-    const allUsers = await db.getUser() || []    
-
-    if (!user)
-      return msg.reply(`「✎」 El usuario mencionado no está registrado en el bot.`)
-
-    const users = allUsers.map(u => ({
-      ...u,
-      jid: u.id
-    }))
-
-    const sortedLevel = users.sort((a, b) => (b.level || 0) - (a.level || 0))
-    const rank = sortedLevel.findIndex(u => u.jid === who) + 1
-
-    const txt = `*❑ ˳Usuario* ◢ ${user.name || who.split('@')[0]} ◤
-
-𖹭  ׄ  ְ ✿ Experiencia › *${user.exp?.toLocaleString() || 0}*
-𖹭  ׄ  ְ ✤ Nivel › *${user.level || 0}*
-𖹭  ׄ  ְ ❀ Puesto › *#${rank}*
-
-𖹭  ׄ  ְ ☆ Comandos totales › *${user.usedcommands?.toLocaleString() || 0}*`
-
-    await msg.reply(txt)
+❖ Nivel › *${user.level || 0}*
+☆ Experiencia › *${user.exp?.toLocaleString() || 0}*
+➨ Progreso › *${progresoActual} => ${xp}* _(${porcentaje}%)_
+✐ Puesto › *#${rank}*
+❒ Comandos ejecutados › *${user.usedcommands?.toLocaleString() || 0}*`;
+    await sock.sendMessage(chatId, { text: txt, mentions: [who] }, { quoted: msg });
   }
-}
+};

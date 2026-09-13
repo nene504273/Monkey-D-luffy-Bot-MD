@@ -1,25 +1,13 @@
-import db from "#db"
+import db from '#db';
 export default {
   command: ['setdescription', 'setdesc'],
   category: 'profile',
-    run: async ({ msg, sock, args, command, text, usedPrefix: prefix }) => {
-    const user = await db.getUser(msg.sender)
-    const input = args.join(' ')
-
-    if (user.description)
-      return msg.reply(
-        `✐ Ya tienes una descripción. Usa › *${prefix}deldescription* para eliminarla.`,
-      )
-
-    if (!input)
-      return msg.reply(
-        '《✧》 Debes especificar una descripción válida.',
-      )
-
-    user.description = input
-
-    await db.updateUser(msg.sender, 'description', user.description)
-
-    return msg.reply(`✐ Se ha establecido tu descripción:\n> *${user.description}*`)
+  description: 'Establecer tu descripción de perfil.',
+  run: async ({ msg, args, usedPrefix, command }) => {
+    const user = db.getUser(msg.sender);
+    const input = args.join(' ');    
+    if (!input) return msg.reply(`《✧》 Debes especificar una descripción válida para tu perfil.\n\n> ✐ Ejemplo » *${usedPrefix + command} Hola, uso WhatsApp!*`);    
+    db.setUser(msg.sender, 'description', input);
+    return msg.reply(`✎ Se ha establecido tu descripcion, puedes revisarla con ${usedPrefix}profile ฅ^•ﻌ•^ฅ`);
   },
 };

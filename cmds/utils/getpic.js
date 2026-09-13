@@ -1,23 +1,20 @@
-import db from "#db"
 export default {
   command: ['pfp', 'getpic'],
   category: 'utils',
-  run: async ({ msg, sock }) => {
-    const mentioned = msg.mentionedJid
-    const who = mentioned.length > 0 ? mentioned[0] : msg.quoted ? msg.quoted.sender : false
-
-    if (!who)
-      return msg.reply(`✿ Etiqueta o menciona al usuario del que quieras ver su foto de perfil.`)
-
+  description: 'Ver la foto de perfil de un usuario.',
+  run: async ({ msg, sock, usedPrefix, command, text }) => {
+    const who = msg.mentionedJid?.[0] || msg.quoted?.sender || null;
+    if (!who) {
+      return msg.reply(`《✧》 Etiqueta o menciona al usuario del que quieras ver su foto de perfil.`);
+    }
     try {
-      const img = await sock.profilePictureUrl(who, 'image').catch(() => null)
-
-      if (!img)
-        return msg.reply('✿ No se pudo obtener la foto de perfil.')
-
-      await sock.sendMessage(msg.chat, { image: { url: img }, caption: null }, { quoted: msg })
-    } catch {
-      await msg.reply(msgglobal)
+      const img = await sock.profilePictureUrl(who, 'image').catch(() => null);
+      if (!img) {
+        return sock.sendMessage(msg.chat, { text: `《✧》 No se pudo obtener la foto de perfil de @${who.split('@')[0]}.`, mentions: [who] }, { quoted: msg });
+      }
+      await sock.sendMessage(msg.chat, { image: { url: img }, caption: null }, { quoted: msg });
+    } catch (e) {
+      await msg.reply(`> An unexpected error occurred while executing command *${usedPrefix + command}*. Please try again or contact support if the issue persists.\n> [Error: *${e.message}*]`);
     }
   },
 };

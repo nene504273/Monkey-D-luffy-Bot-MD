@@ -1,54 +1,47 @@
-import db from "#db"
 import { promises as fs } from 'fs';
+import db from '#db';
+
+const charactersFilePath = './core/characters.json';
 
 async function loadCharacters() {
-  try {
-    const data = await fs.readFile('./lib/characters.json', 'utf-8')
-    return JSON.parse(data)
-  } catch {
-    throw new Error('ꕥ No se pudo cargar el archivo characters.json.')
-  }
+  const data = await fs.readFile(charactersFilePath, 'utf-8');
+  return JSON.parse(data);
 }
 
 export default {
-  command: ['slist', 'serielist', 'animelist'],
+  command: ['serielist', 'slist', 'animelist'],
   category: 'gacha',
-  run: async ({ msg, sock, args }) => {
-    const chatId = msg.chat
-    const chatData = await db.getChat(chatId)
-
-    if (chatData.adminonly || !chatData.gacha)
-      return msg.reply(mess.comandooff)
-
+  description: 'Listar series del bot.',
+  run: async ({ msg, args, usedPrefix, command }) => {
     try {
-      const characters = await loadCharacters()
-
-      const sources = characters.reduce((acc, character) => {
-        if (!character.source) return acc
-        const source = character.source.trim()
-        acc[source] = (acc[source] || 0) + 1
-        return acc
-      }, {})
-
-      const sortedSources = Object.entries(sources).sort(([, a], [, b]) => b - a)
-      const sourcesPerPage = 20
-      const page = parseInt(args[0], 10) || 1
-      const totalPages = Math.ceil(sortedSources.length / sourcesPerPage)
-
-      if (page < 1 || page > totalPages)
-        return msg.reply(`✐ La página ${page} no existe. Intenta entre 1 y ${totalPages}.`)
-
-      const startIndex = (page - 1) * sourcesPerPage
-      const paginatedSources = sortedSources.slice(startIndex, startIndex + sourcesPerPage)
-
-      const message =
-        `*✩ AnimeList (✿❛◡❛)*\n*❒ Lista de series (${sortedSources.length}):*\n\n` +
-        paginatedSources.map(([source, count]) => `› *${source}* (${count})`).join('\n') +
-        `\n\n> ⌦ Página *${page}* de *${totalPages}*`
-
-      await sock.reply(chatId, message, msg)
-    } catch (error) {
-      await msg.reply(msgglobal)
+      const chat = db.getChat(msg.chat);
+      if (chat.adminonly || !chat.gacha) {
+        return msg.reply(`ꕥ Los comandos de *Gacha* están desactivados en este grupo.\n\nUn *administrador* puede activarlos con el comando:\n» *${usedPrefix}gacha on*`);
+      }      
+      const structure = await loadCharacters();
+      const seriesKeys = Object.keys(structure);
+      const totalSeries = seriesKeys.length;
+      const page = parseInt(args[0]) || 1;
+      const perPage = 20;
+      const totalPages = Math.max(1, Math.ceil(totalSeries / perPage));      
+      if (page < 1 || page > totalPages) {
+        return msg.reply(`ꕥ Página no válida. Hay un total de *${totalPages}* páginas.`);
+      }      
+      const start = (page - 1) * perPage;
+      const end = Math.min(start + perPage, totalSeries);
+      const seriesPage = seriesKeys.slice(start, end);      
+      let replyText = `*❏ Lista de series (${totalSeries}):*\n\n`;     
+      for (const key of seriesPage) {
+        const serie = structure[key];
+        const name = typeof serie.name === 'string' ? serie.name : key;
+        const characters = Array.isArray(serie.characters) ? serie.characters.length : 0;
+        replyText += `» *${name}* (${characters})\n`;
+      }      
+      replyText += `
+> • _Página ${page}/${totalPages}_`;
+      await msg.reply(replyText.trim());      
+    } catch (e) {
+      await msg.reply(`> An unexpected error occurred while executing command *${usedPrefix + command}*. Please try again or contact support if the issue persists.\n> [Error: *${e.message}*]`);
     }
   },
-}
+};

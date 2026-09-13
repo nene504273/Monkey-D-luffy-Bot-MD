@@ -1,104 +1,71 @@
-import db from "#db"
-import { readFileSync } from 'fs'
+import { promises as fs } from 'fs';
+import db from '#db';
 
-function formatDate(timestamp) {
-  const date = new Date(timestamp)
-  const daysOfWeek = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado']
-  const months = [
-    'enero',
-    'febrero',
-    'marzo',
-    'abril',
-    'mayo',
-    'junio',
-    'julio',
-    'agosto',
-    'septiembre',
-    'octubre',
-    'noviembre',
-    'diciembre'
-  ]
-  return `${daysOfWeek[date.getDay()]}, ${date.getDate()} de ${months[date.getMonth()]} de ${date.getFullYear()}`
+const charactersFilePath = './core/characters.json';
+
+async function loadCharacters() {
+  const data = await fs.readFile(charactersFilePath, 'utf-8');
+  return JSON.parse(data);
+}
+
+function flattenCharacters(structure) {
+  return Object.values(structure).flatMap(s => Array.isArray(s.characters) ? s.characters : []);
 }
 
 export default {
   command: ['givechar', 'givewaifu', 'regalar'],
   category: 'gacha',
-  run: async ({ msg, sock, args }) => {
-    const chatId = msg.chat
-    const senderId = msg.sender
-    
-    const chatConfig = await db.getChat(chatId)
-    
-    if (chatConfig.adminonly || !chatConfig.gacha)
-      return msg.reply(mess.comandooff)
-
-    const mentioned = msg.mentionedJid || []
-    const mentionedJid = mentioned.length > 0 ? mentioned[0] : (msg.quoted ? msg.quoted.sender : false)
-    
-    if (!mentionedJid) 
-      return msg.reply('《✤》 Menciona al usuario o responde a su mensaje junto con el nombre del personaje.')
-    
-    if (mentionedJid === senderId)
-      return msg.reply('✐ No puedes regalarte un personaje a ti mismo.')
-
-    const senderData = await db.getChatUser(chatId, senderId)
-    
-    if (!senderData?.characters?.length) 
-      return msg.reply('✐ No tienes personajes en tu inventario.')
-
-    const characterName = args
-      .filter((arg) => !arg.startsWith('@'))
-      .join(' ')
-      .toLowerCase()
-      .trim()
-
-    const characterIndex = senderData.characters.findIndex(
-      (c) => c.name?.toLowerCase() === characterName
-    )
-    
-    if (characterIndex === -1)
-      return msg.reply(`ꕥ No tienes el personaje *${characterName}* en tu inventario.`)
-
+  description: 'Regalar un personaje a otro usuario.',
+  run: async ({ msg, sock, args, usedPrefix, command }) => {
     try {
-      const characterDetails = JSON.parse(readFileSync('./lib/characters.json', 'utf8'))
-      const original = characterDetails.find((c) => c.name.toLowerCase() === characterName)
-      
-      if (!original)
-        return msg.reply(`✿ No se encontró el personaje *${characterName}* en la base de datos.`)
-
-      const reservedCharacter = {
-        name: original.name,
-        value: original.value,
-        gender: original.gender,
-        source: original.source,
-        keyword: original.keyword,
-        claim: formatDate(Date.now())
+      const chat = db.getChat(msg.chat);
+      if (chat.adminonly || !chat.gacha) {
+        return msg.reply(`ꕥ Los comandos de *Gacha* están desactivados en este grupo.\n\nUn *administrador* puede activarlos con el comando:\n» *${usedPrefix}gacha on*`);
+      }      
+      if (!args.length) {
+        return msg.reply(`❀ Debes escribir el nombre del personaje y citar o mencionar al usuario que lo recibirá`);
+      }      
+      const targetId = msg.mentionedJid?.[0] || msg.quoted?.sender || null;
+      if (!targetId) return msg.reply(`❀ Debes mencionar o citar el mensaje del destinatario.`);
+      let sender = db.getChatUser(msg.chat, msg.sender);
+      let target = db.getChatUser(msg.chat, targetId);
+      if (!target) {
+      return msg.reply(`「✎」 El usuario mencionado no está registrado en el bot.`);
       }
-
-      let receiver = await db.getChatUser(chatId, mentionedJid)
-      
-      if (!receiver) {
-        receiver = await db.getChatUser(chatId, mentionedJid)
+      const characterName = msg.quoted ? args.join(' ').toLowerCase().trim() : args.slice(0, -1).join(' ').toLowerCase().trim();      
+      const structure = await loadCharacters();
+      const allCharacters = flattenCharacters(structure);
+      const character = allCharacters.find(c => c.name.toLowerCase() === characterName);      
+      if (!character) {
+        return msg.reply(`ꕥ No se encontró el personaje *${characterName}*.`);
+      }      
+      if (!sender.characters.includes(character.id)) {
+        return msg.reply(`ꕥ *${character.name}* no está reclamado por ti.`);
       }
-
-      if (!Array.isArray(receiver.characters)) {
-        receiver.characters = []
+      const charKey = msg.chat + '__' + character.id;
+      db.setCreate('characters', charKey, 'name', character.name);
+      let characterData = db.getCharacter(charKey);
+      if (!characterData) characterData = { name: character.name, value: Number(character.value || 0), votes: 0 };
+      characterData.user = targetId;
+      characterData.claimedAt = Date.now();
+      db.setCharacter(charKey, characterData);
+      sender.characters = sender.characters.filter(id => id !== character.id);
+      db.setChatUser(msg.chat, msg.sender, 'characters', sender.characters);
+      if (!target.characters.includes(character.id)) {
+        target.characters.push(character.id);
+        db.setChatUser(msg.chat, targetId, 'characters', target.characters);
       }
-
-      receiver.characters.push(reservedCharacter)
-      await db.updateChatUser(chatId, mentionedJid, 'characters', receiver.characters)
-
-      senderData.characters.splice(characterIndex, 1)
-      await db.updateChatUser(chatId, senderId, 'characters', senderData.characters)
-
-      const message = `✐ *${reservedCharacter.name}* ha sido regalado a *@${mentionedJid.split('@')[0]}*.`
-
-      await sock.reply(chatId, message, msg, { mentions: [mentionedJid] })
-      
+      if (sender.favorite === character.id) {
+        db.setChatUser(msg.chat, msg.sender, 'favorite', '');
+        db.setUser(msg.sender, 'favorite', '');
+      }
+      const senderGlobal = db.getUser(msg.sender);
+      const targetGlobal = db.getUser(targetId);
+      let senderName = senderGlobal?.name?.trim() || msg.sender.split('@')[0];
+      let receiverName = targetGlobal?.name?.trim() || targetId.split('@')[0];
+      await sock.reply(msg.chat, `❀ *${character.name}* ha sido regalado a *${receiverName}* por *${senderName}*.`, msg, { mentions: [targetId] });
     } catch (e) {
-      console.error(e)
-      await msg.reply(msgglobal)
+      await msg.reply(`> An unexpected error occurred while executing command *${usedPrefix + command}*. Please try again or contact support if the issue persists.\n> [Error: *${e.message}*]`);
     }
-  }
-}
+  },
+};

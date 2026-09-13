@@ -1,101 +1,61 @@
-import db from "#db"
-import fs from 'fs';
-
-function obtenerCharacterValue(name) {
-  const characterDataPath = './lib/characters.json'
-  if (!fs.existsSync(characterDataPath)) return 'Valor no disponible'
-  const characterData = JSON.parse(fs.readFileSync(characterDataPath, 'utf-8'))
-  const character = characterData.find((char) => char.name === name)
-  return character ? character.value?.toLocaleString() : 'Valor no disponible'
-}
-
-function obtenerTiempoRestante(expira) {
-  const ahora = Date.now()
-  const diferencia = expira - ahora
-  if (diferencia <= 0) return 'Expirado'
-
-  const segundos = Math.floor((diferencia / 1000) % 60)
-  const minutos = Math.floor((diferencia / (1000 * 60)) % 60)
-  const horas = Math.floor((diferencia / (1000 * 60 * 60)) % 24)
-  const dias = Math.floor(diferencia / (1000 * 60 * 60 * 24))
-
-  const partes = []
-  if (dias > 0) partes.push(`${dias}d`)
-  if (horas > 0) partes.push(`${horas}h`)
-  if (minutos > 0) partes.push(`${minutos}msg`)
-  if (segundos > 0 || partes.length === 0) partes.push(`${segundos}s`)
-
-  return partes.join(' ')
-}
-
+import db from '#db';
 export default {
-  command: ['haremshop', 'tiendawaifus', 'wshop'],
+  command: ['wshop', 'haremshop', 'tiendawaifus'],
   category: 'gacha',
-  run: async ({ msg, sock, args }) => {
+  description: 'Ver los personajes en venta.',
+  run: async ({ msg, sock, args, usedPrefix, command }) => {
+    const chatId = msg.chat;
+    db.setCreate('chats', chatId, 'sales', {});
+    let chat = db.getChat(chatId);
+    if (chat.adminonly || !chat.gacha) {
+      return msg.reply(`ꕥ Los comandos de *Gacha* están desactivados en este grupo.\n\nUn *administrador* puede activarlos con:\n» *${usedPrefix}gacha on*`);
+    }
+    if (chat.sales && typeof chat.sales === 'string') {
+      try { chat.sales = JSON.parse(chat.sales); } catch { chat.sales = {}; }
+    }    
     try {
-    const chatId = msg.chat
-    const botId = sock.user.id.split(':')[0] + '@s.whatsapp.net'
-    
-    const chatConfig = await db.getChat(chatId)
-    
-    if (chatConfig.adminonly || !chatConfig.gacha)
-      return msg.reply(mess.comandooff)
-
-    const botSettings = await db.getSettings(botId)
-    const monedas = botSettings?.currency || 'monedas'
-
-    const chatUsers = await db.getChatUser(chatId)
-    
-    const personajesEnVenta = []
-    
-    for (const user of chatUsers) {
-      if (user.personajesEnVenta && user.personajesEnVenta.length > 0) {
-        const vendedorInfo = await db.getUser(user.user_id)
-        
-        user.personajesEnVenta.forEach(p => {
-          personajesEnVenta.push({
-            name: p.name,
-            precio: p.precio,
-            expira: p.expira,
-            vendedor: user.user_id,
-            vendedorNombre: vendedorInfo?.name || user.user_id.split('@')[0]
-          })
-        })
+      const ahora = Date.now();
+      let cambios = false;
+      for (const [id, venta] of Object.entries(chat.sales)) {
+        if (ahora - venta.time >= 3 * 864e5) {
+          delete chat.sales[id];
+          cambios = true;
+        }
       }
-    }
-
-    if (personajesEnVenta.length === 0) 
-      return msg.reply('《✤》 No hay personajes en venta actualmente.')
-
-    const page = parseInt(args[0]) || 1
-    const perPage = 10
-    const totalPages = Math.ceil(personajesEnVenta.length / perPage)
-
-    if (page < 1 || page > totalPages)
-      return msg.reply(`✎ La página *${page}* no existe. Hay *${totalPages}* páginas.`)
-
-    const start = (page - 1) * perPage
-    const end = start + perPage
-    const lista = personajesEnVenta.slice(start, end)
-
-    let mensaje = `✰ ໌　۟　𝖧𝖺𝗋𝖾𝗆𝖲𝗁𝗈𝗉　ׅ　팅화　ׄ\n✐ Personajes en venta:\n\n`
-
-    for (const p of lista) {
-      const valorEstimado = obtenerCharacterValue(p.name)
-      const tiempo = obtenerTiempoRestante(new Date(p.expira).getTime())
-      
-      mensaje += `> 𖣣ֶㅤ֯⌗ ꕤ  ׄ ⬭ *${p.name}* (✭ ${valorEstimado})\n` +
-                 `> 𖣣ֶㅤ֯⌗ ⛁  ׄ ⬭ Precio › *${p.precio.toLocaleString()} ${monedas}*\n` +
-                 `> 𖣣ֶㅤ֯⌗ ✿  ׄ ⬭ Vendedor › *${p.vendedorNombre}*\n` +
-                 `> 𖣣ֶㅤ֯⌗ ✤  ׄ ⬭ Expira › *${tiempo}*\n\n`
-    }
-
-    mensaje += `> ⌦ Página *${page}* de *${totalPages}*`
-
-
-      await msg.reply(mensaje)
+      if (cambios) {
+        db.setChat(chatId, 'sales', chat.sales);
+      }
+      const ventas = Object.entries(chat.sales || {});      
+      if (!ventas.length) {
+        const grupo = await sock.groupMetadata(msg.chat);
+        return msg.reply(`ꕥ No hay personajes en venta en *${grupo.subject || 'este grupo'}*`);
+      }
+      const page = parseInt(args[0]) || 1;
+      const porPagina = 10;
+      const totalPaginas = Math.ceil(ventas.length / porPagina);
+      if (page < 1 || page > totalPaginas) {
+        return msg.reply(`ꕥ Página inválida. Solo hay *${totalPaginas}* disponible${totalPaginas > 1 ? 's' : ''}.`);
+      }
+      const botId = sock.user.id.split(':')[0] + '@s.whatsapp.net';
+      const settings = db.getSettings(botId);
+      const currency = settings?.currency;
+      const listado = [];
+      for (const [id, venta] of ventas.slice((page - 1) * porPagina, page * porPagina)) {
+        const precios = typeof venta.price === 'number' ? `¥${venta.price.toLocaleString()} ${currency}` : 'Precio no disponible';
+        const tiempoRestante = 3 * 864e5 - (Date.now() - venta.time);
+        const d = Math.floor(tiempoRestante / 86400000);
+        const h = Math.floor(tiempoRestante % 86400000 / 3600000);
+        const m_ = Math.floor(tiempoRestante % 3600000 / 60000);
+        const s = Math.floor(tiempoRestante % 60000 / 1000);
+        const vendedorGlobal = db.getUser(venta.user);
+        let vendedor = vendedorGlobal?.name?.trim() || venta.user.split('@')[0];
+        const character = db.getCharacter(id);
+        const valorFinal = character?.value || 0;
+        listado.push(`❀ *${venta.name}* (✰ ${valorFinal.toLocaleString()}):\n⛁ Precio » *${precios}*\n❖ Vendedor » *${vendedor}*\nⴵ Expira en » *${d}d ${h}h ${m_}m ${s}s*`);
+      }
+      msg.reply(`*☆ HaremShop \`≧◠ᴥ◠≦\`*\n❏ Personajes en venta <${ventas.length}>:\n\n` + listado.join('\n\n') + `\n\n> • Paginá *${page}* de *${totalPaginas}*`);
     } catch (e) {
-      await msg.reply(`${e.message}`)
+      await msg.reply(`> An unexpected error occurred while executing command *${usedPrefix + command}*. Please try again or contact support if the issue persists.\n> [Error: *${e.message}*]`);
     }
   },
 };

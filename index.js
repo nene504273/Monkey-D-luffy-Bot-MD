@@ -1,29 +1,30 @@
 import "./settings.js";
-import "#db";
-import handler from '#handler';
+import main from '#main';
 import events from '#events';
 import makeWASocket, { Browsers, makeCacheableSignalKeyStore, useMultiFileAuthState, fetchLatestBaileysVersion, jidDecode, DisconnectReason } from 'baileys';
 import pino from "pino";
 import qrcode from "qrcode-terminal";
 import chalk from "chalk";
+import cfonts from "cfonts";
 import fs from "fs";
 import path from "path";
 import readlineSync from "readline-sync";
-import { smsg, getCachedMeta, setCachedMeta } from "#serialize";
-import cmdsLoader from '#cmdsloader';
-import { startSubBot } from '#cmds/socket/subbot';
+import { smsg, getCachedMeta, setCachedMeta, deleteCachedMeta, patchGroupMetadata } from "#serialize";
+import cmdsLoader from '#system/cmdsLoader';
+import "#system/database";
+import { startSubBot } from './cmds/socket/subs.js';
 import db from '#db';
+import NodeCache from "node-cache";
 
 const log = {
-  info: (msg) => console.log(chalk.bgBlue.white.bold(` INFO `), chalk.white(msg)),
-  success: (msg) => console.log(chalk.bgGreen.white.bold(` SUCCESS `), chalk.greenBright(msg)),
-  warn: (msg) => console.log(chalk.bgYellowBright.blueBright.bold(` WARNING `), chalk.yellow(msg)),
-  error: (msg) => console.log(chalk.bgRed.white.bold(` ERROR `), chalk.redBright(msg))
+  info: (msg) => console.log(chalk.bgBlue.white.bold(`INFO`), chalk.white(msg)),
+  success: (msg) => console.log(chalk.bgGreen.white.bold(`SUCCESS`), chalk.greenBright(msg)),
+  warn: (msg) => console.log(chalk.bgYellowBright.blueBright.bold(`WARNING`), chalk.yellow(msg)),
+  error: (msg) => console.log(chalk.bgRed.white.bold(`ERROR`), chalk.redBright(msg))
 };
 
 let phoneNumber = "";
 let phoneInput = "";
-let lineM = '⋯ ⋯ ⋯ ⋯ ⋯ ⋯ ⋯ ⋯ ⋯ ⋯ ⋯ 》'
 const methodCodeQR = process.argv.includes("--qr");
 const methodCode = process.argv.includes("code");
 function normalizePhone(input) {
@@ -36,24 +37,29 @@ function normalizePhone(input) {
   return s;
 }
 
-console.log(chalk.blue.bold('\n INICIANDO SISTEMA ...'))
-console.log(chalk.cyan(`
-      Stellar | Wa Bot
-     Powered by I'm Diego ~
-`))
+const { say } = cfonts
+console.log(chalk.magentaBright('\n❀ Iniciando...'))
+  say('Yuki Suou', {
+  align: 'center',           
+  gradient: ['red', 'blue'] 
+})
+  say('Made with love by Destroy', {
+  font: 'console',
+  align: 'center',
+  gradient: ['blue', 'magenta']
+})
 
-const BOT_TYPES = [
-  { name: 'SubBot', folder: './Sessions/Subs', starter: startSubBot }
-]
-
-if (!fs.existsSync('./lib/system/tmp')) fs.mkdirSync('./lib/system/tmp', { recursive: true });
+const botTypes = [
+  { name: 'SubBot', folder: './Sessions/Subs', starter: startSubBot },
+];
+if (!fs.existsSync('./tmp')) fs.mkdirSync('./tmp', { recursive: true });
 global.conns = global.conns || [];
 const reconnecting = new Set();
 const msgStore = new Map();
 const msgLimit = 500;
 
 async function loadBots() {
-  for (const { name, folder, starter } of BOT_TYPES) {
+  for (const { name, folder, starter } of botTypes) {
     if (!fs.existsSync(folder)) continue;
     const botIds = fs.readdirSync(folder);
     for (const userId of botIds) {
@@ -72,20 +78,28 @@ async function loadBots() {
       await new Promise((res) => setTimeout(res, 2500));
     }
   }
- // setTimeout(loadBots, 60 * 1000);
+  setTimeout(loadBots, 60 * 1000);
 }
 
 async function initDB() {
+  db.initDB();
+  db.clearDB();
+  global.db = db;
+  console.log(chalk.gray('[ ✿  ]  Base de datos cargada correctamente.'));
+}
+
+function cleanCache() {
   try {
-    db.initDB()
-    db.clearCache('user')
-    db.clearCache('chat')
-    db.clearCache('set')
-    db.clearCache('chatuser')
-    db.clearCache('packsticker')
-    log.info('Base de datos inicializada.')
+    if (fs.existsSync('./tmp')) {
+      const files = fs.readdirSync('./tmp');
+      let cleaned = 0;
+      for (const file of files) {
+        try { fs.unlinkSync(path.join('./tmp', file)); cleaned++; } catch {}
+      }
+      if (cleaned > 0) console.log(chalk.gray(`[ ⚠ ] Cache tmp: ${cleaned} archivos eliminados`));
+    }
   } catch (e) {
-    log.error(`Error DB: ${e.message}`)
+    console.error(chalk.red('Error en cleanCache: '), e);
   }
 }
 
@@ -113,20 +127,7 @@ if (methodCodeQR) {
     phoneNumber = normalizePhone(phoneInput);
   }
 } else if (!fs.existsSync("./Sessions/Owner/creds.json")) {
-    opcion = readlineSync.question(`╭${lineM}  
-┊ ${chalk.blueBright('╭┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅')}
-┊ ${chalk.blueBright('┊')} ${chalk.blue.bgBlue.bold.cyan('METODO DE VINCULACION')}
-┊ ${chalk.blueBright('╰┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅')}   
-┊ ${chalk.blueBright('╭┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅')}     
-┊ ${chalk.blueBright('┊')} ${chalk.green.bgMagenta.bold.yellow('COMO DESEA CONECTARSE?')}
-┊ ${chalk.blueBright('┊')} ${chalk.bold.redBright('=>  Opcion 1:')} ${chalk.greenBright('Codigo QR.')}
-┊ ${chalk.blueBright('┊')} ${chalk.bold.redBright('=>  Opcion 2:')} ${chalk.greenBright('Codigo de 8 digitos.')}
-┊ ${chalk.blueBright('╰┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅')}
-┊ ${chalk.blueBright('╭┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅')}     
-┊ ${chalk.blueBright('┊')} ${chalk.italic.magenta('Escriba solo el numero de')}
-┊ ${chalk.blueBright('┊')} ${chalk.italic.magenta('la opcion para conectarse.')}
-┊ ${chalk.blueBright('╰┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅')} 
-╰${lineM}\n${chalk.bold.magentaBright('---> ')}`);
+  opcion = readlineSync.question(chalk.bold.white("\nSeleccione una opción:\n") + chalk.blueBright("1. Con código QR\n") + chalk.cyan("2. Con código de texto de 8 dígitos\n--> "));
   while (!/^[1-2]$/.test(opcion)) {
     console.log(chalk.bold.redBright(`No se permiten numeros que no sean 1 o 2, tampoco letras o símbolos especiales.`));
     opcion = readlineSync.question("--> ");
@@ -143,6 +144,28 @@ let reconexion = 0;
 let botReady = false;
 let isRestarting = false;
 const retriesLimit = 15;
+function remove(sock) {
+  if (!sock) return;
+  try { sock.ev.removeAllListeners(); } catch {}
+  try { sock.ws?.close(); } catch {}
+  try { sock.end?.(new Error('replaced')); } catch {}
+  try { sock.msgRetryCounterCache?.close(); } catch {}
+}
+
+const logger = pino({ level: "silent" });
+const versionCache = { value: null, expiresAt: 0 };
+async function getVersion() {
+  if (versionCache.value && Date.now() < versionCache.expiresAt) return versionCache.value;
+  try {
+    const latest = await fetchLatestBaileysVersion();
+    versionCache.value = latest.version;
+    versionCache.expiresAt = Date.now() + 60 * 60 * 1000;
+  } catch (e) {
+    if (!versionCache.value) versionCache.value = [2, 3000, 1033105955];
+  }
+  return versionCache.value;
+}
+
 async function warmupGroups(sock) {
   try {
     const allChats = db.getChat()
@@ -168,25 +191,37 @@ export async function startBot() {
   if (isRestarting) return;
   isRestarting = true;
   bootTime = Date.now();
-  const { state, saveCreds } = await useMultiFileAuthState('./Sessions/Owner');
-  const { version } = await fetchLatestBaileysVersion();
+  const { state, saveCreds: saveCredsDB } = await useMultiFileAuthState('./Sessions/Owner');
+  const version = await getVersion();
+  let saveCredsTimer = null;
+  const saveCreds = () => { clearTimeout(saveCredsTimer); saveCredsTimer = setTimeout(saveCredsDB, 2000); };
+  const msgRetryCounterCache = new NodeCache({ stdTTL: 3600, checkperiod: 600, useClones: false });
   console.info = () => {};
   console.debug = () => {};
   const sock = makeWASocket({
     version,
-    logger: pino({ level: 'silent' }),
+    logger,
     browser: Browsers.macOS('Chrome'),
     printQRInTerminal: false,
-    auth: { creds: state.creds, keys: makeCacheableSignalKeyStore(state.keys, pino({ level: 'silent' })) },
+    auth: { creds: state.creds, keys: makeCacheableSignalKeyStore(state.keys, logger) },
     markOnlineOnConnect: false,
     syncFullHistory: false,
-    generateHighQualityLinkPreview: true,
+    shouldSyncHistoryMessage: () => false,
+    fireInitQueries: false,
+    generateHighQualityLinkPreview: false,
     shouldIgnoreJid: (jid) => jid.endsWith('@broadcast'),
-    keepAliveIntervalMs: 25_000,
+    keepAliveIntervalMs: 30000,
+    connectTimeoutMs: 20000,
+    transactionOpts: { maxCommitRetries: 10, delayBetweenTriesMs: 3000 },
+    emitOwnEvents: false,
+    msgRetryCounterCache,
+    cachedGroupMetadata: async (jid) => getCachedMeta(jid) ?? undefined,
     getMessage: async (key) => msgStore.get(key.remoteJid + ':' + key.id),
   });
 
   global.sock = sock;
+  patchGroupMetadata(sock);
+  sock.msgRetryCounterCache = msgRetryCounterCache;
   sock.ev.on("creds.update", saveCreds);
   sock.sendText = (jid, text, quoted = "", options) => sock.sendMessage(jid, { text, ...options }, { quoted });
   sock.decodeJid = (jid) => {
@@ -226,13 +261,14 @@ export async function startBot() {
         if ((msg.messageTimestamp * 1000) < bootTime - 15_000) continue;
         if (msg.message.ephemeralMessage) msg.message = msg.message.ephemeralMessage.message;
         const m = await smsg(sock, msg);
-        if (typeof handler === 'function') handler(sock, m, messages).catch((err) => console.error('[ ✿  ]  Main Owner »', err?.message));
+        if (typeof main === 'function') main(sock, m, messages).catch((err) => console.error('[ ✿  ]  Main Owner »', err?.message));
       } catch (err) {
         console.error('Error:', err);
       }
     }
   });
-
+  sock.ev.on("group-participants.update", ({ id }) => { deleteCachedMeta(id); });
+  sock.ev.on("groups.update", (updates) => { for (const update of updates) deleteCachedMeta(update.id); });
   try { await events(sock, null); } catch (err) { console.log(chalk.gray(`[ EVENT ERROR ] → ${err}`)); }
 
   sock.ev.on("connection.update", async (update) => {
@@ -248,18 +284,15 @@ export async function startBot() {
       reconexion = 0;
       isRestarting = false;
       const userName = sock.user.name || "Desconocido";
-      log.success(`Conectado a: ${userName}`);
+      log.success(`[ ✿ ]  Conectado a: ${userName}`);
       if (!botReady) {
         botReady = true;
         warmupGroups(sock);
       }
     }
     if (isNewLogin) log.info("Nuevo dispositivo detectado");
-    if (receivedPendingNotifications === true) {
-      log.warn("Por favor espere aproximadamente 1 minuto...");
-      sock.ev.flush();
-    }
     if (connection === "close") {
+      remove(sock);
       const reason = lastDisconnect?.error?.output?.statusCode || 0;
       if ([DisconnectReason.loggedOut, DisconnectReason.forbidden, DisconnectReason.multideviceMismatch].includes(reason)) {
         log.warn(`Principal desvinculado (${reason}) — limpiando sesión y reiniciando...`);
@@ -297,9 +330,27 @@ export async function startBot() {
   });
 }
 
+setInterval(cleanCache, 60 * 60 * 1000);
+cleanCache();
+
 (async () => {
   await initDB();
   await cmdsLoader();
-  loadBots();
   await startBot();
+  await loadBots();
 })();
+
+function onUncaughtException(e) {
+  log.error(`ERROR → ${e?.stack || e?.message || e}`);
+}
+function onUnhandledRejection(reason) {
+  if (reason instanceof SyntaxError) {
+    process.off('uncaughtException', onUncaughtException);
+    process.off('unhandledRejection', onUnhandledRejection);
+    process.nextTick(() => { throw reason; });
+    return;
+  }
+  log.error(`RECHAZO → ${reason?.stack || reason?.message || reason}`);
+}
+process.on('uncaughtException', onUncaughtException);
+process.on('unhandledRejection', onUnhandledRejection);

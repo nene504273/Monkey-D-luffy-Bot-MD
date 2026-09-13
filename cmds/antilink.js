@@ -1,64 +1,27 @@
-import db from "#db"
-
-const linkRegex = /(https?:\/\/)?(chat\.whatsapp\.com\/[0-9A-Za-z]{20,24}|whatsapp\.com\/channel\/[0-9A-Za-z]{20,24})/i
-
-const joinCommands = [
-  '/invite', '#invite', '-invite',
-  '!invite', '.invite', '+invite'
-]
+import db from '#db';
+const linkRegex = /(https?:\/\/)?(chat\.whatsapp\.com\/[0-9A-Za-z]{20,24}|whatsapp\.com\/channel\/[0-9A-Za-z]{20,24})/i;
 
 export async function before({ msg, sock, groupMetadata, participants, isAdmins, isBotAdmins }) {
   if (!msg.isGroup || !msg.text) return;
   if (msg.isBot) return;
-
-  const botId = sock.user.id.split(':')[0] + '@s.whatsapp.net';
   if (!groupMetadata) return;
-
-  const botSettings = await db.getSettings(botId);
-  const isSelf = botSettings?.self ?? 0;
+  const botId = sock.user.id.split(':')[0] + '@s.whatsapp.net';
+  const chat = db.getChat(msg.chat) || {};
+  const settings = db.getSettings(botId) || {};
+  const isSelf = (settings.self ?? false) || (chat.isMute ?? false);
   if (isSelf) return;
-
-  const chat = await db.getChat(msg.chat);
   const primaryBotId = chat?.primaryBot;
   const isPrimary = !primaryBotId || primaryBotId === botId;
-
   const isGroupLink = linkRegex.test(msg.text);
-  const command = msg.text.trim().split(/\s+/)[0].toLowerCase();
-
-  if (!isGroupLink || !chat?.antilinks || isAdmins || !isBotAdmins || !isPrimary) return;
-
-  await sock.sendMessage(msg.chat, {
-    delete: {
-      remoteJid: msg.chat,
-      fromMe: false,
-      id: msg.key.id,
-      participant: msg.key.participant
-    }
-  }).catch(() => {});
-
-  if (!joinCommands.includes(command)) {
-    
-    if (msg.quoted?.key?.id) {
-      await sock.sendMessage(msg.chat, {
-        delete: {
-          remoteJid: msg.chat,
-          fromMe: false,
-          id: msg.quoted.key.id,
-          participant: msg.quoted.key.participant
-        }
-      }).catch(() => {});
-    }
-
-    const ysr = await db.getUser(msg.sender);
-    const userName = ysr?.name || msg.pushName || 'Usuario';
-
-    setTimeout(async () => {
-      try {
-        await sock.reply(msg.chat, `❖ *${userName}* eliminado por \`Anti-Link\``, null);
-        await sock.groupParticipantsUpdate(msg.chat, [msg.sender], 'remove');
-      } catch (err) {
-        console.error('Error al expulsar en Anti-Link:', err);
-      }
-    }, 500);
+  const hasAllowedLink = global.links?.channel && msg.text.includes(global.links.channel);
+  const command = (msg.command || '').toLowerCase();
+  if (hasAllowedLink || !isGroupLink || !chat?.antilinks || isAdmins || !isBotAdmins || !isPrimary) return;
+  await sock.sendMessage(msg.chat, { delete: { remoteJid: msg.chat, fromMe: false, id: msg.key.id, participant: msg.key.participant }});
+  if (command !== 'invite') {
+    const isChannelLink = /whatsapp\.com\/channel\//i.test(msg.text);
+    const user = db.getUser(msg.sender);
+    const userName = user?.name || 'Usuario';
+    await sock.reply(msg.chat, `> ꕥ Se ha eliminado a *${userName}* del grupo por \`Anti-Link\`, no permitimos enlaces de *${isChannelLink ? 'canales' : 'otros grupos'}*.`, null);
+    await sock.groupParticipantsUpdate(msg.chat, [msg.sender], 'remove');
   }
 }

@@ -1,33 +1,31 @@
-import db from "#db"
-import chalk from 'chalk'
+import chalk from 'chalk';
+import db from '#db';
 
-const limpiarPersonajesReservados = async () => {
+const limpiarRolls = async () => {
   try {
-    const chats = await db.getChat() 
-    const now = Date.now()
-
-    for (const chat of chats) {
-      if (!chat.personajesReservados || !Array.isArray(chat.personajesReservados)) {
-        continue
-      }
-
-      const nuevosPersonajesReservados = chat.personajesReservados.filter(personaje => {
-        const expirado = personaje.expiresAt && now > personaje.expiresAt
-        const yaReclamado = chat.users && Object.values(chat.users).some(u =>
-          u.characters && u.characters.some(c => c.name === personaje.name)
-        )
-        return !expirado && !yaReclamado
-      })
-
-      if (chat.personajesReservados.length !== nuevosPersonajesReservados.length) {
-        await db.updateChat(chat.id, 'personajesReservados', nuevosPersonajesReservados)
-        // console.log(chalk.gray(`[ ✿ ] Personajes reservados limpiados en chat ${chat.id}`))
+    const now = Date.now();
+    const allChats = db.getChat();    
+    for (const chat of allChats) {
+      if (!chat.rolls) continue;      
+      let rolls = chat.rolls;
+      let cambios = false;      
+      for (const msgId of Object.keys(rolls)) {
+        const roll = rolls[msgId];
+        const expirado = roll.expiresAt && now > roll.expiresAt;
+        const reclamado = roll.claimed === true;
+        if (expirado || reclamado) {
+          delete rolls[msgId];
+          cambios = true;
+        }
+      }      
+      if (cambios) {
+        db.setChat(chat.id, 'rolls', rolls);
       }
     }
   } catch (e) {
-    console.log(chalk.gray('Error limpiando personajesReservados'))
+    console.log(chalk.gray('Error limpiando rolls'));
   }
-}
+};
 
-setInterval(limpiarPersonajesReservados, 1800000) // cada 30 minutos
-// limpiarPersonajesReservados()
+setInterval(limpiarRolls, 1800000);
+limpiarRolls();

@@ -1,45 +1,38 @@
-import db from "#db"
+import db from '#db';
 export default {
-  command: ['w', 'work'],
-  category: 'rpg',
-  run: async ({ msg, sock, args, command, text, usedPrefix: prefix }) => {
-    const chat = await db.getChat(msg.chat)
-    const user = await db.getChatUser(msg.chat, msg.sender)
-    const botId = sock.user.id.split(':')[0] + '@s.whatsapp.net';
-    const botSettings = await db.getSettings(botId)
-    const monedas = botSettings.currency;
-
-    if (chat.adminonly || !chat.rpg)
-      return msg.reply(mess.comandooff)
-
-    if (!user.workCooldown) user.workCooldown = 0;
-    const remainingTime = user.workCooldown - Date.now();
-
-    if (remainingTime > 0) {
-      return msg.reply(`✿ Debes esperar *${msToTime(remainingTime)}* para trabajar de nuevo.`);
+  command: ['w', 'work', 'chambear', 'trabajar'],
+  category: 'economy',
+  description: 'Ganar coins trabajando.',
+  run: async ({ msg, sock, usedPrefix, command, text }) => {
+    const chat = db.getChat(msg.chat);
+    if (chat.adminonly || !chat.economy) {
+      return msg.reply(`ꕥ Los comandos de *Economía* están desactivados en este grupo.\n\nUn *administrador* puede activarlos con el comando:\n» *${usedPrefix}economy on*`);
     }
-
-    const rsl = Math.floor(Math.random() * 5000);     
-    user.workCooldown = Date.now() + 10 * 60 * 1000; // 10 minutos
-    user.coins += rsl;
-
-   await db.updateChatUser(msg.chat, msg.sender, 'coins', user.coins)
-   await db.updateChatUser(msg.chat, msg.sender, 'workCooldown', user.workCooldown)
-
-        await sock.reply(msg.chat, `「✿」 ${pickRandom(trabajo)} *¥${rsl.toLocaleString()} ${monedas}*.`, msg)
+    const botId = sock.user.id.split(':')[0] + '@s.whatsapp.net';
+    const settings = db.getSettings(botId);
+    const monedas = settings.currency;
+    db.setCreate('chat_users', [msg.chat, msg.sender], 'lastwork', 0);
+    const user = db.getChatUser(msg.chat, msg.sender);
+    const cooldown = 3 * 60 * 1000;
+    if (Date.now() < user.lastwork) {
+      const tiempoRestante = formatTime(user.lastwork - Date.now());
+      return sock.reply(msg.chat, `ꕥ Debes esperar *${tiempoRestante}* para usar *${usedPrefix + command}* de nuevo.`, msg);
+    }
+    const rsl = Math.floor(Math.random() * (4000 - 2000 + 1)) + 2000;
+    db.setChatUser(msg.chat, msg.sender, 'lastwork', Date.now() + cooldown);
+    db.setChatUser(msg.chat, msg.sender, 'coins', (user.coins || 0) + rsl);    
+    await sock.sendMessage(msg.chat, { text: `❀ ${pickRandom(trabajo)} *¥${rsl.toLocaleString()} ${monedas}*.` }, { quoted: msg });
   }
 };
 
-function msToTime(duration) {
-  const seconds = Math.floor((duration / 1000) % 60);
-  const minutes = Math.floor((duration / (1000 * 60)) % 60);
-
-  const min = minutes < 10 ? '0' + minutes : minutes;
-  const sec = seconds < 10 ? '0' + seconds : seconds;
-
-  return min === '00'
-    ? `${sec} segundo${sec > 1 ? 's' : ''}`
-    : `${min} minuto${min > 1 ? 's' : ''}, ${sec} segundo${sec > 1 ? 's' : ''}`;
+function formatTime(ms) {
+  const totalSec = Math.ceil(ms / 1000);
+  const minutes = Math.floor((totalSec % 3600) / 60);
+  const seconds = totalSec % 60;
+  const parts = [];
+  if (minutes > 0) parts.push(`${minutes} minuto${minutes !== 1 ? 's' : ''}`);
+  parts.push(`${seconds} segundo${seconds !== 1 ? 's' : ''}`);
+  return parts.join(' ');
 }
 
 function pickRandom(list) {

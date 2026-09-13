@@ -1,129 +1,77 @@
-import db from "#db"
-import fs from 'fs'
+import db from '#db';
+global.math = global.math || {};
 
-global.math = global.math || {}
+const limits = { facil: 10, medio: 50, dificil: 90, imposible: 100, imposible2: 160 };
+const rewardRanges = { facil: [500, 1000], medio: [1000, 2000], dificil: [2000, 3500], imposible: [3500, 4800], imposible2: [5000, 6500] };
 
-const limits = {
-  facil: 10,
-  medio: 50,
-  dificil: 90,
-  imposible: 120,
-  imposible2: 200
-}
-
-const generateRandomNumber = (max) => Math.floor(Math.random() * max) + 1
-const getOperation = () => ['+', '-', '*', '/'][Math.floor(Math.random() * 4)]
-
-const operacionesAvanzadas = [
-  (a, b) => ({ visible: `√(${a}² + ${b}³) ÷ ${Math.max(2, b % 10)}`, eval: `Math.sqrt((${a}**2 + ${b}**3)) / ${Math.max(2, b % 10)}` }),
-  (a, b) => ({ visible: `(${a}³ - ${b}²) ÷ ${Math.max(2, a % 7)}`, eval: `((${a}**3 - ${b}**2)) / ${Math.max(2, a % 7)}` }),
-  (a, b) => ({ visible: `√(${a} × ${b}) + ${a}`, eval: `Math.sqrt(${a} * ${b}) + ${a}` }),
-  (a, b) => ({ visible: `(${a}² + ${b}²) ÷ ${Math.max(2, b)}`, eval: `((${a}**2 + ${b}**2)) / ${Math.max(2, b)}` })
-]
+const generateRandomNumber = (max) => Math.floor(Math.random() * max) + 1;
+const getOperation = () => ['+', '-', '*', '/'][Math.floor(Math.random() * 4)];
 
 const generarProblema = (dificultad) => {
-  const maxLimit = limits[dificultad] || 30
-  const num1 = generateRandomNumber(maxLimit)
-  const num2 = generateRandomNumber(maxLimit)
-
-  if (['dificil', 'imposible', 'imposible2'].includes(dificultad)) {
-    const expr = operacionesAvanzadas[Math.floor(Math.random() * operacionesAvanzadas.length)](num1, num2)
-    const resultado = eval(expr.eval)
-    return {
-      problema: expr.visible,
-      resultado: resultado.toFixed(2)
-    }
-  }
-
-  const operador = getOperation()
-  const resultado = eval(`${num1} ${operador} ${num2}`)
-  const simbolo = operador === '*' ? '×' : operador === '/' ? '÷' : operador
-  return {
-    problema: `${num1} ${simbolo} ${num2}`,
-    resultado: operador !== '/' ? resultado : resultado.toFixed(2)
-  }
-}
-
-async function run({ msg, sock: client, args, command, text, usedPrefix: prefix }) {
-  const chatId = msg.chat
-  const db2 = await db.getChat(msg.chat)
-  const user = await db.getUser(msg.sender)
-  const juego = global.math[chatId]
-
-  if (db2.adminonly || !db2.rpg) {
-    return msg.reply(mess.comandooff)
-  }
-
-  if (command === 'responder') {
-    if (!juego?.juegoActivo) return
-
-    const quotedId = msg.quoted?.key?.id || msg.quoted?.id || msg.quoted?.stanzaId
-    if (quotedId !== juego.problemMessageId) return
-
-    const respuestaUsuario = args[0]
-    if (!respuestaUsuario) {
-      return sock.reply(chatId, `《✤》 Debes escribir tu respuesta.`, msg)
-    }
-
-    const respuestaCorrecta = juego.respuesta
-    const botId = sock.user.id.split(':')[0] + '@s.whatsapp.net'
-    const primaryBotId = db2.primaryBot
-
-    if (!primaryBotId || primaryBotId === botId) {
-      if (respuestaUsuario === respuestaCorrecta) {
-        const expaleatorio = Math.floor(Math.random() * 50) + 10
-        user.exp += expaleatorio
-        await db.updateUser(msg.sender, 'exp', user.exp)
-        clearTimeout(juego.tiempoLimite)
-        delete global.math[chatId]
-        return sock.reply(chatId, `✎ Respuesta correcta.\n> *Ganaste ›* ${expaleatorio} Exp`, msg)
-      } else {
-        juego.intentos += 1
-        if (juego.intentos >= 3) {
-          clearTimeout(juego.tiempoLimite)
-          delete global.math[chatId]
-          return sock.reply(chatId, '《✤》 Te quedaste sin intentos. Suerte a la próxima.', msg)
-        } else {
-          const intentosRestantes = 3 - juego.intentos
-          return sock.reply(chatId, `《✤》 Respuesta incorrecta, te quedan ${intentosRestantes} intentos.`, msg)
-        }
-      }
-    }
-    return
-  }
-
-  if (command === 'math') {
-    if (juego?.juegoActivo) {
-      return sock.reply(chatId, '✿ Ya hay un juego activo. Espera a que termine.', msg)
-    }
-
-    const dificultad = args[0]?.toLowerCase()
-    if (!limits[dificultad]) {
-      return sock.reply(chatId, '❀ Especifica una dificultad válida: *facil, medio, dificil, imposible, imposible2*', msg)
-    }
-
-    const { problema, resultado } = generarProblema(dificultad)
-    const problemMessage = await sock.reply(chatId, `「✎」 Tienes 1 minuto para resolver:\n\n> ❖ *${problema}*\n\n_✿ Usa » *${prefix}responder* para responder!_`, msg)
-
-    global.math[chatId] = {
-      juegoActivo: true,
-      problema,
-      respuesta: resultado.toString(),
-      intentos: 0,
-      timeout: Date.now() + 60000,
-      problemMessageId: problemMessage.key?.id,
-      tiempoLimite: setTimeout(() => {
-        if (global.math[chatId]?.juegoActivo) {
-          delete global.math[chatId]
-          sock.reply(chatId, '《✤》 Tiempo agotado. El juego ha terminado.', msg)
-        }
-      }, 60000)
-    }
-  }
-}
+  const maxLimit = limits[dificultad] || 30;
+  const num1 = generateRandomNumber(maxLimit);
+  const num2 = generateRandomNumber(maxLimit);
+  const operador = getOperation();
+  const resultado = eval(`${num1} ${operador} ${num2}`);
+  const simbolo = operador === '*' ? '×' : operador === '/' ? '÷' : operador;
+  return { problema: `${num1} ${simbolo} ${num2}`, resultado };
+};
 
 export default {
-  command: ['math', 'matematicas', 'responder'],
-  category: 'rpg',
-  run
-}
+  command: ['math', 'mates'],
+  category: 'economy',
+  description: 'Iniciar un juego de matemáticas.',
+  before: async ({ msg, sock }) => {
+    const chatId = msg.chat;
+    const juego = global.math[chatId];
+    if (!juego?.juegoActivo) return;
+    const respuestaUsuario = parseFloat(msg.text?.trim());
+    if (isNaN(respuestaUsuario)) return;
+    const botId = sock.user.id.split(':')[0] + '@s.whatsapp.net';
+    const chat = db.getChat(chatId);
+    if (chat.primaryBot && chat.primaryBot !== botId) return;
+    const user = db.getChatUser(chatId, msg.sender);
+    const respuestaCorrecta = parseFloat(juego.respuesta);
+    if (respuestaUsuario === respuestaCorrecta) {
+      const [min, max] = rewardRanges[juego.dificultad] || [500, 1000];
+      const coinsAleatorio = Math.floor(Math.random() * (max - min + 1)) + min;
+      db.setChatUser(chatId, msg.sender, 'coins', (user.coins || 0) + coinsAleatorio);
+      clearTimeout(juego.tiempoLimite);
+      delete global.math[chatId];
+      await sock.reply(chatId, `「❀」Respuesta correcta.\n> *Ganaste ›* ¥${coinsAleatorio.toLocaleString()}`, msg);
+    } else {
+      juego.intentos += 1;
+      if (juego.intentos >= 3) {
+        clearTimeout(juego.tiempoLimite);
+        delete global.math[chatId];
+        await sock.reply(chatId, '「✎」Te quedaste sin intentos. Suerte a la próxima.', msg);
+      } else {
+        await sock.reply(chatId, `「✎」Respuesta incorrecta, te quedan ${3 - juego.intentos} intentos.`, msg);
+      }
+    }
+    return true;
+  },
+  run: async ({ msg, sock, args, usedPrefix, command }) => {
+    const chatId = msg.chat;
+    const chat = db.getChat(chatId);
+    if (chat.adminonly || !chat.economy) {
+      return msg.reply(`ꕥ Los comandos de *Economía* están desactivados en este grupo.\n\nUn *administrador* puede activarlos con el comando:\n» *${usedPrefix}economy on*`);
+    }
+    if (global.math[chatId]?.juegoActivo) {
+      return sock.reply(chatId, 'ꕥ Ya hay un juego activo. Espera a que termine.', msg);
+    }
+    const dificultad = args[0]?.toLowerCase();
+    if (!limits[dificultad]) {
+      return sock.reply(chatId, '「✎」Especifica una dificultad válida: *facil, medio, dificil, imposible, imposible2*', msg);
+    }
+    const { problema, resultado } = generarProblema(dificultad);
+    const problemMessage = await sock.reply(chatId, `「✩」Tienes 1 minuto para resolver:\n\n> ✩ *${problema}*\n\n_✐ Responde con el número correcto!_`, msg);
+    global.math[chatId] = { juegoActivo: true, problema, respuesta: resultado.toString(), intentos: 0, dificultad, timeout: Date.now() + 60000, problemMessageId: problemMessage.key?.id, tiempoLimite: setTimeout(() => {
+        if (global.math[chatId]?.juegoActivo) {
+          delete global.math[chatId];
+          sock.reply(chatId, `「✿」Tiempo agotado. La respuesta era *${resultado}*.`, msg);
+        }
+      }, 60000)
+    };
+  }
+};

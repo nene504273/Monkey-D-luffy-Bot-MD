@@ -1,26 +1,28 @@
-import db from "#db"
+import db from '#db';
 export default {
   command: ['setgenre'],
   category: 'profile',
-    run: async ({ msg, sock, args, command, text, usedPrefix: prefix }) => {
-    const user = await db.getUser(msg.sender)
-    const input = args.join(' ').toLowerCase()
-
-    if (user.genre)
-      return msg.reply(`ꕥ Ya tienes un género. Usa › *${prefix + command}* para eliminarlo.`)
-
-    if (!input)
-      return msg.reply(
-        '《✧》 Debes ingresar un género válido.',
-      )
-
-    const genre = input === 'hombre' ? 'Hombre' : input === 'mujer' ? 'Mujer' : null
-    if (!genre) return msg.reply(`《✧》 Elije un genero valido.`)
-
-    user.genre = genre
-
-    await db.updateUser(msg.sender, 'genre', user.genre)
-
-    return msg.reply(`✎ Se ha establecido tu género como: *${user.genre}*`)
+  description: 'Establecer tu género.',
+  run: async ({ msg, args, usedPrefix, command }) => {
+    const user = db.getUser(msg.sender);
+    const input = args.join(' ').toLowerCase();
+    if (!input) return msg.reply(`《✧》 Debes ingresar un género válido.\n✎ Ejemplos:\n> *${usedPrefix + command} hombre*\n> *${usedPrefix + command} mujer*`);    
+    const genresList = ['Hombre', 'Mujer', 'Femboy', 'Transgénero', 'Gay', 'Lesbiana', 'No Binario', 'Pansexual', 'Bisexual', 'Asexual', 'Therian'];
+    let genre = null;    
+    if (!isNaN(input)) {
+      const index = parseInt(input) - 1;
+      if (index >= 0 && index < genresList.length) {
+        genre = genresList[index];
+      }
+    } else {
+      const found = genresList.find(g => g.toLowerCase() === input);
+      if (found) genre = found;
+    }    
+    if (!genre) {
+      const opciones = genresList.map((g, i) => `${i + 1}. ${g}`).join('\n');
+      return msg.reply(`《✧》 Elije un género válido.\n\nOpciones:\n${opciones}`);
+    }    
+    db.setUser(msg.sender, 'genre', genre);
+    return msg.reply(`✎ Se ha establecido tu género como: *${genre}*`);
   },
 };
