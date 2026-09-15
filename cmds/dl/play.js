@@ -36,12 +36,15 @@ export default {
       await sock.sendMessage(msg.chat, { image: thumbBuffer, caption }, { quoted: msg })
 
       const audioBuffer = await getBuffer(dl)
+      if (!audioBuffer || audioBuffer.length === 0) {
+        return msg.reply("《✧》 No se pudo descargar el *audio*, intenta más tarde.")
+      }
 
       const mensaje = {
         audio: audioBuffer,
         mimetype: 'audio/mpeg',
         fileName: `${title}.mp3`,
-        ptt: true
+        ptt: false
       }
 
       await sock.sendMessage(msg.chat, mensaje, { quoted: msg })
