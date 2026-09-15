@@ -1,0 +1,4 @@
+node_modules/
+Sessions/
+tmp/
+database.json
