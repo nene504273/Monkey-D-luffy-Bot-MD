@@ -251,8 +251,6 @@ export default {
     'lick',
     'slap',
     'dance',
-    'love',
-    'amor',
     'cuddle',
     'cold',
     'sing',
@@ -289,7 +287,7 @@ export default {
       who = msg.quoted ? msg.quoted.sender : msg.sender
     }
 
-     const user = await db.getUser(who)
+    const user = await db.getUser(who)
     const fromName = msg.pushName || 'Alguien'
     const toName = user.name || 'alguien'
 
@@ -303,24 +301,24 @@ export default {
         : `${fromName} ${captionText} ${getRandomSymbol()}.`
 
     try {
-const response = await fetch(
-  `${api.url}/sfw/interaction?inter=${currentCommand}&key=${api.key}`
-)
+      const response = await fetch(
+        `${api.url}/sfw/${currentCommand}?key=${api.key}`
+      )
 
-const videoBuffer = await response.buffer()
+      const videoBuffer = await response.buffer()
 
-await sock.sendMessage(
-  msg.chat,
-  {
-    video: videoBuffer, 
-    gifPlayback: true,
-    caption,
-    mentions: [who, msg.sender],
-  },
-  { quoted: msg },
-)
+      await sock.sendMessage(
+        msg.chat,
+        {
+          video: videoBuffer,
+          gifPlayback: true,
+          caption,
+          mentions: [who, msg.sender],
+        },
+        { quoted: msg },
+      )
     } catch {
       await msg.reply(msgglobal)
     }
   },
-};
+}
