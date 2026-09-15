@@ -5,12 +5,10 @@ export default {
   category: "downloader",
 
   run: async ({ msg, sock, args }) => {
-    // 1. Validar que haya enlaces
     if (!args.length) {
       return msg.reply("✎ Ingrese uno o varios enlaces de *Instagram*.")
     }
 
-    // 2. Filtrar solo enlaces válidos de Instagram
     const urls = args.filter(arg =>
       arg.match(/instagram\.com\/(p|reel|share|tv)\//)
     )
@@ -19,33 +17,34 @@ export default {
       return msg.reply("✿ El enlace no parece *válido*. Asegúrate de que sea de *Instagram*")
     }
 
-    // 3. Procesar cada enlace (máximo 10)
     for (const url of urls.slice(0, 10)) {
       try {
-        // 4. Llamar a la API de alyacore
+        // 1. Pedir el enlace a la API
         const { data } = await axios.get(
           `${api.url}/dl/instagram?url=${encodeURIComponent(url)}&key=${api.key}`
         )
 
-        // 5. Verificar que la API respondió bien
         if (!data.status || !data.data?.dl) {
-          console.log("Instagram: API sin datos", JSON.stringify(data))
+          console.log("IG: API sin datos", JSON.stringify(data))
           await sock.reply(msg.chat, "✿ No se pudo *obtener* el contenido", msg)
           continue
         }
 
         const dl = data.data.dl
-        console.log("Instagram: enlace obtenido ->", dl.slice(0, 80) + "...")
+        console.log("IG: enlace ->", dl.slice(0, 60) + "...")
 
-        // 6. Detectar si es video por la extensión del enlace
+        // 2. Descargar el archivo como buffer (binario)
+        const archivo = await axios.get(dl, { responseType: "arraybuffer" })
+
+        // 3. Detectar tipo por extensión del enlace
         const esVideo = /\.(mp4|mov|webm)(\?|$)/i.test(dl)
 
-        // 7. Enviar según el tipo
+        // 4. Enviar el archivo ya descargado
         if (esVideo) {
           await sock.sendMessage(
             msg.chat,
             {
-              video: { url: dl },
+              video: archivo.data,
               mimetype: "video/mp4",
               fileName: "instagram.mp4",
             },
@@ -54,15 +53,14 @@ export default {
         } else {
           await sock.sendMessage(
             msg.chat,
-            { image: { url: dl } },
+            { image: archivo.data },
             { quoted: msg }
           )
         }
 
-        console.log("Instagram: enviado correctamente")
+        console.log("IG: enviado correctamente")
       } catch (e) {
-        // 8. Mostrar el error real en consola
-        console.log("Instagram: ERROR ->", e?.response?.data || e?.message || e)
+        console.log("IG-ERROR:", e?.response?.data || e?.message || e)
         await sock.reply(msg.chat, "✿ Ocurrió un problema al procesar el enlace.", msg)
       }
     }
