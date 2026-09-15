@@ -3,7 +3,7 @@ import axios from "axios"
 export default {
   command: ["instagram", "ig", "reel"],
   category: "downloader",
-  run: async ({ msg, sock, args }) => {
+  run: async ({ msg, sock, args, api }) => {
     if (!args.length) {
       return msg.reply("✎ Ingrese uno o varios enlaces de *Instagram*.")
     }
@@ -13,36 +13,42 @@ export default {
       return msg.reply("✿ El enlace no parece *válido*. Asegúrate de que sea de *Instagram*")
     }
 
-    try {
-      // Procesa cada enlace (máx 10)
-      for (const url of urls.slice(0, 10)) {
-        const res = await axios.get(`${api.url}/dl/instagram?url=${encodeURIComponent(url)}&key=${api.key}`)
-        const json = res.data
+    for (const url of urls.slice(0, 10)) {
+      try {
+        const { data } = await axios.get(
+          `${api.url}/dl/instagram?url=${encodeURIComponent(url)}&key=${api.key}`
+        )
 
-        if (!json.status || !json.data || !json.data.dl) {
+        if (!data.status || !data.data?.dl) {
           await sock.reply(msg.chat, "✿ No se pudo *obtener* el contenido", msg)
           continue
         }
 
-        const { type, dl } = json.data
+        const dl = data.data.dl
 
-        if (type === "video") {
+        // Decidir por extensión del archivo, no por el "type" de la API
+        const isVideo = /\.(mp4|mov|webm)(\?|$)/i.test(dl)
+
+        if (isVideo) {
           await sock.sendMessage(
             msg.chat,
-            { video: { url: dl }, mimetype: "video/mp4", fileName: "instagram.mp4" },
+            {
+              video: { url: dl },
+              mimetype: "video/mp4",
+              fileName: "instagram.mp4",
+            },
             { quoted: msg }
           )
         } else {
-          // Imagen
           await sock.sendMessage(
             msg.chat,
             { image: { url: dl } },
             { quoted: msg }
           )
         }
+      } catch {
+        await sock.reply(msg.chat, msgglobal, msg)
       }
-    } catch (e) {
-      await sock.reply(msg.chat, msgglobal, msg)
     }
   }
 }
