@@ -32,8 +32,15 @@ export default {
       const best = sorted[0]
       if (!best || !best.url || best.url === "/") return null
 
-      // Descargar el buffer desde la url directa
-      const dl = await axios.get(best.url, { responseType: "arraybuffer" })
+      // Descargar con headers para evitar el 403
+      const dl = await axios.get(best.url, {
+        responseType: "arraybuffer",
+        headers: {
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+          "Referer": "https://www.facebook.com/",
+          "Accept": "video/webm,video/mp4,video/*;q=0.9,*/*;q=0.8"
+        }
+      })
       return Buffer.from(dl.data)
     }
 
@@ -93,8 +100,7 @@ export default {
         }
       }
     } catch (e) {
-      // TEMPORAL: mostrar el error real para depurar
-      await msg.reply(`✿ Error: ${e.message}`)
+      await msg.reply(msgglobal)
       console.log("ERROR FB:", e)
     }
   }
