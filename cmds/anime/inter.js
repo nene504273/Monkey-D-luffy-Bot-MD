@@ -251,6 +251,8 @@ export default {
     'lick',
     'slap',
     'dance',
+    'love',
+    'amor',
     'cuddle',
     'cold',
     'sing',
@@ -301,12 +303,22 @@ export default {
         : `${fromName} ${captionText} ${getRandomSymbol()}.`
 
     try {
-      const response = await fetch(
-        `${api.url}/sfw/${currentCommand}?key=${api.key}`
+      // 1. Llamada a la API de Alyacore para obtener la URL del video
+      const apiResponse = await fetch(
+        `https://api.alyacore.xyz/sfw/interaction?inter=${currentCommand}&key=LUFFY-FIX67`
       )
+      const apiData = await apiResponse.json()
 
-      const videoBuffer = await response.buffer()
+      // 2. Verificar que la respuesta sea exitosa y contenga la URL
+      if (!apiData.status || !apiData.result) {
+        throw new Error('La API no devolvió una URL válida')
+      }
 
+      // 3. Descargar el video desde la URL obtenida
+      const videoResponse = await fetch(apiData.result)
+      const videoBuffer = await videoResponse.buffer()
+
+      // 4. Enviar el video
       await sock.sendMessage(
         msg.chat,
         {
@@ -315,10 +327,11 @@ export default {
           caption,
           mentions: [who, msg.sender],
         },
-        { quoted: msg },
+        { quoted: msg }
       )
-    } catch {
+    } catch (error) {
+      // En caso de error, se envía el mensaje global
       await msg.reply(msgglobal)
     }
   },
-}
+};
