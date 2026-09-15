@@ -14,52 +14,31 @@ export default {
     }
 
     try {
-      if (urls.length > 1) {
-        const medias = []
-        for (const url of urls.slice(0, 10)) {
-          try {
-            const res = await axios.get(`${api.url}/dl/instagram?url=${encodeURIComponent(url)}&key=${api.key}`)
-            const json = res.data
-            if (!json.status || !json.data || !json.data.download) continue
-            for (const media of json.data.download.slice(0, 10)) {
-              if (media.type === "video") {
-                medias.push({ type: "video", data: { url: media.url } })
-              } else {
-                medias.push({ type: "image", data: { url: media.url } })
-              }
-            }
-          } catch {}
-        }
-        if (medias.length) {
-          await sock.sendAlbumMessage(msg.chat, medias, { quoted: msg })
-        } else {
-          await msg.reply("✿ No se pudieron procesar los enlaces.")
-        }
-      } else {
-        const url = urls[0]
+      // Procesa cada enlace (máx 10)
+      for (const url of urls.slice(0, 10)) {
         const res = await axios.get(`${api.url}/dl/instagram?url=${encodeURIComponent(url)}&key=${api.key}`)
         const json = res.data
-        if (!json.status || !json.data || !json.data.download) {
-          return sock.reply(msg.chat, "✿ No se pudo *obtener* el contenido", msg)
+
+        if (!json.status || !json.data || !json.data.dl) {
+          await sock.reply(msg.chat, "✿ No se pudo *obtener* el contenido", msg)
+          continue
         }
-        const downloads = json.data.download
-        if (downloads.length === 1 && downloads[0].type === "video") {
-          const media = downloads[0]
+
+        const { type, dl } = json.data
+
+        if (type === "video") {
           await sock.sendMessage(
             msg.chat,
-            { video: { url: media.url }, mimetype: "video/mp4", fileName: "instagram.mp4" },
+            { video: { url: dl }, mimetype: "video/mp4", fileName: "instagram.mp4" },
             { quoted: msg }
           )
         } else {
-          const medias = []
-          for (const media of downloads.slice(0, 10)) {
-            if (media.type === "video") {
-              medias.push({ type: "video", data: { url: media.url } })
-            } else {
-              medias.push({ type: "image", data: { url: media.url } })
-            }
-          }
-          await sock.sendAlbumMessage(msg.chat, medias, { quoted: msg })
+          // Imagen
+          await sock.sendMessage(
+            msg.chat,
+            { image: { url: dl } },
+            { quoted: msg }
+          )
         }
       }
     } catch (e) {
