@@ -11,7 +11,7 @@ export default {
 
     const urls = args.filter(arg => arg.match(/facebook\.com|fb\.watch|video\.fb\.com/))
 
-    // Descarga el video de la mejor calidad disponible
+    // Descarga un video desde la API, intentando varias estrategias
     const downloadVideo = async (url) => {
       const apiUrl = `${api.url}/dl/facebook?url=${encodeURIComponent(url)}&key=${api.key}`
       const res = await axios.get(apiUrl)
@@ -21,27 +21,40 @@ export default {
         return null
       }
 
-      // Priorizar calidad: 1080p > 720p > 480p > 360p
+      // Orden de prioridad de calidad
       const qualityOrder = ["1080p", "720p", "480p", "360p", "1440p", "640p", "540p"]
-      const sorted = [...json.resultados].sort((a, b) => {
+      const validas = json.resultados.filter(r => r.url && r.url !== "/")
+
+      // Primero priorizar las URLs de snapcdn (proxy que no bloquea)
+      const snapcdn = validas.filter(r => r.url.includes("snapcdn"))
+      const directas = validas.filter(r => !r.url.includes("snapcdn"))
+
+      const ordenar = (arr) => [...arr].sort((a, b) => {
         const ia = qualityOrder.indexOf(a.quality)
         const ib = qualityOrder.indexOf(b.quality)
         return (ia === -1 ? 999 : ia) - (ib === -1 ? 999 : ib)
       })
 
-      const best = sorted[0]
-      if (!best || !best.url || best.url === "/") return null
+      const candidatas = [...ordenar(snapcdn), ...ordenar(directas)]
 
-      // Descargar con headers para evitar el 403
-      const dl = await axios.get(best.url, {
-        responseType: "arraybuffer",
-        headers: {
-          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-          "Referer": "https://www.facebook.com/",
-          "Accept": "video/webm,video/mp4,video/*;q=0.9,*/*;q=0.8"
+      // Intentar cada URL hasta que una funcione
+      for (const item of candidatas) {
+        try {
+          const dl = await axios.get(item.url, {
+            responseType: "arraybuffer",
+            headers: {
+              "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+              "Referer": "https://www.facebook.com/"
+            }
+          })
+          const buffer = Buffer.from(dl.data)
+          if (buffer.length > 0) return buffer
+        } catch (e) {
+          continue // probar siguiente calidad
         }
-      })
-      return Buffer.from(dl.data)
+      }
+
+      return null
     }
 
     try {
