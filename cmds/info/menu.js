@@ -11,7 +11,6 @@ export default {
   category: 'info',
   run: async ({ msg, sock, args, command, text, usedPrefix: prefix }) => {
     try {
-
       const now = new Date();
       const colombianTime = new Date(
         now.toLocaleString('en-US', { timeZone: 'America/Bogota' })
@@ -26,7 +25,9 @@ export default {
       const tiempo2 = moment.tz('America/Bogota').format('hh:mm A');
 
       const botId = sock?.user?.id.split(':')[0] + '@s.whatsapp.net' || '';
-      const botSettings = await db.getSettings(botId);
+      
+      // 1. Evitar crash si getSettings no retorna nada
+      const botSettings = (await db.getSettings(botId)) || {}; 
       const botname = botSettings.namebot || '';
       const botname2 = botSettings.namebot2 || '';
       const banner = botSettings.banner || '';
@@ -35,11 +36,10 @@ export default {
 
       const isOficialBot =
         botId === global?.sock ? global?.sock?.user?.id?.split(':')[0] + '@s.whatsapp.net' : ''
-      const botType = isOficialBot
-        ? 'Owner'
-        : 'Sub Bot';
+      const botType = isOficialBot ? 'Owner' : 'Sub Bot';
 
-      const userr = await db.getUser();
+      // 2. Evitar crash si getUser() retorna null/undefined
+      const userr = (await db.getUser()) || {}; 
       const users = Object.keys(userr).length || 0;
 
       const time = sock.uptime
@@ -47,38 +47,40 @@ export default {
         : 'Desconocido';
       const device = getDevice(msg.key.id);
 
-      const own = await db.getUser(owner);
+      // 3. Evitar crash si el owner no está en la DB
+      const own = (await db.getUser(owner)) || {}; 
 
       let menu = `> *¡ʜᴏʟᴀ!* ${msg.pushName}, como está tu día?, mucho gusto mi nombre es *${botname2}* ʚ♡⃛ɞ(ू•ᴗ•ू❁)*
 
-   ⌒࣪᷼⏜͡  ۪  ࿚ꨪᰰ࿙  ࣭࣪⢏࣭۟⢢࣭ׄ᎐፝֟᎐࣭ׄ⡔࣭۟⡹࣭ׄ  ࿚ꨪᰰ࿙  ۪  ͡⏜ׄ᷼⌒
+   ⌒࣪᷼⏜͡  ۪  ࿚ꨪᰰ࿙  ࣭࣪⢏࣭۟⢢࣭ׄ᎐፝֟᎐࣭ׄ⡔࣭۟⡹࣭ׄ  ࿚ꨪᰰ࿙  ۪  ͡⏜ׄ᷼⌒
 
-: ̗̀〄 *ᴅᴇᴠᴇʟᴏᴘᴇʀ ::* ${
+: ̗̀〄 *ᴅᴇᴠᴇʟᴏᴘᴇʀ ::* ${
         owner
           ? !isNaN(owner.replace(/@s\.whatsapp\.net$/, ''))
-            ? `${own.name}`
+            ? `${own.name || owner}` // <-- Usa own.name pero si no existe, muestra el número
             : owner
           : 'Oculto por privacidad'
       }
-: ̗̀ꕥ *ᴛɪᴘᴏ ::* ${botType}
-: ̗̀☄︎ *sɪsᴛᴇᴍᴀ/ᴏᴘʀ ::* ${device}
+: ̗̀ꕥ *ᴛɪᴘᴏ ::* ${botType}
+: ̗̀☄︎ *sɪsᴛᴇᴍᴀ/ᴏᴘʀ ::* ${device}
 
-: ̗̀❖ *ᴛɪᴍᴇ ::* ${tiempo}, ${tiempo2}
-: ̗̀❖ *ᴜsᴇʀs ::* ${users.toLocaleString()}
-: ̗̀❖ *ᴍɪ ᴛɪᴇᴍᴘᴏ ::* ${time}
-: ̗̀❖ *ᴜʀʟ ::* ${link}
+: ̗̀❖ *ᴛɪᴍᴇ ::* ${tiempo}, ${tiempo2}
+: ̗̀❖ *ᴜsᴇʀs ::* ${users.toLocaleString()}
+: ̗̀❖ *ᴍɪ ᴛɪᴇᴍᴘᴏ ::* ${time}
+: ̗̀❖ *ᴜʀʟ ::* ${link}
 
-   ⌒࣪᷼⏜͡  ۪  ࿚ꨪᰰ࿙  ࣭࣪⢏࣭۟⢢࣭ׄ᎐፝֟᎐࣭ׄ⡔࣭۟⡹࣭ׄ  ࿚ꨪᰰ࿙  ۪  ͡⏜ׄ᷼⌒
+   ⌒࣪᷼⏜͡  ۪  ࿚ꨪᰰ࿙  ࣭࣪⢏࣭۟⢢࣭ׄ᎐፝֟᎐࣭ׄ⡔࣭۟⡹࣭ׄ  ࿚ꨪᰰ࿙  ۪  ͡⏜ׄ᷼⌒
 
 ⋆｡ﾟ☁︎ ｡° *ᴄᴏᴍ꯭ᴀ꯭ɴᴅᴏs* ﾟ｡˚₊ 𓂃\n`;
 
       const categoryArg = args[0]?.toLowerCase();
       const categories = {};
 
-      for (const command of commands) {
-        const category = command.category || 'otros';
+      // 4. Asegurar que commands sea un array iterable
+      for (const cmdItem of (commands || [])) {
+        const category = cmdItem.category || 'otros';
         if (!categories[category]) categories[category] = [];
-        categories[category].push(command);
+        categories[category].push(cmdItem);
       }
 
       if (categoryArg && !categories[categoryArg]) {
@@ -90,22 +92,26 @@ export default {
       for (const [category, cmds] of Object.entries(categories)) {
         if (categoryArg && category.toLowerCase() !== categoryArg) continue;
         const catName = category.charAt(0).toUpperCase() + category.slice(1);
-         menu += `\n╭╼ׅࣶ፝֟╾╌ֵ╾͜─ํ͜┈ְ ࣭࣪⢏࣭ࣧ⢢࣭ׄ᎐፝֟͟͝᎐࣭ׄ⡔࣭ࣧ⡹࣭࣭ׄ࣪ ְ┈ํ͜─͜╼ꨪᰰ╾࣮╌╼ࣶׅ፝֟╾╮\n│❀ *${catName} ☆(ﾉ◕ヮ◕)ﾉ*\n├╾ׅ╴ׂ╌╶ׅ╌ׂ─ 〫─ׂ┄ׅ╴ׂ╌ׅ╶╼.  ╾ׅ╴ׂ╌╶ׅ╌ׂ\n`;
+         menu += `\n╭╼ׅࣶ፝֟╾╌ֵ╾͜─ํ͜┈ְ ࣭࣪⢏࣭ࣧ⢢࣭ׄ᎐፝֟͟͝᎐࣭ׄ⡔࣭ࣧ⡹࣭࣭ׄ࣪ ְ┈ํ͜─͜╼ꨪᰰ╾࣮╌╼ࣶׅ፝֟╾╮\n│❀ *${catName} ☆(ﾉ◕ヮ◕)ﾉ*\n├╾ׅ╴ׂ╌╶ׅ╌ׂ─ 〫─ׂ┄ׅ╴ׂ╌ׅ╶╼.  ╾ׅ╴ׂ╌╶ׅ╌ׂ\n`;
+        
         cmds.forEach((cmd) => {
-          const cleanPrefix = prefix
-          const aliases = cmd.alias
-            .map((a) => {
-              const aliasClean = a
-                .split(/[\/#!+.\-]+/)
-                .pop()
-                .toLowerCase()
-              return `${prefix}${aliasClean}`
-            })
-            .join(' › ')
+          // 5. ARREGLO CRÍTICO: Soporte para alias, aliases o command
+          const cmdAliases = cmd.alias || cmd.aliases || cmd.command || [];
+          
+          const aliases = Array.isArray(cmdAliases) 
+            ? cmdAliases.map((a) => {
+                const aliasClean = String(a)
+                  .split(/[\/#!+.\-]+/)
+                  .pop()
+                  .toLowerCase()
+                return `${prefix}${aliasClean}`
+              }).join(' › ')
+            : String(cmdAliases);
+
           menu += `│✿ ${aliases} ${cmd.uso ? `+ ${cmd.uso}` : ''}\n`
-          menu += `> ✺ ${cmd.desc}\n`
+          menu += `> ✺ ${cmd.desc || 'Sin descripción'}\n`
         })
-          menu += `╰╼ׅࣶ፝֟╾╌ֵ╾͜─ํ͜┈ְ ࣭࣪⢏࣭ࣧ⢢࣭ׄ᎐፝֟͟͝᎐࣭ׄ⡔࣭ࣧ⡹࣭ׄ ְ┈ํ͜─͜╼ꨪᰰ╾࣮╌╼ࣶׅ፝֟╾╯ \n`
+        menu += `╰╼ׅࣶ፝֟╾╌ֵ╾͜─ํ͜┈ְ ࣭࣪⢏࣭ࣧ⢢࣭ׄ᎐፝֟͟͝᎐࣭ׄ⡔࣭ࣧ⡹࣭ׄ ְ┈ํ͜─͜╼ꨪᰰ╾࣮╌╼ࣶׅ፝֟╾╯ \n`
       }
 
       menu += `\n> *${botname2} desarrollado por Luffy* ૮(˶ᵔᵕᵔ˶)ა`;
@@ -125,12 +131,18 @@ export default {
       } else {
         await sock.sendMessage(msg.chat, { 
           text: menu.trim(), 
-          linkPreview: link && banner ? (await prepareWAMessageMedia({ image: { url: banner } }, { upload: sock.waUploadToServer, mediaTypeOverride: 'thumbnail-link' }).then(({ imageMessage }) => ({ 'canonical-url': link, 'matched-text': link, title: botname, description: `${botname2}, Built With ⚡ By Luffy`, jpegThumbnail: imageMessage?.jpegThumbnail ? Buffer.from(imageMessage.jpegThumbnail) : undefined, highQualityThumbnail: imageMessage || undefined }))) : undefined, 
+          // 6. .catch(() => undefined) evita que el menú crashee si la imagen del banner falla al cargar
+          linkPreview: link && banner ? (await prepareWAMessageMedia({ image: { url: banner } }, { upload: sock.waUploadToServer, mediaTypeOverride: 'thumbnail-link' }).then(({ imageMessage }) => ({ 'canonical-url': link, 'matched-text': link, title: botname, description: `${botname2}, Built With ⚡ By Luffy`, jpegThumbnail: imageMessage?.jpegThumbnail ? Buffer.from(imageMessage.jpegThumbnail) : undefined, highQualityThumbnail: imageMessage || undefined })).catch(() => undefined)) : undefined, 
           contextInfo: contextBase
         }, { quoted: msg });
       }
     } catch (e) {
-      await msg.reply(msgglobal);
+      // 7. ESTO ES OBLIGATORIO PARA DEPURAR: Imprime el error real en tu consola/terminal
+      console.error('🔴 ERROR EN EL MENÚ:', e);
+      
+      // Si msgglobal no existe, envía un mensaje de respaldo para que no crashee el catch
+      const errorMsg = typeof msgglobal !== 'undefined' ? msgglobal : `✿⸝꙳.˖ Ocurrió un error al generar el menú. Revisa la consola del bot.`;
+      await msg.reply(errorMsg);
     }
   },
 };
