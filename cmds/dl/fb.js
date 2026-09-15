@@ -11,20 +11,40 @@ export default {
 
     const urls = args.filter(arg => arg.match(/facebook\.com|fb\.watch|video\.fb\.com/))
 
+    // Descarga el video de la mejor calidad disponible
+    const downloadVideo = async (url) => {
+      const apiUrl = `${api.url}/dl/facebook?url=${encodeURIComponent(url)}&key=${api.key}`
+      const res = await axios.get(apiUrl)
+      const json = res.data
+
+      if (!json.status || !json.resultados || !json.resultados.length) {
+        return null
+      }
+
+      // Priorizar calidad: 1080p > 720p > 480p > 360p, etc.
+      const qualityOrder = ["1080p", "720p", "480p", "360p", "1440p", "640p", "540p"]
+      const sorted = [...json.resultados].sort((a, b) => {
+        const ia = qualityOrder.indexOf(a.quality)
+        const ib = qualityOrder.indexOf(b.quality)
+        return (ia === -1 ? 999 : ia) - (ib === -1 ? 999 : ib)
+      })
+
+      const best = sorted[0]
+      if (!best || !best.url || best.url === "/") return null
+
+      // Descargar el buffer desde la url directa
+      const dl = await axios.get(best.url, { responseType: "arraybuffer" })
+      return Buffer.from(dl.data)
+    }
+
     try {
       if (urls.length) {
         if (urls.length > 1) {
           const medias = []
           for (const url of urls.slice(0, 10)) {
             try {
-              const apiUrl = `${api.url}/dl/facebook?url=${url}&key=${api.key}`
-              const res = await axios.get(apiUrl, { responseType: "arraybuffer" })
-              const buffer = Buffer.from(res.data)
-
-              medias.push({
-                type: "video",
-                data: buffer
-              })
+              const buffer = await downloadVideo(url)
+              if (buffer) medias.push({ type: "video", data: buffer })
             } catch (e) {
               continue
             }
@@ -35,16 +55,16 @@ export default {
             await msg.reply(`✿ No se pudieron procesar los enlaces.`)
           }
         } else {
-          const url = urls[0]
-          const apiUrl = `${api.url}/dl/facebook?url=${url}&key=${api.key}`
-          const res = await axios.get(apiUrl, { responseType: "arraybuffer" })
-          const buffer = Buffer.from(res.data)
-
-          await sock.sendMessage(
-            msg.chat,
-            { video: buffer, mimetype: "video/mp4", fileName: "fb.mp4" },
-            { quoted: msg }
-          )
+          const buffer = await downloadVideo(urls[0])
+          if (buffer) {
+            await sock.sendMessage(
+              msg.chat,
+              { video: buffer, mimetype: "video/mp4", fileName: "fb.mp4" },
+              { quoted: msg }
+            )
+          } else {
+            await msg.reply(`✿ No se pudo descargar el video.`)
+          }
         }
       } else {
         const query = args.join(" ")
@@ -59,14 +79,8 @@ export default {
         const medias = []
         for (const item of json.data.slice(0, 3)) {
           try {
-            const apiUrl = `${api.url}/dl/facebook?url=${item.url}&key=${api.key}`
-            const resDl = await axios.get(apiUrl, { responseType: "arraybuffer" })
-            const buffer = Buffer.from(resDl.data)
-
-            medias.push({
-              type: "video",
-              data: buffer
-            })
+            const buffer = await downloadVideo(item.url)
+            if (buffer) medias.push({ type: "video", data: buffer })
           } catch (e) {
             continue
           }
