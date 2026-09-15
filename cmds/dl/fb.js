@@ -21,7 +21,7 @@ export default {
         return null
       }
 
-      // Priorizar calidad: 1080p > 720p > 480p > 360p, etc.
+      // Priorizar calidad: 1080p > 720p > 480p > 360p
       const qualityOrder = ["1080p", "720p", "480p", "360p", "1440p", "640p", "540p"]
       const sorted = [...json.resultados].sort((a, b) => {
         const ia = qualityOrder.indexOf(a.quality)
@@ -93,7 +93,9 @@ export default {
         }
       }
     } catch (e) {
-      await msg.reply(msgglobal)
+      // TEMPORAL: mostrar el error real para depurar
+      await msg.reply(`✿ Error: ${e.message}`)
+      console.log("ERROR FB:", e)
     }
   }
 }
