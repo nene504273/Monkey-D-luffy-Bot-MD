@@ -1,3 +1,4 @@
+import ytsearch from "yt-search"
 import { getBuffer } from "#serialize"
 import fetch from "node-fetch"
 
@@ -12,11 +13,19 @@ export default {
       }
 
       const text = args.join(" ")
-      const dlEndpoint = `${api.url}/dl/youtubeplay?query=${encodeURIComponent(text)}&key=${api.key}`
+
+      // Buscar el video para obtener su URL de YouTube
+      const searchResult = await ytsearch(text)
+      if (!searchResult.videos || !searchResult.videos.length) {
+        return msg.reply("《✧》 No se encontró información del video.")
+      }
+      const videoUrl = searchResult.videos[0].url
+
+      const dlEndpoint = `${api.url}/dl/youtubeplay?query=${encodeURIComponent(videoUrl)}&key=${api.key}`
       const resDl = await fetch(dlEndpoint).then(r => r.json())
 
       if (!resDl?.status || !resDl?.result?.dl) {
-        return msg.reply("《✧》 No se encontró información del video.")
+        return msg.reply("《✧》 No se pudo descargar el *audio*, intenta más tarde.")
       }
 
       const { title, channel, duration, views, thumbnail, dl } = resDl.result
@@ -29,7 +38,7 @@ export default {
 > _✐ \`Canal\` ── ${canal}_
 > _ⴵ \`Duración\` ── ${duration || ''}s_
 > _✰ \`Vistas\` ── ${vistas}_
-> _🜸 \`Enlace\` ── ${dl}_
+> _🜸 \`Enlace\` ── ${videoUrl}_
 
 > _──  ִ    ۟  *¡Enviando audio, por favor espera!*_`
 
