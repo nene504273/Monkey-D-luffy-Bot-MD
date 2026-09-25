@@ -49,7 +49,7 @@ export default {
       const canalNombre = 'Monkey D. Luffy - MD Bot ⚡';
 
       // ── Cabecera con estilo de tripulación ──
-      let menu = `｡•᎑•`)っ ¡Buenos días, tripulación del Sombrero de Paja! ☀️
+      let menu = `｡•᎑•っ ¡Buenos días, tripulación del Sombrero de Paja! ☀️
 ${botname2} ha recibido una actualización. Revisen los comandos mejorados y disfruten.
 
 ✐ ֹ ִ𓏧𓏧𓏧𓏧 🍬 𓏧𓏧𓏧 🍭 𓏧𓏧𓏧𓏧𓏧𓏧𓏧𓏧
@@ -118,7 +118,7 @@ ${botname2} ha recibido una actualización. Revisen los comandos mejorados y dis
 
       menu += `\n✐ ֹ ִ 🍭 𓏧𓏧𓏧 🍬 𓏧𓏧𓏧𓏧 ✐ ֹ ִ
 
-ε(´｡•᎑•`)っ ¡Disfruten la estancia, nakamas! Usen los comandos con moderación.
+ε´｡•᎑•っ ¡Disfruten la estancia, nakamas! Usen los comandos con moderación.
 
 > Gomu Gomu no... ¡${botname2}! Desarrollado por Luffy ૮(˶ᵔᵕᵔ˶)ა
 > 〜 El Rey de los Piratas no se rinde jamás. 🏴☠️`;
