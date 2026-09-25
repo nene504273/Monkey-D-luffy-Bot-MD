@@ -26,9 +26,11 @@ export default {
       const botSettings = (await db.getSettings(botId)) || {}; 
       const botname = botSettings.namebot || '';
       const botname2 = botSettings.namebot2 || '';
-      const banner = botSettings.banner || '';
       const owner = botSettings.owner || '';
       const link = botSettings.link || '';
+
+      // ── IMAGEN DEL MENÚ (fija) ──
+      const banner = 'https://d.uguu.se/QabPZFiU.jpeg';
 
       const isOficialBot =
         botId === global?.sock ? global?.sock?.user?.id?.split(':')[0] + '@s.whatsapp.net' : ''
@@ -46,7 +48,7 @@ export default {
 
       // ── Datos del canal ──
       const canal = '120363420846835529@newsletter';
-      const canalNombre = 'Monkey D. Luffy - MD Bot ⚡';
+      const canalNombre = '© powered by Luffy';
 
       // ── Cabecera con estilo de tripulación ──
       let menu = `｡•᎑•っ ¡Buenos días, tripulación del Sombrero de Paja! ☀️
@@ -129,15 +131,11 @@ ${botname2} ha recibido una actualización. Revisen los comandos mejorados y dis
       };
 
       // ── LA IMAGEN VA ARRIBA, EL MENÚ COMO CAPTION ──
-      if (!banner) {
-        await sock.sendMessage(msg.chat, { text: menu.trim(), contextInfo: contextBase }, { quoted: msg });
-      } else {
-        await sock.sendMessage(
-          msg.chat,
-          { image: { url: banner }, caption: menu.trim(), contextInfo: contextBase },
-          { quoted: msg }
-        );
-      }
+      await sock.sendMessage(
+        msg.chat,
+        { image: { url: banner }, caption: menu.trim(), contextInfo: contextBase },
+        { quoted: msg }
+      );
     } catch (e) {
       console.error('🔴 ERROR EN EL MENÚ:', e);
       const errorMsg = typeof msgglobal !== 'undefined' ? msgglobal : `✿⸝꙳.˖ Ocurrió un error al generar el menú. Revisa la consola del bot.`;
