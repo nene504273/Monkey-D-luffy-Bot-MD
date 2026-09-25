@@ -29,7 +29,7 @@ export default {
       const owner = botSettings.owner || '';
       const link = botSettings.link || '';
 
-      // ── IMAGEN DEL MENÚ (fija) ──
+      // ── IMAGEN DEL MENÚ: CAMBIA ESTA URL POR UNA DE CATBOX/IMGRUR/TELEGRAPH ──
       const banner = 'https://d.uguu.se/QabPZFiU.jpeg';
 
       const isOficialBot =
@@ -130,12 +130,21 @@ ${botname2} ha recibido una actualización. Revisen los comandos mejorados y dis
         isForwarded: false
       };
 
-      // ── LA IMAGEN VA ARRIBA, EL MENÚ COMO CAPTION ──
-      await sock.sendMessage(
-        msg.chat,
-        { image: { url: banner }, caption: menu.trim(), contextInfo: contextBase },
-        { quoted: msg }
-      );
+      // ── PROTECCIÓN PERMANENTE: si la imagen falla, envía solo el texto ──
+      try {
+        await sock.sendMessage(
+          msg.chat,
+          { image: { url: banner }, caption: menu.trim(), contextInfo: contextBase },
+          { quoted: msg }
+        );
+      } catch (imgErr) {
+        // Si la imagen no carga, manda el menú en texto para que nunca falle
+        await sock.sendMessage(
+          msg.chat,
+          { text: menu.trim(), contextInfo: contextBase },
+          { quoted: msg }
+        );
+      }
     } catch (e) {
       console.error('🔴 ERROR EN EL MENÚ:', e);
       const errorMsg = typeof msgglobal !== 'undefined' ? msgglobal : `✿⸝꙳.˖ Ocurrió un error al generar el menú. Revisa la consola del bot.`;
