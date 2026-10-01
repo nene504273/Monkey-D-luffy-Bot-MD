@@ -123,27 +123,26 @@ export default {
         isForwarded: false
       };
 
-      // ══════════ CANAL OFICIAL (BOTÓN CLICKEABLE) ══════════
+      // ══════════ BOTÓN DEL CANAL (CLICKEABLE) ══════════
       const canalUrl = 'https://whatsapp.com/channel/120363420846835529';
       const canalNombre = 'Monkey D. Luffy - MD Bot ⚡';
 
-      const templateButtons = [
+      const buttons = [
         {
-          index: 1,
-          urlButton: {
-            displayText: `📢 ${canalNombre}`,
-            url: canalUrl  // <-- al tocarlo lleva directo al canal
-          }
+          buttonId: canalUrl,
+          buttonText: { displayText: `📢 ${canalNombre}` },
+          type: 1,
+          url: canalUrl
         }
       ];
 
-      // ══════════ ENVÍO CON IMAGEN + BOTÓN DEL CANAL ══════════
+      // ══════════ ENVÍO CON IMAGEN + BOTÓN ══════════
       await sock.sendMessage(
         msg.chat,
         {
           image: { url: bannerImg },
           caption: menu.trim(),
-          templateButtons,
+          buttons,
           viewOnce: true,
           contextInfo: contextBase
         },
