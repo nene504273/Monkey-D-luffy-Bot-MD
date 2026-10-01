@@ -30,7 +30,6 @@ export default {
       const botSettings = (await db.getSettings(botId)) || {}; 
       const botname = botSettings.namebot || '';
       const botname2 = botSettings.namebot2 || '';
-      const banner = botSettings.banner || '';
       const owner = botSettings.owner || '';
       const link = botSettings.link || '';
 
@@ -50,6 +49,9 @@ export default {
       // 3. Evitar crash si el owner no está en la DB
       const own = (await db.getUser(owner)) || {}; 
 
+      // ══════════ IMAGEN SUPERIOR (BANNER) ══════════
+      const bannerImg = 'https://n.uguu.se/ZCHBYdRG.jpeg';
+
       let menu = `> *¡ʜᴏʟᴀ!* ${msg.pushName}, como está tu día?, mucho gusto mi nombre es *${botname2}* ʚ♡⃛ɞ(ू•ᴗ•ू❁)*
 
    ⌒࣪᷼⏜͡  ۪  ࿚ꨪᰰ࿙  ࣭࣪⢏࣭۟⢢࣭ׄ᎐፝֟᎐࣭ׄ⡔࣭۟⡹࣭ׄ  ࿚ꨪᰰ࿙  ۪  ͡⏜ׄ᷼⌒
@@ -57,7 +59,7 @@ export default {
 : ̗̀〄 *ᴅᴇᴠᴇʟᴏᴘᴇʀ ::* ${
         owner
           ? !isNaN(owner.replace(/@s\.whatsapp\.net$/, ''))
-            ? `${own.name || owner}` // <-- Usa own.name pero si no existe, muestra el número
+            ? `${own.name || owner}`
             : owner
           : 'Oculto por privacidad'
       }
@@ -114,28 +116,34 @@ export default {
         menu += `╰╼ׅࣶ፝֟╾╌ֵ╾͜─ํ͜┈ְ ࣭࣪⢏࣭ࣧ⢢࣭ׄ᎐፝֟͟͝᎐࣭ׄ⡔࣭ࣧ⡹࣭ׄ ְ┈ํ͜─͜╼ꨪᰰ╾࣮╌╼ࣶׅ፝֟╾╯ \n`
       }
 
-      menu += `\n> *${botname2} desarrollado por Luffy* ૮(˶ᵔᵕᵔ˶)ა`;
+      // ══════════ CANAL OFICIAL (ABAJO) ══════════
+      const canalId = '120363420846835529@newsletter';
+      const canalNombre = 'Monkey D. Luffy - MD Bot ⚡';
 
-      const isVideo = banner.includes('.mp4') || banner.includes('.gif') || banner.includes('.webm');
+      menu += `\n╭╼ׅࣶ፝֟╾╌ֵ╾͜─ํ͜┈ְ ࣭࣪⢏࣭ࣧ⢢࣭ׄ᎐፝֟͟͝᎐࣭ׄ⡔࣭ࣧ⡹࣭࣭ׄ࣪ ְ┈ํ͜─͜╼ꨪᰰ╾࣮╌╼ࣶׅ፝֟╾╮\n`;
+      menu += `│❀ *ᴄᴀɴᴀʟ ᴏꜰɪᴄɪᴀʟ* ☆(ﾉ◕ヮ◕)ﾉ\n`;
+      menu += `│✿ *${canalNombre}*\n`;
+      menu += `│✿ https://whatsapp.com/channel/${canalId.replace('@newsletter', '')}\n`;
+      menu += `╰╼ׅࣶ፝֟╾╌ֵ╾͜─ํ͜┈ְ ࣭࣪⢏࣭ࣧ⢢࣭ׄ᎐፝֟͟͝᎐࣭ׄ⡔࣭ࣧ⡹࣭ׄ ְ┈ํ͜─͜╼ꨪᰰ╾࣮╌╼ࣶׅ፝֟╾╯ \n\n`;
+
+      menu += `> *${botname2} desarrollado por Luffy* ૮(˶ᵔᵕᵔ˶)ა`;
+
       const contextBase = {
         mentionedJid: null,
         isForwarded: false
       };
 
-      if (isVideo) {
-        await sock.sendMessage(
-          msg.chat,
-          { video: { url: banner }, caption: menu.trim(), contextInfo: contextBase },
-          { quoted: msg }
-        );
-      } else {
-        await sock.sendMessage(msg.chat, { 
-          text: menu.trim(), 
-          // 6. .catch(() => undefined) evita que el menú crashee si la imagen del banner falla al cargar
-          linkPreview: link && banner ? (await prepareWAMessageMedia({ image: { url: banner } }, { upload: sock.waUploadToServer, mediaTypeOverride: 'thumbnail-link' }).then(({ imageMessage }) => ({ 'canonical-url': link, 'matched-text': link, title: botname, description: `${botname2}, Built With ⚡ By Luffy`, jpegThumbnail: imageMessage?.jpegThumbnail ? Buffer.from(imageMessage.jpegThumbnail) : undefined, highQualityThumbnail: imageMessage || undefined })).catch(() => undefined)) : undefined, 
+      // ══════════ ENVÍO CON IMAGEN SUPERIOR ══════════
+      await sock.sendMessage(
+        msg.chat,
+        {
+          image: { url: bannerImg },
+          caption: menu.trim(),
           contextInfo: contextBase
-        }, { quoted: msg });
-      }
+        },
+        { quoted: msg }
+      );
+
     } catch (e) {
       // 7. ESTO ES OBLIGATORIO PARA DEPURAR: Imprime el error real en tu consola/terminal
       console.error('🔴 ERROR EN EL MENÚ:', e);
