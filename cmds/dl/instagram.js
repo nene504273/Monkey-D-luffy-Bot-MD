@@ -39,27 +39,16 @@ export default {
         const archivo = await axios.get(dl, { responseType: "arraybuffer" })
         console.log("IG: archivo descargado, tamaño:", archivo.data.byteLength, "bytes")
 
-        // 5. Detectar tipo por extensión
-        const esVideo = /\.(mp4|mov|webm)(\?|$)/i.test(dl)
-
-        // 6. Enviar el archivo ya descargado
-        if (esVideo) {
-          await sock.sendMessage(
-            msg.chat,
-            {
-              video: archivo.data,
-              mimetype: "video/mp4",
-              fileName: "instagram.mp4",
-            },
-            { quoted: msg }
-          )
-        } else {
-          await sock.sendMessage(
-            msg.chat,
-            { image: archivo.data },
-            { quoted: msg }
-          )
-        }
+        // 5. Enviar SIEMPRE como video (reels)
+        await sock.sendMessage(
+          msg.chat,
+          {
+            video: archivo.data,
+            mimetype: "video/mp4",
+            fileName: "instagram.mp4",
+          },
+          { quoted: msg }
+        )
 
         console.log("IG: enviado correctamente")
       } catch (e) {
