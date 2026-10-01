@@ -116,16 +116,6 @@ export default {
         menu += `╰╼ׅࣶ፝֟╾╌ֵ╾͜─ํ͜┈ְ ࣭࣪⢏࣭ࣧ⢢࣭ׄ᎐፝֟͟͝᎐࣭ׄ⡔࣭ࣧ⡹࣭ׄ ְ┈ํ͜─͜╼ꨪᰰ╾࣮╌╼ࣶׅ፝֟╾╯ \n`
       }
 
-      // ══════════ CANAL OFICIAL (TEXTO ABAJO) ══════════
-      const canalJid = '120363420846835529@newsletter';
-      const canalNombre = 'Monkey D. Luffy - MD Bot ⚡';
-
-      menu += `\n╭╼ׅࣶ፝֟╾╌ֵ╾͜─ํ͜┈ְ ࣭࣪⢏࣭ࣧ⢢࣭ׄ᎐፝֟͟͝᎐࣭ׄ⡔࣭ࣧ⡹࣭࣭ׄ࣪ ְ┈ํ͜─͜╼ꨪᰰ╾࣮╌╼ࣶׅ፝֟╾╮\n`;
-      menu += `│❀ *ᴄᴀɴᴀʟ ᴏꜰɪᴄɪᴀʟ* ☆(ﾉ◕ヮ◕)ﾉ\n`;
-      menu += `│✿ ${canalNombre}\n`;
-      menu += `│✿ https://whatsapp.com/channel/${canalJid.replace('@newsletter', '')}\n`;
-      menu += `╰╼ׅࣶ፝֟╾╌ֵ╾͜─ํ͜┈ְ ࣭࣪⢏࣭ࣧ⢢࣭ׄ᎐፝֟͟͝᎐࣭ׄ⡔࣭ࣧ⡹࣭ׄ ְ┈ํ͜─͜╼ꨪᰰ╾࣮╌╼ࣶׅ፝֟╾╯ \n`;
-
       menu += `\n> *${botname2} desarrollado por Luffy* ૮(˶ᵔᵕᵔ˶)ა`;
 
       const contextBase = {
@@ -133,12 +123,28 @@ export default {
         isForwarded: false
       };
 
-      // ══════════ ENVÍO CON IMAGEN SUPERIOR ══════════
+      // ══════════ CANAL OFICIAL (BOTÓN CLICKEABLE) ══════════
+      const canalUrl = 'https://whatsapp.com/channel/120363420846835529';
+      const canalNombre = 'Monkey D. Luffy - MD Bot ⚡';
+
+      const templateButtons = [
+        {
+          index: 1,
+          urlButton: {
+            displayText: `📢 ${canalNombre}`,
+            url: canalUrl  // <-- al tocarlo lleva directo al canal
+          }
+        }
+      ];
+
+      // ══════════ ENVÍO CON IMAGEN + BOTÓN DEL CANAL ══════════
       await sock.sendMessage(
         msg.chat,
         {
           image: { url: bannerImg },
           caption: menu.trim(),
+          templateButtons,
+          viewOnce: true,
           contextInfo: contextBase
         },
         { quoted: msg }
