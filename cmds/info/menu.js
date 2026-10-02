@@ -1,7 +1,5 @@
-import db from "#db"
-import { getDevice, prepareWAMessageMedia } from 'baileys';
-import fs from 'fs';
-import fetch from 'node-fetch';
+import db from "#db";
+import { getDevice } from 'baileys';
 import axios from 'axios';
 import moment from 'moment-timezone';
 import { commands } from '../../lib/system/comandos.js';
@@ -24,17 +22,16 @@ export default {
         .replace(/,/g, '');
       const tiempo2 = moment.tz('America/Bogota').format('hh:mm A');
 
-      const botId = sock?.user?.id.split(':')[0] + '@s.whatsapp.net' || '';
+      const botId = sock?.user?.id?.split(':')[0] + '@s.whatsapp.net' || '';
 
       // 1. Evitar crash si getSettings no retorna nada
       const botSettings = (await db.getSettings(botId)) || {}; 
-      const botname = botSettings.namebot || '';
-      const botname2 = botSettings.namebot2 || '';
+      const botname2 = botSettings.namebot2 || botSettings.namebot || 'Bot';
       const owner = botSettings.owner || '';
       const link = botSettings.link || '';
 
-      const isOficialBot =
-        botId === global?.sock ? global?.sock?.user?.id?.split(':')[0] + '@s.whatsapp.net' : ''
+      const officialJid = global?.sock?.user?.id?.split(':')[0] + '@s.whatsapp.net';
+      const isOficialBot = botId === officialJid;
       const botType = isOficialBot ? 'Owner' : 'Sub Bot';
 
       // 2. Evitar crash si getUser() retorna null/undefined
@@ -50,30 +47,26 @@ export default {
       const own = (await db.getUser(owner)) || {}; 
 
       // ══════════ IMAGEN SUPERIOR (BANNER) ══════════
-      const bannerImg = 'https://n.uguu.se/ZCHBYdRG.jpeg';
+      // Coloca aquí una URL fija/permanente (ej. Imgur, Catbox, Telegra.ph)
+      const bannerImgUrl = 'https://i.imgur.com/8Q0yX3W.jpg';
 
-      let menu = `> *¡ʜᴏʟᴀ!* ${msg.pushName}, como está tu día?, mucho gusto mi nombre es *${botname2}* ʚ♡⃛ɞ(ू•ᴗ•ू❁)*
-
-   ⌒࣪᷼⏜͡  ۪  ࿚ꨪᰰ࿙  ࣭࣪⢏࣭۟⢢࣭ׄ᎐፝֟᎐࣭ׄ⡔࣭۟⡹࣭ׄ  ࿚ꨪᰰ࿙  ۪  ͡⏜ׄ᷼⌒
-
-: ̗̀〄 *ᴅᴇᴠᴇʟᴏᴘᴇʀ ::* ${
+      let menu = `> *¡ʜᴏʟᴀ!* ${msg.pushName || 'Usuario'}, ¿cómo está tu día? Mucho gusto, mi nombre es *${botname2}* ʚ♡⃛ɞ(ू•ᴗ•ू❁)*\n\n`;
+      menu += `   ⌒࣪᷼⏜͡  ۪  ࿚ꨪᰰ࿙  ࣭࣪⢏࣭۟⢢࣭ׄ᎐፝֟᎐࣭ׄ⡔࣭۟⡹࣭ׄ  ࿚ꨪᰰ࿙  ۪  ͡⏜ׄ᷼⌒\n\n`;
+      menu += `: ̗̀〄 *ᴅᴇᴠᴇʟᴏᴘᴇʀ ::* ${
         owner
           ? !isNaN(owner.replace(/@s\.whatsapp\.net$/, ''))
             ? `${own.name || owner}`
             : owner
           : 'Oculto por privacidad'
-      }
-: ̗̀ꕥ *ᴛɪᴘᴏ ::* ${botType}
-: ̗̀☄︎ *sɪsᴛᴇᴍᴀ/ᴏᴘʀ ::* ${device}
-
-: ̗̀❖ *ᴛɪᴍᴇ ::* ${tiempo}, ${tiempo2}
-: ̗̀❖ *ᴜsᴇʀs ::* ${users.toLocaleString()}
-: ̗̀❖ *ᴍɪ ᴛɪᴇᴍᴘᴏ ::* ${time}
-: ̗̀❖ *ᴜʀʟ ::* ${link}
-
-   ⌒࣪᷼⏜͡  ۪  ࿚ꨪᰰ࿙  ࣭࣪⢏࣭۟⢢࣭ׄ᎐፝֟᎐࣭ׄ⡔࣭۟⡹࣭ׄ  ࿚ꨪᰰ࿙  ۪  ͡⏜ׄ᷼⌒
-
-⋆｡ﾟ☁︎ ｡° *ᴄᴏᴍ꯭ᴀ꯭ɴᴅᴏs* ﾟ｡˚₊ 𓂃\n`;
+      }\n`;
+      menu += `: ̗̀ꕥ *ᴛɪᴘᴏ ::* ${botType}\n`;
+      menu += `: ̗̀☄︎ *sɪsᴛᴇᴍᴀ/ᴏᴘʀ ::* ${device}\n\n`;
+      menu += `: ̗̀❖ *ᴛɪᴍᴇ ::* ${tiempo}, ${tiempo2}\n`;
+      menu += `: ̗̀❖ *ᴜsᴇʀs ::* ${users.toLocaleString()}\n`;
+      menu += `: ̗̀❖ *ᴍɪ ᴛɪᴇᴍᴘᴏ ::* ${time}\n`;
+      menu += `: ̗̀❖ *ᴜʀʟ ::* ${link}\n\n`;
+      menu += `   ⌒࣪᷼⏜͡  ۪  ࿚ꨪᰰ࿙  ࣭࣪⢏࣭۟⢢࣭ׄ᎐፝֟᎐࣭ׄ⡔࣭۟⡹࣭ׄ  ࿚ꨪᰰ࿙  ۪  ͡⏜ׄ᷼⌒\n\n`;
+      menu += `⋆｡ﾟ☁︎ ｡° *ᴄᴏᴍ꯭ᴀ꯭ɴᴅᴏs* ﾟ｡˚₊ 𓂃\n`;
 
       const categoryArg = args[0]?.toLowerCase();
       const categories = {};
@@ -86,74 +79,64 @@ export default {
       }
 
       if (categoryArg && !categories[categoryArg]) {
-        return msg.reply(
-          `《✤》 La categoría *${categoryArg}* no fue encontrada.`
-        );
+        return msg.reply(`《✤》 La categoría *${categoryArg}* no fue encontrada.`);
       }
 
       for (const [category, cmds] of Object.entries(categories)) {
         if (categoryArg && category.toLowerCase() !== categoryArg) continue;
         const catName = category.charAt(0).toUpperCase() + category.slice(1);
-         menu += `\n╭╼ׅࣶ፝֟╾╌ֵ╾͜─ํ͜┈ְ ࣭࣪⢏࣭ࣧ⢢࣭ׄ᎐፝֟͟͝᎐࣭ׄ⡔࣭ࣧ⡹࣭࣭ׄ࣪ ְ┈ํ͜─͜╼ꨪᰰ╾࣮╌╼ࣶׅ፝֟╾╮\n│❀ *${catName} ☆(ﾉ◕ヮ◕)ﾉ*\n├╾ׅ╴ׂ╌╶ׅ╌ׂ─ 〫─ׂ┄ׅ╴ׂ╌ׅ╶╼.  ╾ׅ╴ׂ╌╶ׅ╌ׂ\n`;
+        menu += `\n╭╼ׅࣶ፝֟╾╌ֵ╾͜─ํ͜┈ְ ࣭࣪⢏࣭ࣧ⢢࣭ׄ᎐፝֟͟͝᎐࣭ׄ⡔࣭ࣧ⡹࣭࣭ׄ࣪ ְ┈ํ͜─͜╼ꨪᰰ╾࣮╌╼ࣶׅ፝֟╾╮\n│❀ *${catName} ☆(ﾉ◕ヮ◕)ﾉ*\n├╾ׅ╴ׂ╌╶ׅ╌ׂ─ 〫─ׂ┄ׅ╴ׂ╌ׅ╶╼.  ╾ׅ╴ׂ╌╶ׅ╌ׂ\n`;
 
         cmds.forEach((cmd) => {
-          // 5. ARREGLO CRÍTICO: Soporte para alias, aliases o command
           const cmdAliases = cmd.alias || cmd.aliases || cmd.command || [];
 
           const aliases = Array.isArray(cmdAliases) 
             ? cmdAliases.map((a) => {
-                const aliasClean = String(a)
-                  .split(/[\/#!+.\-]+/)
-                  .pop()
-                  .toLowerCase()
-                return `${prefix}${aliasClean}`
+                const aliasClean = String(a).split(/[\/#!+.\-]+/).pop().toLowerCase();
+                return `${prefix}${aliasClean}`;
               }).join(' › ')
             : String(cmdAliases);
 
-          menu += `│✿ ${aliases} ${cmd.uso ? `+ ${cmd.uso}` : ''}\n`
-          menu += `> ✺ ${cmd.desc || 'Sin descripción'}\n`
-        })
-        menu += `╰╼ׅࣶ፝֟╾╌ֵ╾͜─ํ͜┈ְ ࣭࣪⢏࣭ࣧ⢢࣭ׄ᎐፝֟͟͝᎐࣭ׄ⡔࣭ࣧ⡹࣭ׄ ְ┈ํ͜─͜╼ꨪᰰ╾࣮╌╼ࣶׅ፝֟╾╯ \n`
+          menu += `│✿ ${aliases} ${cmd.uso ? `+ ${cmd.uso}` : ''}\n`;
+          menu += `> ✺ ${cmd.desc || 'Sin descripción'}\n`;
+        });
+        menu += `╰╼ׅࣶ፝֟╾╌ֵ╾͜─ํ͜┈ְ ࣭࣪⢏࣭ࣧ⢢࣭ׄ᎐፝֟͟͝᎐࣭ׄ⡔࣭ࣧ⡹࣭ׄ ְ┈ํ͜─͜╼ꨪᰰ╾࣮╌╼ࣶׅ፝֟╾╯ \n`;
       }
 
       menu += `\n> *${botname2} desarrollado por Luffy* ૮(˶ᵔᵕᵔ˶)ა`;
 
-      const contextBase = {
-        mentionedJid: null,
-        isForwarded: false
-      };
+      // ══════════ OBTENER IMAGEN DE FORMA SEGURA ══════════
+      let imageBuffer = null;
+      try {
+        const response = await axios.get(bannerImgUrl, { 
+          responseType: 'arraybuffer', 
+          timeout: 5000 
+        });
+        imageBuffer = Buffer.from(response.data);
+      } catch (imgErr) {
+        console.warn('⚠️ No se pudo descargar la imagen del menú, enviando solo texto:', imgErr.message);
+      }
 
-      // ══════════ BOTÓN DEL CANAL (CLICKEABLE) ══════════
-      const canalUrl = 'https://whatsapp.com/channel/120363420846835529';
-      const canalNombre = 'Monkey D. Luffy - MD Bot ⚡';
-
-      const buttons = [
-        {
-          buttonId: canalUrl,
-          buttonText: { displayText: `📢 ${canalNombre}` },
-          type: 1,
-          url: canalUrl
-        }
-      ];
-
-      // ══════════ ENVÍO CON IMAGEN + BOTÓN ══════════
-      await sock.sendMessage(
-        msg.chat,
-        {
-          image: { url: bannerImg },
-          caption: menu.trim(),
-          buttons,
-          viewOnce: true,
-          contextInfo: contextBase
-        },
-        { quoted: msg }
-      );
+      // ══════════ ENVÍO DE MENSAJE ══════════
+      if (imageBuffer) {
+        await sock.sendMessage(
+          msg.chat,
+          {
+            image: imageBuffer,
+            caption: menu.trim()
+          },
+          { quoted: msg }
+        );
+      } else {
+        await sock.sendMessage(
+          msg.chat,
+          { text: menu.trim() },
+          { quoted: msg }
+        );
+      }
 
     } catch (e) {
-      // 7. ESTO ES OBLIGATORIO PARA DEPURAR: Imprime el error real en tu consola/terminal
       console.error('🔴 ERROR EN EL MENÚ:', e);
-
-      // Si msgglobal no existe, envía un mensaje de respaldo para que no crashee el catch
       const errorMsg = typeof msgglobal !== 'undefined' ? msgglobal : `✿⸝꙳.˖ Ocurrió un error al generar el menú. Revisa la consola del bot.`;
       await msg.reply(errorMsg);
     }
