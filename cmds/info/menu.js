@@ -25,7 +25,7 @@ export default {
       const botId = sock?.user?.id?.split(':')[0] + '@s.whatsapp.net' || '';
 
       // 1. Evitar crash si getSettings no retorna nada
-      const botSettings = (await db.getSettings(botId)) || {}; 
+      const botSettings = (await db.getSettings(botId)) || {};
       const botname2 = botSettings.namebot2 || botSettings.namebot || 'Bot';
       const owner = botSettings.owner || '';
       const link = botSettings.link || '';
@@ -35,7 +35,7 @@ export default {
       const botType = isOficialBot ? 'Owner' : 'Sub Bot';
 
       // 2. Evitar crash si getUser() retorna null/undefined
-      const userr = (await db.getUser()) || {}; 
+      const userr = (await db.getUser()) || {};
       const users = Object.keys(userr).length || 0;
 
       const time = sock.uptime
@@ -44,30 +44,31 @@ export default {
       const device = getDevice(msg.key.id);
 
       // 3. Evitar crash si el owner no está en la DB
-      const own = (await db.getUser(owner)) || {}; 
+      const own = (await db.getUser(owner)) || {};
 
       // ══════════ IMAGEN SUPERIOR (BANNER) ══════════
-      // Coloca aquí una URL fija/permanente (ej. Imgur, Catbox, Telegra.ph)
       const bannerImgUrl = 'https://i.imgur.com/8Q0yX3W.jpg';
 
-      let menu = `> *¡ʜᴏʟᴀ!* ${msg.pushName || 'Usuario'}, ¿cómo está tu día? Mucho gusto, mi nombre es *${botname2}* ʚ♡⃛ɞ(ू•ᴗ•ू❁)*\n\n`;
-      menu += `   ⌒࣪᷼⏜͡  ۪  ࿚ꨪᰰ࿙  ࣭࣪⢏࣭۟⢢࣭ׄ᎐፝֟᎐࣭ׄ⡔࣭۟⡹࣭ׄ  ࿚ꨪᰰ࿙  ۪  ͡⏜ׄ᷼⌒\n\n`;
-      menu += `: ̗̀〄 *ᴅᴇᴠᴇʟᴏᴘᴇʀ ::* ${
-        owner
-          ? !isNaN(owner.replace(/@s\.whatsapp\.net$/, ''))
-            ? `${own.name || owner}`
-            : owner
-          : 'Oculto por privacidad'
-      }\n`;
-      menu += `: ̗̀ꕥ *ᴛɪᴘᴏ ::* ${botType}\n`;
-      menu += `: ̗̀☄︎ *sɪsᴛᴇᴍᴀ/ᴏᴘʀ ::* ${device}\n\n`;
-      menu += `: ̗̀❖ *ᴛɪᴍᴇ ::* ${tiempo}, ${tiempo2}\n`;
-      menu += `: ̗̀❖ *ᴜsᴇʀs ::* ${users.toLocaleString()}\n`;
-      menu += `: ̗̀❖ *ᴍɪ ᴛɪᴇᴍᴘᴏ ::* ${time}\n`;
-      menu += `: ̗̀❖ *ᴜʀʟ ::* ${link}\n\n`;
-      menu += `   ⌒࣪᷼⏜͡  ۪  ࿚ꨪᰰ࿙  ࣭࣪⢏࣭۟⢢࣭ׄ᎐፝֟᎐࣭ׄ⡔࣭۟⡹࣭ׄ  ࿚ꨪᰰ࿙  ۪  ͡⏜ׄ᷼⌒\n\n`;
-      menu += `⋆｡ﾟ☁︎ ｡° *ᴄᴏᴍ꯭ᴀ꯭ɴᴅᴏs* ﾟ｡˚₊ 𓂃\n`;
+      // ══════════ CONSTRUCCIÓN DEL MENÚ PIRATA ══════════
+      let menu = `⏝ᩙ ׅ   ׄ᷼⏜֟፝᷼͡⏜͜   ׄ ░⃝ᩘ🏴‍☠️ᩙ ׄ  ͜⏜፝֟᷼͡⏜ׄ᷼   ׅ ⏝ᩙ\n\n`;
+      menu += `     *⿻̸̷᮫̼̼፝͠🍖̸̷ᩙ᪶𔗨̶࿔:: 𝐁𝐢𝐞𝐧𝐯𝐞𝐧𝐢𝐝𝐨 𝐚 𝐛𝐨𝐫𝐝𝐨*\n`;
+      menu += `             *𝐝𝐞𝐥 𝐦𝐞𝐣𝐨𝐫 𝐛𝐚𝐫𝐜𝐨 𝐩𝐢𝐫𝐚𝐭𝐚*\n`;
+      menu += `                   *⚓ ${botname2.toUpperCase()} - 𝐁𝐎𝐓 ⚓*\n\n`;
+      menu += `       ᡴꪫּ ᩿ 𝆬 ┤ ֵ𝆬 ꥓꥓۪۫⏝꥓̥𝆬︶۪ ׄ𖹭 ۪  ְ̊   ̥𝆬👒 ۪  ְ̊   ̥𝆬 𖹭꥓۪۫︶꥓۪⏝۪𝆬 ꥓\n\n`;
 
+      // ══════════ DATOS DEL NAVEGANTE ══════════
+      menu += `╭ׅ━ׁ┉ׅ─ׁ┉ׅ─ׁ┉ׅ─ׁ 𝆭˳ּ🌊 ׁ─ׅ┉ׁ─ׅ┉ׁ─ׅ┉ׁ━ִ╮\n`;
+      menu += `*✿ֶׁ〪 🅓︩︪𝗮𝘁𝗼𝘀 𝗱𝗲𝗹 𝗡𝗮𝘃𝗲𝗴𝗮𝗻𝘁𝗲 ⠶*\n`;
+      menu += `> ⌑ׄ👤〪𝆭݀₊ _Usuario:_ ${msg.pushName || 'Usuario'}\n`;
+      menu += `> ⌑ׄ🎖️〪𝆭݀₊ _Alianza:_ ${users} Piratas\n`;
+      menu += `> ⌑ׄ⏳〪𝆭݀₊ _Activo:_ ${time}\n`;
+      menu += `> ⌑ׄ🕒〪𝆭݀₊ _Hora:_ ${tiempo2} (VZLA)\n`;
+      menu += `> ⌑ׄ🔗〪𝆭݀₊ _API:_ ${link}\n`;
+      menu += `╰ׅ━ׁ┉ׅ─ׁ┉ׅ─ׁ┉ׅ─ׁ 𝆭˳ּ👒 ׁ─ׅ┉ׁ─ׅ┉ׁ─ׅ┉ׁ━ִ╯\n\n`;
+
+      menu += `* ˳࣪𫆪𫇭֦˚ּ ⠶ 𝗟𝗶𝘀𝘁𝗮 𝗱𝗲 𝗧𝗲𝘀𝗼𝗿𝗼𝘀 ᩡ*\n\n`;
+
+      // ══════════ LISTA DE TESOROS (COMANDOS POR CATEGORÍA) ══════════
       const categoryArg = args[0]?.toLowerCase();
       const categories = {};
 
@@ -85,32 +86,39 @@ export default {
       for (const [category, cmds] of Object.entries(categories)) {
         if (categoryArg && category.toLowerCase() !== categoryArg) continue;
         const catName = category.charAt(0).toUpperCase() + category.slice(1);
-        menu += `\n╭╼ׅࣶ፝֟╾╌ֵ╾͜─ํ͜┈ְ ࣭࣪⢏࣭ࣧ⢢࣭ׄ᎐፝֟͟͝᎐࣭ׄ⡔࣭ࣧ⡹࣭࣭ׄ࣪ ְ┈ํ͜─͜╼ꨪᰰ╾࣮╌╼ࣶׅ፝֟╾╮\n│❀ *${catName} ☆(ﾉ◕ヮ◕)ﾉ*\n├╾ׅ╴ׂ╌╶ׅ╌ׂ─ 〫─ׂ┄ׅ╴ׂ╌ׅ╶╼.  ╾ׅ╴ׂ╌╶ׅ╌ׂ\n`;
+
+        menu += `✿ㅤ໋︵ּㅤׄ⏜ּㅤ֯✿ִㅤ⃞ׄ🧭⃞ㅤִ❀֯ㅤּ⏜ׄㅤּ︵  ✿\n`;
+        menu += `┄ ֺ 〪ᨘ✿🥂 〫࣫〇ׁ┄ \`${catName.toUpperCase()}\` ┄〇ׁ🥂✿ ׅ ۬┄\n`;
 
         cmds.forEach((cmd) => {
           const cmdAliases = cmd.alias || cmd.aliases || cmd.command || [];
 
-          const aliases = Array.isArray(cmdAliases) 
+          const aliases = Array.isArray(cmdAliases)
             ? cmdAliases.map((a) => {
                 const aliasClean = String(a).split(/[\/#!+.\-]+/).pop().toLowerCase();
                 return `${prefix}${aliasClean}`;
               }).join(' › ')
             : String(cmdAliases);
 
-          menu += `│✿ ${aliases} ${cmd.uso ? `+ ${cmd.uso}` : ''}\n`;
+          menu += `│ ᗢׁ̇ᰍ〪֙  ᳝ ׁ \`${aliases}\` ${cmd.uso ? `+ ${cmd.uso}` : ''}\n`;
           menu += `> ✺ ${cmd.desc || 'Sin descripción'}\n`;
         });
-        menu += `╰╼ׅࣶ፝֟╾╌ֵ╾͜─ํ͜┈ְ ࣭࣪⢏࣭ࣧ⢢࣭ׄ᎐፝֟͟͝᎐࣭ׄ⡔࣭ࣧ⡹࣭ׄ ְ┈ํ͜─͜╼ꨪᰰ╾࣮╌╼ࣶׅ፝֟╾╯ \n`;
+
+        menu += `╰ׅ━ׁ┉ׅ─ׁ┉ׅ─ׁ┉ׅ─ׁ 𝆭⚓˳ּ ׁ─ׅ┉ׁ─ׅ┉ׁ─ׅ┉ׁ━ִ╯\n\n`;
       }
 
-      menu += `\n> *${botname2} desarrollado por Luffy* ૮(˶ᵔᵕᵔ˶)ა`;
+      // ══════════ FRASE FINAL ══════════
+      menu += `.   ╓᷼─ໍ۪┅֟፝─̥࣪:¨᜔⠣۟⠜¨᜔:࣪─࣮࣪͡┅ꊥ᜔۫👒ꊥ᜔┅࣮࣪͡─:࣪¨᜔⠣۟⠜¨᜔:࣪─̥፝֟┅۪─᷼ໍ╖\n`;
+      menu += `> *“Si no arriesgas tu vida, no puedes crear un futuro.”*\n`;
+      menu += `> _— Monkey D. Luffy_\n`;
+      menu += `.   ╙᷼─ໍ۪┅֟፝─̥࣪:¨᜔⠣۟⠜¨᜔:࣪─࣮࣪͡┅ꊥ᜔۫⚓ꊥ᜔┅࣮࣪͡─:࣪¨᜔⠣۟⠜¨᜔:࣪─̥፝֟┅۪─᷼ໍ╜\n`;
 
       // ══════════ OBTENER IMAGEN DE FORMA SEGURA ══════════
       let imageBuffer = null;
       try {
-        const response = await axios.get(bannerImgUrl, { 
-          responseType: 'arraybuffer', 
-          timeout: 5000 
+        const response = await axios.get(bannerImgUrl, {
+          responseType: 'arraybuffer',
+          timeout: 5000,
         });
         imageBuffer = Buffer.from(response.data);
       } catch (imgErr) {
@@ -123,7 +131,7 @@ export default {
           msg.chat,
           {
             image: imageBuffer,
-            caption: menu.trim()
+            caption: menu.trim(),
           },
           { quoted: msg }
         );
@@ -134,10 +142,12 @@ export default {
           { quoted: msg }
         );
       }
-
     } catch (e) {
       console.error('🔴 ERROR EN EL MENÚ:', e);
-      const errorMsg = typeof msgglobal !== 'undefined' ? msgglobal : `✿⸝꙳.˖ Ocurrió un error al generar el menú. Revisa la consola del bot.`;
+      const errorMsg =
+        typeof msgglobal !== 'undefined'
+          ? msgglobal
+          : `✿⸝꙳.˖ Ocurrió un error al generar el menú. Revisa la consola del bot.`;
       await msg.reply(errorMsg);
     }
   },
