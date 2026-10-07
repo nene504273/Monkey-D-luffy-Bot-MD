@@ -52,7 +52,6 @@ export default {
 
       // ⚠️ IMPORTANTE: serverMessageId DEBE ser un número REAL (el ID del mensaje
       // dentro de tu canal). Con -1 WhatsApp NO muestra el botón "Ver canal".
-      // Para obtenerlo: envía un mensaje a tu canal y captura su serverMessageId.
       const serverMessageId = 0; // ← RELLENA AQUÍ con el número real (ej. 123456789)
 
       const contextInfo = {
@@ -67,14 +66,14 @@ export default {
       };
 
       // ══════════ IMAGEN SUPERIOR (BANNER) ══════════
-      const bannerImgUrl = 'https://i.imgur.com/8Q0yX3W.jpg';
+      const bannerImgUrl = 'https://cdn.dev-ander.xyz/a/sVCE.jpg';
 
       // ══════════ CONSTRUCCIÓN DEL MENÚ PIRATA ══════════
       let menu = `⏝ᩙ ׅ   ׄ᷼⏜֟፝᷼͡⏜͜   ׄ ░⃝ᩘ🏴‍☠️ᩙ ׄ  ͜⏜፝֟᷼͡⏜ׄ᷼   ׅ ⏝ᩙ\n\n`;
       menu += `     *⿻̸̷᮫̼̼፝͠🍖̸̷ᩙ᪶𔗨̶࿔:: 𝐁𝐢𝐞𝐧𝐯𝐞𝐧𝐢𝐝𝐨 𝐚 𝐛𝐨𝐫𝐝𝐨*\n`;
       menu += `             *𝐝𝐞𝐥 𝐦𝐞𝐣𝐨𝐫 𝐛𝐚𝐫𝐜𝐨 𝐩𝐢𝐫𝐚𝐭𝐚*\n`;
       menu += `                   *⚓ ${botname2.toUpperCase()} - 𝐁𝐎𝐓 ⚓*\n\n`;
-      menu += `       ᡴꪫּ ᩿ 𝆬 ┤ ֵ𝆬 ꥓꥓۪۫⏝꥓̥𝆬︶۪ ׄ𖹭 ۪  ְ̊   ̥𝆬👒 ۪  ְ̊   ̥𝆬 𖹭꥓۪۫︶꥓۪⏝۪𝆬 ꥓\n\n`;
+      menu += `       ᡴꪫּ ᩿ 𝆬 ┤ ֵ𝆬 ꥓꥓۪۫⏝꥓̥𝆬︶۪ ׄ𖹭 ۪  ְ̊   ̥𝆬👒 ۪  ְ̊   ̥𝆬 𖹭꥓۪۫︶꥓۪⏝۪𝆬 ꥓\ n\n`;
 
       // ══════════ DATOS DEL NAVEGANTE ══════════
       menu += `╭ׅ━ׁ┉ׅ─ׁ┉ׅ─ׁ┉ׅ─ׁ 𝆭˳ּ🌊 ׁ─ׅ┉ׁ─ׅ┉ׁ─ׅ┉ׁ━ִ╮\n`;
