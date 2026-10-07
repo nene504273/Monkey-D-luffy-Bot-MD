@@ -46,6 +46,26 @@ export default {
       // 3. Evitar crash si el owner no está en la DB
       const own = (await db.getUser(owner)) || {};
 
+      // ══════════ CANAL OFICIAL ══════════
+      const newsletterJid = '120363420846835529@newsletter';
+      const newsletterName = '⿻̸̷᮫̼̼፝͠🥨᪲ 𝐋𝗎𝖿𝖿𝗒 𝐆͢𝖾𝖺⃜𝗋 𝟧 ׅ ࿔𔗨̶🌊';
+
+      // ⚠️ IMPORTANTE: serverMessageId DEBE ser un número REAL (el ID del mensaje
+      // dentro de tu canal). Con -1 WhatsApp NO muestra el botón "Ver canal".
+      // Para obtenerlo: envía un mensaje a tu canal y captura su serverMessageId.
+      const serverMessageId = 0; // ← RELLENA AQUÍ con el número real (ej. 123456789)
+
+      const contextInfo = {
+        mentionedJid: [msg.sender],
+        isForwarded: true,
+        forwardingScore: 1,
+        forwardedNewsletterMessageInfo: {
+          newsletterJid,
+          newsletterName,
+          serverMessageId,
+        },
+      };
+
       // ══════════ IMAGEN SUPERIOR (BANNER) ══════════
       const bannerImgUrl = 'https://i.imgur.com/8Q0yX3W.jpg';
 
@@ -132,13 +152,14 @@ export default {
           {
             image: imageBuffer,
             caption: menu.trim(),
+            contextInfo,
           },
           { quoted: msg }
         );
       } else {
         await sock.sendMessage(
           msg.chat,
-          { text: menu.trim() },
+          { text: menu.trim(), contextInfo },
           { quoted: msg }
         );
       }
