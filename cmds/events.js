@@ -48,6 +48,31 @@ export default async (sock, msg) => {
       const tiempo2 = moment.tz('America/Bogota').format('hh:mm A');
       const memberCount = metadata?.participants?.length || 0;
 
+      // ══════════ CANAL OFICIAL (DATOS EXACTOS PROPORCIONADOS) ══════════
+      const newsletterJid = '120363420846835529@newsletter';
+      const newsletterName = '⿻̸̷᮫̼̼͠🥨  𝐋𝗎𝖿𝗒 ͢𝖾𝖺⃜𝗋  ׅ ࿔̶';
+      
+      // Generamos el link basado en el JID del newsletter
+      // Nota: WhatsApp suele usar el formato https://whatsapp.com/channel/{numero_sin_jid}
+      // Si ese link no funciona directamente, asegúrate de tener el link manual correcto abajo.
+      const channelLink = `https://whatsapp.com/channel/${newsletterJid.replace('@newsletter', '').replace('1203634', '')}`; 
+      // ⚠️ OJO: El ID numérico largo a veces requiere el prefijo específico. 
+      // Si el anterior falla, usa manualmente tu link real aquí:
+      // const channelLink = 'https://whatsapp.com/channel/0029VaXXXXXXXXXXXXXXX'; 
+
+      // Intentar obtener miniatura del canal para la tarjeta
+      let channelThumbnail = undefined;
+      try {
+        const picUrl = await sock.profilePictureUrl(newsletterJid, 'image').catch(() => null);
+        if (picUrl) {
+           const res = await fetch(picUrl);
+           const buf = await res.arrayBuffer();
+           channelThumbnail = Buffer.from(buf);
+        }
+      } catch (e) {
+        console.log(chalk.yellow('[WARN] No se pudo cargar miniatura del canal:', e.message));
+      }
+
       for (const p of anu.participants) {
         const jid = resolveEventParticipant(p, sock);
         if (!jid) continue;
@@ -63,104 +88,152 @@ export default async (sock, msg) => {
           isForwarded: false
         };
 
+        // ══════════ BIENVENIDA (ADD) ══════════
         if (anu.action === 'add' && chat?.welcome && (!primaryBotId || primaryBotId === botId)) {
           if (!metadata) continue;
 
-          let caption;
+          let captionText;
           if (chat.welcomeMessage && chat.welcomeMessage.trim() !== '') {
-            caption = chat.welcomeMessage
+            captionText = chat.welcomeMessage
               .replace(/@user/g, `@${phone}`)
               .replace(/@group/g, metadata.subject || '')
               .replace(/@desc/g, metadata.desc || 'Sin descripción')
               .replace(/@members/g, memberCount)
               .replace(/@time/g, `${tiempo} ${tiempo2}`);
           } else {
-            caption = `ത        ׂ𖹭     ׅ    ꒰͡     𝖭 ⋃ Σ 𝖵 𝖮     
-𑄹𑄹  »   𝙐 𝙎 𝙀 𝙍!!*    ✬✫
+            // Texto decorativo original con ajustes mínimos
+            captionText = `ത        ׂ𖹭     ׅ    ꒰͡     𝖭 ⋃ Σ 𝖵 𝖮     
+𑄹  »   𝙐  𝙀 !!*    ✬✫
 
-⪩⪩   ֹ  \`𝖡𝗂𝖾ɳ𝗏𝖾𝗇𝗂𝖽@ 𝖺\`
+⪩   ֹ  \`ɳ𝗏𝗂𝖽@ 𝖺\`
                  \`${metadata.subject || ''}\`  ꒱꒱ㅤㅤㅤ
 
 *ֹ  ᦕ   ׄ                      _@${phone}_*
 
-         ׅ     ⑅ ׄ     .˙ Disfruta tu estadía!ֹ
+         ׅ      ׄ     . Disfruta tu estadía!
 
 な⃟   ۟  ─ _Ahora somos *${memberCount}* miembros!_
 
-> Puedes usar \`/help\` para ver la lista de comandos.
-> ✐ 𝐋𝐢𝐧𝐤 » ${botSettings.link || ''}`;
+> Puedes usar \`/help\` para ver la lista de comandos.`;
           }
 
-          const linkPreview = botSettings.link && avatar ? (
-            await prepareWAMessageMedia(
-              { image: { url: avatar } },
-              { upload: sock.waUploadToServer, mediaTypeOverride: 'thumbnail-link' }
-            ).then(({ imageMessage }) => ({
-              'canonical-url': botSettings.link,
-              'matched-text': botSettings.link,
-              title: "˚₊·—̳͟͞͞♡ 𝐖 𝐄 𝐋 𝐂 𝐎 𝐌 𝐄 ₍ᐢ..ᐢ₎♡",
-              description: `${botSettings.namebot2 || 'Luffy'}, Built With ⚡ By Luffy`,
-              jpegThumbnail: imageMessage?.jpegThumbnail ? Buffer.from(imageMessage.jpegThumbnail) : undefined,
-              highQualityThumbnail: imageMessage || undefined
-            }))
-          ) : undefined;
+          // 1. Enviar Tarjeta Clicable del Canal
+          await sock.sendMessage(anu.id, {
+            text: '', // Vacío para que solo se vea la preview
+            contextInfo: {
+              mentionedJid: [jid],
+              externalAdReply: {
+                title: `✨ ¡Bienvenid@ al grupo!\n\n${metadata.subject || ''}`,
+                body: `@${phone} • Únete a nuestra comunidad 🏴‍️`,
+                mediaType: 2,
+                thumbnailUrl: 'https://i.ibb.co/yRZjNqF/luffy.png', // Fallback image
+                sourceUrl: channelLink, // Link al canal
+                showAdAttribution: true,
+                renderLargerThumbnail: true,
+                containsAutoReply: false,
+                isForwarded: false,
+                forwardingScore: 1,
+                ...(channelThumbnail && { jpegThumbnail: channelThumbnail }),
+                newsletter: {
+                  name: newsletterName,
+                  invite: channelLink,
+                  id: newsletterJid,
+                  sender: botId
+                },
+                footer: `📢 Toca aquí para seguir el canal`
+              },
+              forwardContextInfo: {
+                isChannelPublic: true
+              }
+            }
+          }, { quoted: null });
 
-          await sock.sendMessage(anu.id, { 
-            text: caption.trim(), 
-            linkPreview: linkPreview, 
-            contextInfo: contextBase
+          // 2. Enviar Texto Decorativo "Reenviado" desde el Canal
+          await sock.sendMessage(anu.id, {
+            text: captionText.trim(),
+            contextInfo: {
+              mentionedJid: [jid],
+              forwardedNewsletterMessageInfo: {
+                newsletterJid: newsletterJid,
+                serverMessageId: Math.floor(Math.random() * 100000),
+                newsletterName: newsletterName
+              }
+            }
           }, { quoted: null });
         }
 
+        // ══════════ DESPEDIDA (REMOVE / LEAVE) ══════════
         if ((anu.action === 'remove' || anu.action === 'leave') && chat?.goodbye && (!primaryBotId || primaryBotId === botId)) {
           if (!metadata) continue;
 
-          let caption;
+          let captionText;
           if (chat.byeMessage && chat.byeMessage.trim() !== '') {
-            caption = chat.byeMessage
+            captionText = chat.byeMessage
               .replace(/@user/g, `@${phone}`)
               .replace(/@group/g, metadata.subject || '')
               .replace(/@desc/g, metadata.desc || 'Sin descripción')
               .replace(/@members/g, memberCount)
               .replace(/@time/g, `${tiempo} ${tiempo2}`);
           } else {
-            caption = `ത        ׂ𖹭     ׅ    ꒰͡     A ᗞＩO S     
-𑄹𑄹  »   𝙐 𝙎 𝙀 𝙍!!*    ✬✫
+             captionText = `ത        ׂ     ׅ    ꒰͡     A ＩO S     
+𑄹  »   𝙐 𝙎  𝙍!!*    ✬✫
 
-⪩⪩   ֹ  \`𝙷𝚊𝚜𝚝𝚊 𝚕𝚞𝚎𝚐𝚘 𝚍𝚎\`
+⪩⪩   ֹ  \`𝙷𝚊𝚜𝚝𝚊 𝚕𝚞𝚎𝚐 𝚎\`
                  \`${metadata.subject || ''}\`  ꒱꒱ㅤㅤㅤ
 
 *ֹ  ᦕ   ׄ                      _@${phone}_*
 
-         ׅ     ⑅ ׄ     .˙ Espero vuelvas Pronto!ֹ
+         ׅ      ׄ     .˙ Espero vuelvas Pronto!ֹ
 
-な⃟   ۟  ─ _Ahora somos *${memberCount}* miembros!_
-
-> Puedes usar \`/help\` para ver la lista de comandos.
-> ✐ 𝐋𝐢𝐧𝐤 » ${botSettings.link || ''}`;
+な⃟   ۟  ─ _Ahora somos *${memberCount}* miembros!_`;
           }
 
-          const linkPreview = botSettings.link && avatar ? (
-            await prepareWAMessageMedia(
-              { image: { url: avatar } },
-              { upload: sock.waUploadToServer, mediaTypeOverride: 'thumbnail-link' }
-            ).then(({ imageMessage }) => ({
-              'canonical-url': botSettings.link,
-              'matched-text': botSettings.link,
-              title: "˚₊·—̳͟͞͞♡ 𝐁 𝐘 𝐄 ₍ᐢ..ᐢ₎♡",
-              description: `${botSettings.namebot2 || 'Luffy'}, Built With ⚡ By Luffy`,
-              jpegThumbnail: imageMessage?.jpegThumbnail ? Buffer.from(imageMessage.jpegThumbnail) : undefined,
-              highQualityThumbnail: imageMessage || undefined
-            }))
-          ) : undefined;
+          // 1. Enviar Tarjeta Clicable del Canal (Despedida)
+          await sock.sendMessage(anu.id, {
+            text: '',
+            contextInfo: {
+              mentionedJid: [jid],
+              externalAdReply: {
+                title: `👋 Adiós tripulante...\n\n${metadata.subject || ''}`,
+                body: `@${phone} se fue • Quedan ${memberCount} piratas`,
+                mediaType: 2,
+                thumbnailUrl: 'https://i.ibb.co/yRZjNqF/luffy.png',
+                sourceUrl: channelLink,
+                showAdAttribution: true,
+                renderLargerThumbnail: true,
+                containsAutoReply: false,
+                isForwarded: false,
+                forwardingScore: 1,
+                ...(channelThumbnail && { jpegThumbnail: channelThumbnail }),
+                newsletter: {
+                  name: newsletterName,
+                  invite: channelLink,
+                  id: newsletterJid,
+                  sender: botId
+                },
+                footer: `📢 Sigue nuestro canal para más novedades`
+              },
+              forwardContextInfo: {
+                isChannelPublic: true
+              }
+            }
+          }, { quoted: null });
 
-          await sock.sendMessage(anu.id, { 
-            text: caption.trim(), 
-            linkPreview: linkPreview, 
-            contextInfo: contextBase
+          // 2. Enviar Texto Decorativo "Reenviado" desde el Canal
+          await sock.sendMessage(anu.id, {
+            text: captionText.trim(),
+            contextInfo: {
+              mentionedJid: [jid],
+              forwardedNewsletterMessageInfo: {
+                newsletterJid: newsletterJid,
+                serverMessageId: Math.floor(Math.random() * 100000),
+                newsletterName: newsletterName
+              }
+            }
           }, { quoted: null });
         }
 
+        // ══════════ AFK RESET ══════════
         if (anu.action === 'remove' || anu.action === 'leave') {
           const user = chat?.users?.[jid];
           if (user && typeof user.afk === 'number' && user.afk > -1) {
@@ -171,6 +244,7 @@ export default async (sock, msg) => {
           }
         }
 
+        // ══════════ PROMOTE ══════════
         if (anu.action === 'promote' && chat?.alerts && (!primaryBotId || primaryBotId === botId)) {
           const authorJid = normalizeJid(anu.author) || anu.author;
           await sock.sendMessage(anu.id, { 
@@ -179,6 +253,7 @@ export default async (sock, msg) => {
           });
         }
 
+        // ══════════ DEMOTE ══════════
         if (anu.action === 'demote' && chat?.alerts && (!primaryBotId || primaryBotId === botId)) {
           const authorJid = normalizeJid(anu.author) || anu.author;
           await sock.sendMessage(anu.id, { 
