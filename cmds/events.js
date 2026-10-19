@@ -48,10 +48,6 @@ export default async (sock, msg) => {
       const tiempo2 = moment.tz('America/Bogota').format('hh:mm A');
       const memberCount = metadata?.participants?.length || 0;
 
-      // ══════════ CANAL OFICIAL ══════════
-      const newsletterJid = '120363420846835529@newsletter';
-      const newsletterName = '⿻̸̷᮫̼̼፝͠🥨᪲ 𝐋𝗎𝖿𝖿𝗒 𝐆͢𝖾𝖺⃜𝗋 𝟧 ׅ ࿔𔗨̶🌊';
-
       for (const p of anu.participants) {
         const jid = resolveEventParticipant(p, sock);
         if (!jid) continue;
@@ -67,7 +63,6 @@ export default async (sock, msg) => {
           isForwarded: false
         };
 
-        // ══════════ BIENVENIDA (ADD) ══════════
         if (anu.action === 'add' && chat?.welcome && (!primaryBotId || primaryBotId === botId)) {
           if (!metadata) continue;
 
@@ -80,23 +75,20 @@ export default async (sock, msg) => {
               .replace(/@members/g, memberCount)
               .replace(/@time/g, `${tiempo} ${tiempo2}`);
           } else {
-            caption = `⏝ᩙ ׅ   ׄ᷼⏜֟፝᷼͡⏜͜   ׄ ░⃝ᩘ🏴‍☠️ᩙ ׄ  ͜⏜፝֟᷼͡⏜ׄ᷼   ׅ ⏝ᩙ
-ത        ׂ𖹭     ׅ    ꒰͡     𝖭 𝕌 Σ 𝖵 𝖮     
-𑄹𑄹  »   𝙋 𝙄 𝙍 𝘼 𝙏 𝘼!!*    ✬✫
+            caption = `ത        ׂ𖹭     ׅ    ꒰͡     𝖭 ⋃ Σ 𝖵 𝖮     
+𑄹𑄹  »   𝙐 𝙎 𝙀 𝙍!!*    ✬✫
 
-⪩⪩   ֹ  \`𝖡𝗂𝖾ɳ𝗏𝖾𝗇𝗂𝖽@ 𝖺 𝖻𝗈𝗋𝖽𝗈\`
+⪩⪩   ֹ  \`𝖡𝗂𝖾ɳ𝗏𝖾𝗇𝗂𝖽@ 𝖺\`
                  \`${metadata.subject || ''}\`  ꒱꒱ㅤㅤㅤ
 
-*ֹ  🏴‍☠️  ׄ                      _@${phone}_*
+*ֹ  ᦕ   ׄ                      _@${phone}_*
 
-         ׅ     ⑅ ׄ     .˙ Disfruta tu estadía, tripulante!ֹ
+         ׅ     ⑅ ׄ     .˙ Disfruta tu estadía!ֹ
 
-な⃟   ۟  ─ _Ahora somos *${memberCount}* piratas a bordo!_
+な⃟   ۟  ─ _Ahora somos *${memberCount}* miembros!_
 
 > Puedes usar \`/help\` para ver la lista de comandos.
-> ✐ 𝐋𝐢𝐧𝐤 » ${botSettings.link || ''}
-> 📢 𝐂𝐚𝐧𝐚𝐥 » ${newsletterName}
-.   ╙᷼─ໍ۪┅֟፝─̥࣪:¨᜔⠣۟⠜¨᜔:࣪─࣮࣪͡┅ꊥ᜔۫⚓ꊥ᜔┅࣮࣪͡─:࣪¨᜔⠣۟⠜¨᜔:࣪─̥፝֟┅۪─᷼ໍ╜`;
+> ✐ 𝐋𝐢𝐧𝐤 » ${botSettings.link || ''}`;
           }
 
           const linkPreview = botSettings.link && avatar ? (
@@ -120,7 +112,6 @@ export default async (sock, msg) => {
           }, { quoted: null });
         }
 
-        // ══════════ DESPEDIDA (REMOVE / LEAVE) ══════════
         if ((anu.action === 'remove' || anu.action === 'leave') && chat?.goodbye && (!primaryBotId || primaryBotId === botId)) {
           if (!metadata) continue;
 
@@ -133,23 +124,20 @@ export default async (sock, msg) => {
               .replace(/@members/g, memberCount)
               .replace(/@time/g, `${tiempo} ${tiempo2}`);
           } else {
-            caption = `⏝ᩙ ׅ   ׄ᷼⏜֟፝᷼͡⏜͜   ׄ ░⃝ᩘ🏴‍☠️ᩙ ׄ  ͜⏜፝֟᷼͡⏜ׄ᷼   ׅ ⏝ᩙ
-ത        ׂ𖹭     ׅ    ꒰͡     A ᗞＩO S     
-𑄹𑄹  »   𝙋 𝙄 𝙍 𝘼 𝙏 𝘼!!*    ✬✫
+            caption = `ത        ׂ𖹭     ׅ    ꒰͡     A ᗞＩO S     
+𑄹𑄹  »   𝙐 𝙎 𝙀 𝙍!!*    ✬✫
 
 ⪩⪩   ֹ  \`𝙷𝚊𝚜𝚝𝚊 𝚕𝚞𝚎𝚐𝚘 𝚍𝚎\`
                  \`${metadata.subject || ''}\`  ꒱꒱ㅤㅤㅤ
 
-*ֹ  🏴‍☠️  ׄ                      _@${phone}_*
+*ֹ  ᦕ   ׄ                      _@${phone}_*
 
-         ׅ     ⑅ ׄ     .˙ Espero vuelvas pronto, tripulante!ֹ
+         ׅ     ⑅ ׄ     .˙ Espero vuelvas Pronto!ֹ
 
-な⃟   ۟  ─ _Ahora somos *${memberCount}* piratas a bordo!_
+な⃟   ۟  ─ _Ahora somos *${memberCount}* miembros!_
 
 > Puedes usar \`/help\` para ver la lista de comandos.
-> ✐ 𝐋𝐢𝐧𝐤 » ${botSettings.link || ''}
-> 📢 𝐂𝐚𝐧𝐚𝐥 » ${newsletterName}
-.   ╙᷼─ໍ۪┅֟፝─̥࣪:¨᜔⠣۟⠜¨᜔:࣪─࣮࣪͡┅ꊥ᜔۫⚓ꊥ᜔┅࣮࣪͡─:࣪¨᜔⠣۟⠜¨᜔:࣪─̥፝֟┅۪─᷼ໍ╜`;
+> ✐ 𝐋𝐢𝐧𝐤 » ${botSettings.link || ''}`;
           }
 
           const linkPreview = botSettings.link && avatar ? (
@@ -173,7 +161,6 @@ export default async (sock, msg) => {
           }, { quoted: null });
         }
 
-        // ══════════ AFK RESET ══════════
         if (anu.action === 'remove' || anu.action === 'leave') {
           const user = chat?.users?.[jid];
           if (user && typeof user.afk === 'number' && user.afk > -1) {
@@ -184,7 +171,6 @@ export default async (sock, msg) => {
           }
         }
 
-        // ══════════ PROMOTE ══════════
         if (anu.action === 'promote' && chat?.alerts && (!primaryBotId || primaryBotId === botId)) {
           const authorJid = normalizeJid(anu.author) || anu.author;
           await sock.sendMessage(anu.id, { 
@@ -193,7 +179,6 @@ export default async (sock, msg) => {
           });
         }
 
-        // ══════════ DEMOTE ══════════
         if (anu.action === 'demote' && chat?.alerts && (!primaryBotId || primaryBotId === botId)) {
           const authorJid = normalizeJid(anu.author) || anu.author;
           await sock.sendMessage(anu.id, { 
