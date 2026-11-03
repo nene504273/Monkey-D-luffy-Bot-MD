@@ -1,3 +1,4 @@
+import db from "#db";
 import fetch from 'node-fetch';
 
 export default {
@@ -10,8 +11,11 @@ export default {
     try {
       if (prefix === 'a' || prefix === 'A') return;
 
-      const botname = global.botname || 'Ruby';
-      const emoji = global.emoji || '⚡'; // Definido por seguridad si global.emoji no existe
+      // Obtener la configuración del bot desde la base de datos para que diga Luffy
+      const botId = sock?.user?.id?.split(':')[0] + '@s.whatsapp.net' || '';
+      const botSettings = (await db.getSettings(botId)) || {}; 
+      const botname = botSettings.namebot2 || botSettings.namebot || global.botname || 'Luffy';
+      const emoji = global.emoji || '⚡';
 
       await msg.react('✅');
 
