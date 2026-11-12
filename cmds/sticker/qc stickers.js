@@ -5,6 +5,24 @@ import { exec } from 'child_process'
 import exif from '../../lib/exif.js'
 const { writeExif } = exif
 
+// 🌐 Instancia oficial ACTUAL (bot.lyo.su murió → ahora es quote.yuri.ly)
+const QUOTE_API = 'https://quote.yuri.ly'
+
+// Respaldo: PNG → WebP con ffmpeg (por si la ruta webp directa falla)
+const pngAWebp = (buffer) => new Promise((resolve, reject) => {
+  if (!fs.existsSync('./temp')) fs.mkdirSync('./temp')
+  const inp = `./temp/qc_${Date.now()}.png`
+  const out = `./temp/qc_${Date.now()}.webp`
+  fs.writeFileSync(inp, buffer)
+  exec(`ffmpeg -i "${inp}" -vf "scale=512:512:force_original_aspect_ratio=decrease,pad=512:512:(ow-iw)/2:(oh-ih)/2:color=white" -c:v libwebp -lossless 1 -loop 0 -an -vsync 0 "${out}"`, (err) => {
+    try { fs.unlinkSync(inp) } catch {}
+    if (err) return reject(err)
+    const webp = fs.readFileSync(out)
+    try { fs.unlinkSync(out) } catch {}
+    resolve(webp)
+  })
+})
+
 export default {
   command: ['qc', 'quote'],
   category: 'stickers',
@@ -12,135 +30,106 @@ export default {
 
   run: async ({ msg, sock, args, text, usedPrefix: prefix, command }) => {
     try {
-      // 1. Obtener el texto
+      // 1. Texto
       let textoSticker = text.trim()
-      if (!textoSticker && msg.quoted) {
-        textoSticker = msg.quoted.text || ''
-      }
+      if (!textoSticker && msg.quoted) textoSticker = msg.quoted.text || ''
 
       if (!textoSticker) {
         return sock.reply(msg.chat, `❀ Te faltó el texto o cita un mensaje.\n*Ejemplo:* ${prefix + command} Hola mundo`, msg)
       }
-
       if (textoSticker.length > 40) {
         return sock.reply(msg.chat, `❖ El texto no puede tener más de 40 caracteres.`, msg)
       }
 
       msg.react('⏳')
 
-      // 2. Determinar el target de la cita
+      // 2. Nombre desde tu DB (sin sock.getName)
       const targetJid = msg.quoted ? msg.quoted.sender : msg.sender
-
-      // ✅ NOMBRE: usamos tu DB (ya no usamos sock.getName)
       let nombre = 'Usuario'
       try {
         const userTarget = await db.getUser(targetJid)
-        if (userTarget && userTarget.name) {
-          nombre = userTarget.name
-        } else if (msg.pushName && msg.pushName.trim()) {
-          nombre = msg.pushName
-        } else {
-          nombre = targetJid.split('@')[0]
-        }
+        if (userTarget?.name) nombre = userTarget.name
+        else if (msg.pushName?.trim()) nombre = msg.pushName
+        else nombre = targetJid.split('@')[0]
       } catch {
-        nombre = (msg.pushName && msg.pushName.trim()) || targetJid.split('@')[0]
+        nombre = msg.pushName?.trim() || targetJid.split('@')[0]
       }
 
-      // 3. Foto de perfil (con fallback seguro)
+      // 3. Foto de perfil con fallback
       let pp = 'https://telegra.ph/file/24fa902ead26340f3df2c.png'
       try {
         if (typeof sock.profilePictureUrl === 'function') {
           pp = await sock.profilePictureUrl(targetJid, 'image')
         }
-      } catch {
-        // sin foto → se queda con la por defecto
-      }
+      } catch {}
 
-      // 4. Payload de la API
+      // 4. Payload
       const obj = {
-        type: "quote",
-        format: "png",
-        backgroundColor: "#000000",
+        type: 'quote',
+        backgroundColor: '#000000',
         width: 512,
         height: 768,
         scale: 2,
         messages: [{
           entities: [],
           avatar: true,
-          from: {
-            id: 1,
-            name: nombre,
-            photo: { url: pp }
-          },
+          from: { id: 1, name: nombre, photo: { url: pp } },
           text: textoSticker,
           replyMessage: {}
         }]
       }
 
-      // 5. Consumir la API
-      const res = await fetch('https://bot.lyo.su/quote/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(obj)
-      })
+      let webpBuffer = null
 
-      const data = await res.json()
-
-      if (!res.ok || !data.result || !data.result.image) {
-        msg.react('❌')
-        return sock.reply(msg.chat, '❖ Error al generar la cita. Intenta de nuevo.', msg)
-      }
-
-      // 6. Base64 → Buffer
-      const buffer = Buffer.from(data.result.image, 'base64')
-
-      // 7. Carpeta temporal
-      if (!fs.existsSync('./temp')) {
-        fs.mkdirSync('./temp')
-      }
-
-      const timestamp = Date.now()
-      const tempInput = `./temp/qc_${timestamp}.png`
-      const tempOutput = `./temp/qc_${timestamp}.webp`
-
-      fs.writeFileSync(tempInput, buffer)
-
-      // 8. PNG → WebP (obligatorio para tu writeExif)
-      await new Promise((resolve, reject) => {
-        exec(`ffmpeg -i "${tempInput}" -vf "scale=512:512:force_original_aspect_ratio=decrease,pad=512:512:(ow-iw)/2:(oh-ih)/2:color=white" -c:v libwebp -lossless 1 -loop 0 -an -vsync 0 "${tempOutput}"`, (error) => {
-          if (error) reject(error)
-          else resolve()
+      // 5. INTENTO 1: WebP binario directo (sin ffmpeg)
+      try {
+        const r1 = await fetch(`${QUOTE_API}/generate.webp`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ...obj, format: 'webp' })
         })
-      })
+        if (r1.ok) {
+          const b = Buffer.from(await r1.arrayBuffer())
+          if (b.length > 100 && b.slice(0, 4).toString('ascii') === 'RIFF') webpBuffer = b
+        }
+      } catch (e) {
+        console.log('⚠️ Ruta webp directa falló, uso respaldo:', e.message)
+      }
 
-      // 9. Marca de agua desde tu DB
+      // 6. INTENTO 2: base64 PNG + conversión ffmpeg
+      if (!webpBuffer) {
+        const r2 = await fetch(`${QUOTE_API}/generate`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ...obj, format: 'png' })
+        })
+        const data = await r2.json()
+        if (!r2.ok || !data.image) {
+          msg.react('❌')
+          return sock.reply(msg.chat, '❖ Error al generar la cita. Intenta de nuevo.', msg)
+        }
+        webpBuffer = await pngAWebp(Buffer.from(data.image, 'base64'))
+      }
+
+      // 7. Marca de agua desde tu DB
       let user = await db.getUser(msg.sender)
       const name = user.name
-      let texto1 = user.metadatos || `S'ᴛᴇʟʟᴀʀ 🧠 WᴀBᴏᴛ`
+      let texto1 = user.metadatos || `S'ᴛᴇʟᴀʀ  WᴀBᴏᴛ`
       let texto2 = user.metadatos2 || `@${name}`
 
-      // 10. Exif + envío
-      const webpBuffer = fs.readFileSync(tempOutput)
+      // 8. Exif + envío
       const media = { mimetype: 'image/webp', data: webpBuffer }
       const metadata = { packname: texto1, author: texto2, categories: [''] }
-
       const stickerPath = await writeExif(media, metadata)
 
-      await sock.sendMessage(msg.chat, {
-        sticker: { url: stickerPath }
-      }, { quoted: msg })
-
+      await sock.sendMessage(msg.chat, { sticker: { url: stickerPath } }, { quoted: msg })
       msg.react('✅')
-
-      // 11. Limpieza
-      fs.unlinkSync(tempInput)
-      fs.unlinkSync(tempOutput)
       fs.unlinkSync(stickerPath)
 
     } catch (e) {
       console.error('Error en qc/quote:', e)
       msg.react('❌')
-      return sock.reply(msg.chat, '✿꙳.˖ Ocurrió un error al crear la cita.', msg)
+      return sock.reply(msg.chat, '✿꙳. Ocurrió un error al crear la cita.', msg)
     }
   }
 }
