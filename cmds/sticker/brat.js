@@ -7,74 +7,36 @@ const { writeExif } = exif
 export default {
   command: ['brat', 'sbrat'],
   category: 'stickers',
-  description: 'Crea un sticker estilo Brat con el texto que envíes',
-  
   run: async ({ msg, sock, text, usedPrefix: prefix, command }) => {
     try {
-      // Validar texto
       const textoSticker = text.trim()
       if (!textoSticker) {
-        return sock.reply(msg.chat, `❀ Ingresa un texto para generar tu sticker Brat.\n*Ejemplo:* ${prefix + command} Hola mundo`, msg)
+        return sock.reply(msg.chat, `❀ Escribe un texto para tu sticker Brat.\n*Ejemplo:* ${prefix + command} Hola`, msg)
       }
 
-      // Obtener datos del usuario
-      let user = await db.getUser(msg.sender)
-      const name = user.name
-      let texto1 = user.metadatos || `S'ᴛᴇʟʟᴀʀ 🧠 WᴀBᴏᴛ`
-      let texto2 = user.metadatos2 || `@${name}`
+      const user = await db.getUser(msg.sender)
+      const pack = user.metadatos || `S'ᴛᴇʟʟᴀʀ  WᴀBᴏᴛ`
+      const author = user.metadatos2 || `@${user.name}`
 
-      let pack = texto1
-      let author = texto2
+      const apiUrl = `https://api.alyacore.xyz/tools/brat?text=${encodeURIComponent(textoSticker)}&key=LUFFY-FIX67`
 
-      // Consumir API Brat
-      const apiKey = 'LUFFY-FIX67'
-      const apiUrl = `https://api.alyacore.xyz/tools/brat?text=${encodeURIComponent(textoSticker)}&key=${apiKey}`
-      
-      msg.react('⏳')
-      
       const res = await fetch(apiUrl)
-      if (!res.ok) {
-        console.error(`Error API: ${res.status} ${res.statusText}`)
-        msg.react('❌')
-        return msg.reply('❖ Error al conectar con la API de Brat.')
-      }
+      if (!res.ok) return msg.reply('❖ La API de Brat falló, intenta de nuevo.')
 
-      // Verificar contenido tipo
-      const contentType = res.headers.get('content-type')
-      if (!contentType || !contentType.includes('image')) {
-        console.error('La API no devolvió una imagen:', contentType)
-        msg.react('')
-        return msg.reply('❖ La API no devolvió una imagen válida.')
-      }
-
-      // Convertir a buffer
+      // 🔑 AQUÍ ESTABA EL BUG: ahora usamos el mimetype REAL que devuelve la API
+      // (devuelve "image/png", así writeExif sí hace la conversión PNG → WebP)
+      const mime = (res.headers.get('content-type') || 'image/png').split(';')[0].trim()
       const buffer = Buffer.from(await res.arrayBuffer())
-      
-      // Verificar que el buffer tenga datos
-      if (buffer.length === 0) {
-        console.error('Buffer vacío recibido')
-        msg.react('❌')
-        return msg.reply(' La API devolvió datos vacíos.')
-      }
 
-      // Crear metadata y procesar con exif
-      const media = { mimetype: 'image/webp', data: buffer }
+      const media = { mimetype: mime, data: buffer }   // ← image/png, NO image/webp
       const metadata = { packname: pack, author: author, categories: [''] }
-      
       const stickerPath = await writeExif(media, metadata)
 
-      // Enviar sticker
-      await sock.sendMessage(msg.chat, { 
-        sticker: { url: stickerPath } 
-      }, { quoted: msg })
-      
-      msg.react('✅')
+      await sock.sendMessage(msg.chat, { sticker: { url: stickerPath } }, { quoted: msg })
       fs.unlinkSync(stickerPath)
-
     } catch (e) {
-      console.error('Error completo:', e)
-      msg.react('❌')
-      return msg.reply(typeof msgglobal !== 'undefined' ? msgglobal : '❖ Ocurrió un error inesperado.')
+      console.error(e)
+      return msg.reply(msgglobal)
     }
   }
 }
