@@ -28,12 +28,12 @@ export default {
       const apiKey = 'LUFFY-FIX67'
       const apiUrl = `https://api.alyacore.xyz/tools/vocalremover?url=${encodeURIComponent(inputUrl)}&key=${apiKey}`
       
-      const res = await fetch(apiUrl, { timeout: 120000 }) // Timeout de 2 minutos
+      const res = await fetch(apiUrl, { timeout: 120000 })
       const data = await res.json()
 
       if (!res.ok || !data.status) {
         msg.react('❌')
-        return msg.reply(` Error: ${data.message || 'No se pudo procesar el audio.'}`)
+        return msg.reply(`❖ Error: ${data.message || 'No se pudo procesar el audio.'}`)
       }
 
       if (!data.vocal || !data.instrumental) {
@@ -41,7 +41,13 @@ export default {
         return msg.reply('❖ La API no devolvió las pistas de audio.')
       }
 
-      // 3. Crear carpeta temp
+      // 3. Intentar descargar con headers de navegador
+      const headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'audio/mpeg,audio/*,*/*;q=0.8',
+        'Referer': 'https://aivocalremover.com/'
+      }
+
       if (!fs.existsSync('./temp')) {
         fs.mkdirSync('./temp')
       }
@@ -50,58 +56,70 @@ export default {
       const vocalFile = `./temp/vocal_${timestamp}.mp3`
       const instrumentalFile = `./temp/instrumental_${timestamp}.mp3`
 
-      // 4. Descargar con verificación de contenido
-      await msg.reply('⬇️ Descargando pistas separadas...')
-      
-      // Descargar VOCAL
-      const vocalRes = await fetch(data.vocal)
-      const vocalBuffer = Buffer.from(await vocalRes.arrayBuffer())
-      
-      if (vocalBuffer.length === 0 || vocalBuffer.length < 1000) {
-        msg.react('❌')
-        return msg.reply('❌ Error: La pista de voz está vacía o corrupta. Intenta con otro video.')
+      let vocalSuccess = false
+      let instrumentalSuccess = false
+
+      // Descargar VOCAL con headers
+      try {
+        const vocalRes = await fetch(data.vocal, { headers, timeout: 30000 })
+        const vocalBuffer = Buffer.from(await vocalRes.arrayBuffer())
+        
+        if (vocalBuffer.length > 1000) {
+          fs.writeFileSync(vocalFile, vocalBuffer)
+          vocalSuccess = true
+          console.log(`✅ Vocal descargada: ${vocalBuffer.length} bytes`)
+        }
+      } catch (e) {
+        console.log('⚠️ No se pudo descargar vocal automáticamente')
       }
-      
-      fs.writeFileSync(vocalFile, vocalBuffer)
-      console.log(`✅ Vocal descargada: ${vocalBuffer.length} bytes`)
 
-      // Descargar INSTRUMENTAL
-      const instRes = await fetch(data.instrumental)
-      const instBuffer = Buffer.from(await instRes.arrayBuffer())
-      
-      if (instBuffer.length === 0 || instBuffer.length < 1000) {
-        msg.react('❌')
-        fs.unlinkSync(vocalFile) // Limpiar vocal ya descargada
-        return msg.reply('❌ Error: El instrumental está vacío o corrupto. Intenta con otro video.')
+      // Descargar INSTRUMENTAL con headers
+      try {
+        const instRes = await fetch(data.instrumental, { headers, timeout: 30000 })
+        const instBuffer = Buffer.from(await instRes.arrayBuffer())
+        
+        if (instBuffer.length > 1000) {
+          fs.writeFileSync(instrumentalFile, instBuffer)
+          instrumentalSuccess = true
+          console.log(`✅ Instrumental descargado: ${instBuffer.length} bytes`)
+        }
+      } catch (e) {
+        console.log('⚠️ No se pudo descargar instrumental automáticamente')
       }
-      
-      fs.writeFileSync(instrumentalFile, instBuffer)
-      console.log(`✅ Instrumental descargado: ${instBuffer.length} bytes`)
 
-      // 5. Enviar con verificación
-      await msg.reply(' Enviando pistas de audio...')
-      
-      // Enviar VOCAL
-      await sock.sendMessage(msg.chat, {
-        audio: fs.readFileSync(vocalFile),
-        mimetype: 'audio/mpeg',
-        fileName: '🎤 Voz_Separada.mp3',
-        ptt: false
-      }, { quoted: msg })
+      // 4. Enviar resultados
+      if (vocalSuccess && instrumentalSuccess) {
+        // Ambos descargados correctamente
+        await msg.reply('✅ ¡Audio separado! Enviando pistas...')
+        
+        await sock.sendMessage(msg.chat, {
+          audio: fs.readFileSync(vocalFile),
+          mimetype: 'audio/mpeg',
+          fileName: '🎤 Voz_Separada.mp3',
+          ptt: false
+        }, { quoted: msg })
 
-      // Enviar INSTRUMENTAL  
-      await sock.sendMessage(msg.chat, {
-        audio: fs.readFileSync(instrumentalFile),
-        mimetype: 'audio/mpeg',
-        fileName: '🎸 Instrumental.mp3',
-        ptt: false
-      }, { quoted: msg })
+        await sock.sendMessage(msg.chat, {
+          audio: fs.readFileSync(instrumentalFile),
+          mimetype: 'audio/mpeg',
+          fileName: '🎸 Instrumental.mp3',
+          ptt: false
+        }, { quoted: msg })
 
-      msg.react('✅')
-      
-      // 6. Limpiar
-      fs.unlinkSync(vocalFile)
-      fs.unlinkSync(instrumentalFile)
+        fs.unlinkSync(vocalFile)
+        fs.unlinkSync(instrumentalFile)
+        msg.react('✅')
+        
+      } else {
+        // Falló la descarga automática, enviar enlaces
+        msg.react('⚠️')
+        await msg.reply(
+          `⚠️ No pude descargar los archivos automáticamente, pero aquí están los enlaces de descarga directa:\n\n` +
+          `🎤 *Pista de Voz:*\n${data.vocal}\n\n` +
+          `🎸 *Instrumental:*\n${data.instrumental}\n\n` +
+          `⏰ *Nota:* Estos enlaces expiran rápido, descárgalos ahora.`
+        )
+      }
 
     } catch (e) {
       console.error('Error en vocalremover:', e)
