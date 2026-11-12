@@ -1,4 +1,5 @@
 import db from "#db"
+import fs from 'fs'
 import fetch from 'node-fetch'
 
 export default {
@@ -8,20 +9,20 @@ export default {
   
   run: async ({ msg, sock, text, usedPrefix: prefix, command }) => {
     try {
-      // 1. Obtener la URL (del texto escrito o del mensaje citado)
+      // 1. Obtener la URL
       let inputUrl = text.trim()
       if (!inputUrl && msg.quoted) {
         inputUrl = msg.quoted.text || ''
       }
 
-      // Validación básica de URL
       const isUrl = (str) => /https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()!@:%_\+.~#?&\/\/=]*)/gi.test(str)
 
       if (!inputUrl || !isUrl(inputUrl)) {
-        return sock.reply(msg.chat, `❀ Por favor, proporciona un enlace de YouTube o un enlace de audio directo.\n\n*Ejemplo:* ${usedPrefix + command} https://youtube.com/watch?v=...`, msg)
+        return sock.reply(msg.chat, `❀ Proporciona un enlace de YouTube o audio.\n*Ejemplo:* ${prefix + command} https://youtube.com/watch?v=...`, msg)
       }
 
       msg.react('⏳')
+      await msg.reply('🔄 Procesando audio... Esto puede tardar unos segundos.')
 
       // 2. Consumir la API
       const apiKey = 'LUFFY-FIX67'
@@ -30,38 +31,58 @@ export default {
       const res = await fetch(apiUrl)
       const data = await res.json()
 
-      // 3. Validar respuesta de la API
       if (!res.ok || !data.status) {
         msg.react('❌')
-        return msg.reply(`❖ Error: ${data.message || 'No se pudo procesar el audio. Verifica que el enlace sea válido y público.'}`)
+        return msg.reply(`❖ Error: ${data.message || 'No se pudo procesar el audio.'}`)
       }
 
-      // 4. Enviar los resultados a WhatsApp
-      // Usamos 'audio' con mimetype 'audio/mpeg' para que WhatsApp lo muestre como música/reproductor
+      // 3. Crear carpeta temporal si no existe
+      if (!fs.existsSync('./temp')) {
+        fs.mkdirSync('./temp')
+      }
+
+      // 4. Descargar los archivos ANTES de que expiren
+      const vocalUrl = data.vocal
+      const instrumentalUrl = data.instrumental
       
-      // Enviar Pista Vocal
+      const vocalFile = `./temp/vocal_${Date.now()}.mp3`
+      const instrumentalFile = `./temp/instrumental_${Date.now()}.mp3`
+
+      // Descargar vocal
+      const vocalRes = await fetch(vocalUrl)
+      const vocalBuffer = Buffer.from(await vocalRes.arrayBuffer())
+      fs.writeFileSync(vocalFile, vocalBuffer)
+
+      // Descargar instrumental
+      const instRes = await fetch(instrumentalUrl)
+      const instBuffer = Buffer.from(await instRes.arrayBuffer())
+      fs.writeFileSync(instrumentalFile, instBuffer)
+
+      // 5. Enviar como archivos locales (no URLs)
       await sock.sendMessage(msg.chat, {
-        audio: { url: data.vocal },
+        audio: fs.readFileSync(vocalFile),
         mimetype: 'audio/mpeg',
-        fileName: 'Voz_Separada.mp3',
-        ptt: false // false = se muestra como canción, true = como nota de voz
+        fileName: '🎤 Voz_Separada.mp3',
+        ptt: false
       }, { quoted: msg })
 
-      // Enviar Pista Instrumental
       await sock.sendMessage(msg.chat, {
-        audio: { url: data.instrumental },
+        audio: fs.readFileSync(instrumentalFile),
         mimetype: 'audio/mpeg',
-        fileName: 'Instrumental_Separado.mp3',
+        fileName: '🎸 Instrumental.mp3',
         ptt: false
       }, { quoted: msg })
 
       msg.react('✅')
-      return msg.reply('✅ ¡Audio separado con éxito! 🎤🎸\nAquí tienes la pista de voz y el instrumental.')
+      
+      // 6. Limpiar archivos temporales
+      fs.unlinkSync(vocalFile)
+      fs.unlinkSync(instrumentalFile)
 
     } catch (e) {
       console.error('Error en vocalremover:', e)
       msg.react('❌')
-      return msg.reply('✿꙳.˖ Ocurrió un problema inesperado al separar el audio. Intenta con otro enlace.')
+      return msg.reply('✿꙳. Ocurrió un error al separar el audio. Intenta con otro enlace.')
     }
   }
 }
