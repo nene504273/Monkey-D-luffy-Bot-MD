@@ -24,16 +24,16 @@ export default {
       const tiktokLink = `https://www.tiktok.com/@${author.unique_id || "unknown"}/video/${id}`
 
       return (
-        `ㅤ۟∩　ׅ　★ ໌　ׅ　🎧 𝗧𝗶𝗸𝗧𝗼𝗸 𝗔𝘂𝗱𝗶𝗼　ᰙ\n\n` +
-        `𖣣ֶㅤ֯⌗ ✿ ⬭ Título: ${title}\n` +
-        `𖣣ֶㅤ֯⌗ ★ ⬭ Autor: ${author.nickname || author.unique_id || "Desconocido"}\n` +
-        `𖣣ֶㅤ֯⌗ ❖ ⬭ Duración: ${duration || music_info?.duration || "N/A"}\n` +
-        `𖣣ֶㅤ֯⌗ ♡ ⬭ Likes: ${(stats.likes || 0).toLocaleString()}\n` +
-        `𖣣ֶㅤ֯⌗ ꕥ ⬭ Comentarios: ${(stats.comments || 0).toLocaleString()}\n` +
-        `𖣣ֶㅤ֯⌗ ❒ ⬭ Vistas: ${(stats.plays || stats.views || 0).toLocaleString()}\n` +
-        `𖣣ֶㅤ֯⌗ ☄︎ ⬭ Compartidos: ${(stats.shares || 0).toLocaleString()}\n` +
-        `𖣣ֶㅤ֯⌗ ❍ ⬭ Enlace: ${tiktokLink}\n` +
-        `𖣣ֶㅤ֯⌗ ❖ ⬭ Audio: ${music_info?.title ? music_info.title + " - " : "Desconocido"}${music_info?.author || ""}`
+        `ㅤ∩　ׅ　★ ໌　ׅ　🎧 𝗧𝗶𝗸𝗧𝗼𝗸 𝗔𝘂𝗱𝗶𝗼　ᰙ\n\n` +
+        `𖣣ㅤ֯ ✿  Título: ${title}\n` +
+        `𖣣ֶㅤ֯ ★ ⬭ Autor: ${author.nickname || author.unique_id || "Desconocido"}\n` +
+        `𖣣ֶ֯⌗ ❖ ⬭ Duración: ${duration || music_info?.duration || "N/A"}\n` +
+        `𖣣ֶ֯⌗ ♡ ⬭ Likes: ${(stats.likes || 0).toLocaleString()}\n` +
+        `𖣣ֶㅤ֯⌗ ꕥ  Comentarios: ${(stats.comments || 0).toLocaleString()}\n` +
+        `𖣣ֶㅤ֯ ❒ ⬭ Vistas: ${(stats.plays || stats.views || 0).toLocaleString()}\n` +
+        `𖣣ㅤ֯⌗ ☄︎ ⬭ Compartidos: ${(stats.shares || 0).toLocaleString()}\n` +
+        `𖣣ֶㅤ֯ ❍ ⬭ Enlace: ${tiktokLink}\n` +
+        `𖣣ֶ֯⌗ ❖ ⬭ Audio: ${music_info?.title ? music_info.title + " - " : "Desconocido"}${music_info?.author || ""}`
       )
     }
 
@@ -44,11 +44,20 @@ export default {
         await sock.sendMessage(msg.chat, { image: { url: data.thumbnail }, caption }, { quoted: msg })
       }
 
+      // 🔧 CAMBIO 2: descargar el MP3 a buffer antes de enviarlo
+      // (evita streams cortados/corruptos desde el CDN de TikTok)
+      const audioRes = await axios.get(data.dl, { responseType: "arraybuffer" })
+      const buffer = Buffer.from(audioRes.data)
+
+      if (!buffer || buffer.length < 1000) {
+        return msg.reply("✿ El audio llegó vacío, intenta con otro video.")
+      }
+
       await sock.sendMessage(msg.chat, {
-        audio: { url: data.dl },
+        audio: buffer,               // 🔧 buffer en vez de { url }
         mimetype: "audio/mpeg",
         fileName: `${data.music_info?.title || data.title || "audio"}.mp3`,
-        ptt: true
+        ptt: false                   // 🔧 CAMBIO 1: audio normal, NO nota de voz → SÍ suena
       }, { quoted: msg })
     }
 
